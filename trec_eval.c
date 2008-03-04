@@ -1,6 +1,7 @@
-/* Copyright (c) 2004, 2003, 1991, 1990, 1984 - Chris Buckley. */
+static char *VersionID = VERSIONID;
+/* "Version 7.3  trec_eval Dec 15, 2004"; */
 
-static char *VersionID = "Version 7.2  trec_eval Oct 11, 2004";
+/* Copyright (c) 2004, 2003, 1991, 1990, 1984 - Chris Buckley. */
 
 /********************   PROCEDURE DESCRIPTION   ************************
  *0 Take TREC results text file, TREC qrels file, and evaluate
@@ -72,7 +73,11 @@ int form_trvec (EVAL_PARAM_INFO *ep, TREC_TOP *trec_top,
 int trvec_trec_eval (EVAL_PARAM_INFO *epi, TR_VEC *tr_vec,
 		     TREC_EVAL *eval, long num_rel, long num_nonrel);
 
-static char *usage = "Usage: trec_eval [-h] [-q] [-a] [-o] [-v] trec_rel_file trec_top_file\n   -h: Give full help information, including other options\n   -q: In addition to summary evaluation, give evaluation for each query\n   -a: Print all evaluation measures, instead of just official measures\n   -o: Print requested measures in old non-relational format\n";
+static char *usage = "Usage: trec_eval [-h] [-q] [-a] [-o] [-v] trec_rel_file trec_top_file\n\
+   -h: Give full help information, including other options\n\
+   -q: In addition to summary evaluation, give evaluation for each query\n\
+   -a: Print all evaluation measures, instead of just official measures\n\
+   -o: Print requested measures in old non-relational format\n";
 
 
 int
@@ -106,7 +111,7 @@ char *argv[];
         if (argv[1][1] == 'q')
             epi.query_flag++;
 	else if (argv[1][1] == 'v') {
-	    fprintf (stderr, "%s\n", VersionID);
+	    fprintf (stderr, "trec_eval version %s\n", VersionID);
 	    exit (0);
 	}
 	else if (argv[1][1] == 'h') {
@@ -209,7 +214,7 @@ char *argv[];
 	/* Print results for this query, if desired */
 	if (epi.query_flag) {
 	    if (epi.relation_flag)
-		print_rel_trec_eval_list (&epi, &query_eval, (SM_BUF *) NULL);
+		print_rel_trec_eval_list (1, &epi, &query_eval, (SM_BUF *) NULL);
 	    else
 		old_print_trec_eval_list (&epi, &query_eval, 1, (SM_BUF *) NULL);
         }
@@ -234,12 +239,16 @@ char *argv[];
 	exit (6);
     }
 
-    if (epi.average_complete_flag)
+    if (epi.average_complete_flag) {
+	/* Want to average over possibly missing queries.  Pass in actual
+	 *  number of queries in num_orig_queries */
+	accum_eval.num_orig_queries = accum_eval.num_queries;
 	accum_eval.num_queries = all_trec_qrels.num_q_qrels;
+    }
 
     /* Print final evaluation results */
     if (epi.relation_flag)
-	print_rel_trec_eval_list (&epi, &accum_eval, (SM_BUF *) NULL);
+	print_rel_trec_eval_list (0, &epi, &accum_eval, (SM_BUF *) NULL);
     else
 	old_print_trec_eval_list (&epi, &accum_eval, 1, (SM_BUF *) NULL);
 

@@ -3,8 +3,9 @@ num_ret        	all	1500
 num_rel        	all	561
 num_rel_ret    	all	131
 map            	all	0.1785
+gm_ap          	all	0.1051
 R-prec         	all	0.2174
-bpref          	all	0.1845
+bpref          	all	0.1981
 recip_rank     	all	0.4064
 ircl_prn.0.00  	all	0.4665
 ircl_prn.0.10  	all	0.3884

@@ -1,13 +1,16 @@
 BIN = /home/smart/bin
 H   = .
 
+VERSIONID = 8.0
+
 # gcc
-CC       = gcc32
-CFLAGS   = -g -I$H -O3 -Wall
+CC       = gcc
+CFLAGS   = -g -I$H -O3 -Wall -DVERSIONID=\"$(VERSIONID)\"
+CFLAGS   = -g -I$H  -Wall -DVERSIONID=\"$(VERSIONID)\"
 
 # cc
 ###CC       = cc
-###CFLAGS   = -I$H -g
+###CFLAGS   = -I$H -g -DVERSIONID=\"$(VERSIONID)\"
 
 # Other macros used in some or all makefiles
 INSTALL = /bin/mv
@@ -24,10 +27,10 @@ SRCS = trec_eval.c get_qrels.c get_top.c form_trvec.c measures.c print_meas.c\
 
 SRCH = common.h trec_eval.h smart_error.h sysfunc.h tr_vec.h buf.h
 
-SRCOTHER = README Makefile test 
+SRCOTHER = README Makefile test bpref_bug
 
-trec_eval: $(OBJS)
-	$(CC) $(CFLAGS) -o trec_eval $(OBJS)
+trec_eval: $(SRCS) Makefile $(SRCH)
+	$(CC) $(CFLAGS)  -o trec_eval $(SRCS) -lm
 
 install: $(BIN)/trec_eval
 
@@ -37,6 +40,16 @@ quicktest: trec_eval
 	./trec_eval -a -q test/qrels.test test/results.test | diff - test/out.test.aq
 	./trec_eval -a -q -c test/qrels.test test/results.trunc | diff - test/out.test.aqc
 	./trec_eval -a -q -c -M100 test/qrels.test test/results.trunc | diff - test/out.test.aqcM
+	/bin/echo "Test succeeeded"
+
+longtest: trec_eval
+	/bin/rm -rf test.long; mkdir test.long
+	./trec_eval test/qrels.test test/results.test > test.long/out.test
+	./trec_eval -a test/qrels.test test/results.test > test.long/out.test.a
+	./trec_eval -a -q test/qrels.test test/results.test > test.long/out.test.aq
+	./trec_eval -a -q -c test/qrels.test test/results.trunc > test.long/out.test.aqc
+	./trec_eval -a -q -c -M100 test/qrels.test test/results.trunc > test.long/out.test.aqcM
+	diff test.long test
 
 $(BIN)/trec_eval: trec_eval
 	if [ -f $@ ]; then $(INSTALL) $@ $@.old; fi;
@@ -52,10 +65,10 @@ $(BIN)/trec_eval: trec_eval
 # Odds and ends                                                         #
 #########################################################################
 clean semiclean:
-	/bin/rm -f *.o *.BAK *~ trec_eval trec_eval.shar out.trec_eval Makefile.bak
+	/bin/rm -f *.o *.BAK *~ trec_eval trec_eval.*.shar out.trec_eval Makefile.bak
 
 shar:
-	shar -X $(SRCOTHER) $(SRCS) $(SRCH) > trec_eval.shar
+	shar -X $(SRCOTHER) $(SRCS) $(SRCH) > trec_eval.$(VERSIONID).shar
 
 lint:
 	lint $(SRCS)

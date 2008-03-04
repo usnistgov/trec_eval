@@ -1,12 +1,8 @@
 trec_eval is the standard tool used by the TREC community for
 evaluating an ad hoc retrieval run, given the results file and a
-standard set of judged results.  This is Version 7.2, a reasonably
-major rewrite from earlier versions in terms of internal structure and
-default output format, but the input format and measures calculated
-remain the same (or at least upward compatible).
+standard set of judged results.  
 
 ------------------------------------------------------------------------------
-
 Installation: Should be as easy as typing "make" in the source directory,
 if gcc is available.  Otherwise, comment out the gcc lines (lines 5-6) and
 uncomment out the cc lines (lines 9-10)
@@ -14,24 +10,70 @@ If you wish the trec_eval binary to be placed in a standard location, alter
 the first line of Makefile appropriately.
 
 ------------------------------------------------------------------------------
-
 Testing: sample input and output files are included in the directory test.
 "make quicktest" will perform some sample simple evaluations and compare
 the results.
 
 ------------------------------------------------------------------------------
-
 Usage:  Most options can be ignored.  The only one most folks will need
 is the "-q" flag, to indicate whether to output results for individual 
 queries as well as the averages over all queries.  Official TREC usage
 might be something like 
-	trec_eval -q -c -M1000 submitted_results official_qrels
+	trec_eval -q -c -M1000 official_qrels submitted_results 
 to ensure correct evaluation if submitted_results doesn't have results
 for all queries, or returns more than 1000 documents per query.
 
+
+------------------------------------------------------------------------------
+Change Log
+------------------------------------------------------------------------------
+Version 8.0, full bpref bug fix, see file bpref_bug.  I decided to up the 
+        version number since bpref results are incompatible with previous 
+        results (though the changes are small).
+
+11/8/05: Bpref_bug: New file explaining bug and impact (conclusions after
+	rerunning all of SIGIR 2004 bpref paper experiments).
+11/5/05: Added new measures: micro_prec, micro_recall, micro_bpref. I thought
+	I had an application for micro_bpref averaging (summing components of 
+	measure over all docs (ignoring topics) and then computing measure), 
+	but micro_bpref still proved a rotten measure.  Left code in case
+	someone ever actually finds an application for valid micro averaging.
+11/5/05: Added new measures: old_bpref, old_bpref_top10pRnonrel.  These are
+	the old buggy measures included only for backward comparisons.
+11/5/05: trvec_teval.c: Broke apart old trvec_trec_eval to calculate
+	different types of measures separately.  Very hard to decipher
+	old code (though still difficult with new code) since parts of
+	the calculations for a measure were so far apart.
+
+------------------------------------------------------------------------------
+Version 7.4, minor changes from 7.3
+
+11/4/05: trvec_teval.c: fixed bpref bug if very low (< R) numbers of non-rel
+          judgements available (divided by num_nonrel_ret instead of 
+	  num_nonrel). (pointed out by Ian Soboroff).
+11/3/05: trvec_teval.c: bpref_10, bpref_5 had zero division problems if
+          no rel docs were retrieved. (pointed out by Ian Soboroff).
+10/23/05: form_trvec.c: Added check for duplicate docno's in results and qrels.
+          (pointed out by Shlomo Geva. Default behavior used to be that
+	   duplicate result docno's were always non-rel, but that changed in
+	   later versions, so had better test explicitly for it and complain).
+10/23/05: README: sample invocation of trec_eval had arguments reversed.
+          (pointed out by Carol Peters).
+10/23/05: moved gm_ap to be a major measure (always printed). changed 
+          measures.c, test/out*, README
+
 ------------------------------------------------------------------------------
 
-Changing: To add a new measure:
+Version 7.3, a reasonably major rewrite from earlier versions in terms
+of internal structure and default output format (now relational), but 
+the input format and measures calculated remain the same (or at least 
+upward compatible).
+
+------------------------------------------------------------------------------
+end of ChangeLog
+------------------------------------------------------------------------------
+
+Adding measures: To add a new measure:
 	1. Add space for the measure in TREC_EVAL structure of "trec_eval.h"
 	2. Add description of measure in "measures.c".  See "trec_eval.h" for
 	   definition of the fields.  This description is used for
@@ -59,6 +101,8 @@ measures.c   Description of the measures used by printing.
 trec_eval_help.c Descriptions of trec_eval, the output, and the measures.
 
 trec_eval.h  Basic evaluation structures.
+bpref_bug:   Description of bug in bpref that existed in trec_eval versions 6
+             through 7.3.
 
 The rest of the files are small utility portions from SMART.
 tr_vec.h
@@ -75,137 +119,139 @@ The rest of this file consists of information printed by "trec_eval -h":
 (If you REALLY want a complete list of measures calculated, you can add the
 time based measures and run "trec_eval -T -h".)
 
-trec_eval [-h] [-q] [-a] [-o] [-c] [-l<num>  [-N<num>] [-M<num>] [-Ua<num>] [-Ub<num>] [-Uc<num>] [-Ud<num>] [-T] trec_rel_file trec_top_file
-
-Calculate and print various evaluation measures, evaluating the results 
-in trec_top_file against the relevance judgements in trec_rel_file.
-
-There are a fair number of options, of which only the lower case options are
-normally ever used.  
- -h: Print full help message and exit
- -q: In addition to summary evaluation, give evaluation for each query
- -a: Print all evaluation measures calculated, instead of just the
-     official measures for TREC 2.
- -o: Print everything out in old, nonrelational format (default is relational)
- -c: Average over the complete set of queries in the relevance judgements 
-      instead of the queries in the intersection of relevance judgements
-      and results.  Missing queries will contribute a value of 0 to all
-      evaluation measures (which may or may not be reasonable for a 
-      particular evaluation measure, but is reasonable for standard TREC
-      measures.)
- -l<num>: Num indicates the minimum relevance judgement value needed for
-      a document to be called relevant. (All measures used by TREC eval are
-      based on binary relevance).  Used if trec_rel_file contains relevance
-      judged on a multi-relevance scale.  Default is 1.
- -N<num>: Number of docs in collection
- -M<num>: Max number of docs per topic to use in evaluation (discard rest).
- -Ua<num>: Value to use for 'a' coefficient of utility computation.
-                        relevant  nonrelevant
-      retrieved            a          b
-      nonretrieved         c          d
- -Ub<num>: Value to use for 'b' coefficient of utility computation.
- -Uc<num>: Value to use for 'c' coefficient of utility computation.
- -Ud<num>: Value to use for 'd' coefficient of utility computation.
- -J: Calculate all values only over the judged (either relevant or 
-     nonrelevant) documents.  All unjudged documents are removed from the
-     retrieved set before any calculations (possibly leaving an empty set).
-     DO NOT USE, unless you really know what you're doing - very easy to get
-     reasonable looking, but invalid, numbers. 
- -T: Treat similarity as time that document retrieved.  Compute
-      several time-based measures after ranking docs by time retrieved
-      (first doc (lowest sim) retrieved ranked highest). 
-      Only done if -a selected.
-
-
-Read text tuples from trec_top_file of the form
-     030  Q0  ZF08-175-870  0   4238   prise1
-     qid iter   docno      rank  sim   run_id
-giving TREC document numbers (a string) retrieved by query qid 
-(a string) with similarity sim (a float).  The other fields are ignored,
-with the exception that the run_id field of the last line is kept and
-output.  In particular, note that the rank field is ignored here;
-internally ranks are assigned by sorting by the sim field with ties 
-broken deterministicly (using docno).
-Sim is assumed to be higher for the docs to be retrieved first.
-File may contain no NULL characters.
-Lines may contain fields after the run_id; they are ignored.
-
-Relevance for each docno to qid is determined from text_qrels_file, which
-consists of text tuples of the form
-   qid  iter  docno  rel
-giving TREC document numbers (docno, a string) and their relevance (rel, 
-an integer) to query qid (a string).  iter string field is ignored.  
-Fields are separated by whitespace, string fields can contain no whitespace.
-File may contain no NULL characters.
-
-The text tuples with relevance judgements are converted to TR_VEC form
-and then submitted to the SMART evaluation routines.
-The qid,did,rank,sim,rel fields of TR_VEC are filled in;
-action,iter fields are set to 0.
-The rel field is set to -1 if the document was not judged (not in 
-text_qrels_file).  Most measures, but not all, will treat -1 the same as 0,
-namely nonrelevant.  Note that relevance_level is used to determine if the
-document is relevant during score calculations.
-Queries for which there are no relevant docs are ignored.
-Warning: queries for which there are relevant docs but no retrieved docs
-are also ignored by default.  This allows systems to evaluate over subsets 
-of the relevant docs, but means if a system improperly retrieves no docs, 
-it will not be detected.  Use the -c flag to avoid this behavior.
-
-EXPLANATION OF OFFICIAL VALUES PRINTED OF OLD NON-RELATIONAL FORMAT.
-(Relational Format follows)
-
-1. Total number of documents over all queries
-        Retrieved:
-        Relevant:
-        Rel_ret:     (relevant and retrieved)
-   These should be self-explanatory.  All values are totals over all
-   queries being evaluated.
-2. Interpolated Recall - Precision Averages:
-        at 0.00
-        at 0.10
-        ...
-        at 1.00
-   See any standard IR text (especially by Salton) for more details of 
-   recall-precision evaluation.  Measures precision (percent of retrieved
-   docs that are relevant) at various recall levels (after a certain
-   percentage of all the relevant docs for that query have been retrieved).
-   'Interpolated' means that, for example, precision at recall
-   0.10 (ie, after 10% of rel docs for a query have been retrieved) is
-   taken to be MAXIMUM of precision at all recall points >= 0.10.
-   Values are averaged over all queries (for each of the 11 recall levels).
-   These values are used for Recall-Precision graphs.
-3. Average precision (non-interpolated) over all rel docs
-   The precision is calculated after each relevant doc is retrieved.
-   If a relevant doc is not retrieved, its precision is 0.0.
-   All precision values are then averaged together to get a single number
-   for the performance of a query.  Conceptually this is the area
-   underneath the recall-precision graph for the query.
-   The values are then averaged over all queries.
-4. Precision:
-       at 5    docs
-       at 10   docs
-       ...
-       at 1000 docs   
-   The precision (percent of retrieved docs that are relevant) after X
-   documents (whether relevant or nonrelevant) have been retrieved.
-   Values averaged over all queries.  If X docs were not retrieved
-   for a query, then all missing docs are assumed to be non-relevant.
-5. R-Precision (precision after R (= num_rel for a query) docs retrieved):
-   Measures precision (or recall, they're the same) after R docs
-   have been retrieved, where R is the total number of relevant docs
-   for a query.  Thus if a query has 40 relevant docs, then precision
-   is measured after 40 docs, while if it has 600 relevant docs, precision
-   is measured after 600 docs.  This avoids some of the averaging
-   problems of the 'precision at X docs' values in (4) above.
-   If R is greater than the number of docs retrieved for a query, then
-   the nonretrieved docs are all assumed to be nonrelevant.
+trec_eval [-h] [-q] [-a] [-o] [-c] [-l<num>  [-N<num>] [-M<num>] [-Ua<num>] [-Ub<num>] [-Uc<num>] [-Ud<num>] [-T] trec_rel_file trec_top_file 
+ 
+Calculate and print various evaluation measures, evaluating the results  
+in trec_top_file against the relevance judgements in trec_rel_file. 
+ 
+There are a fair number of options, of which only the lower case options are 
+normally ever used.   
+ -h: Print full help message and exit 
+ -q: In addition to summary evaluation, give evaluation for each query 
+ -a: Print all evaluation measures calculated, instead of just the 
+     main official measures for TREC. 
+ -o: Print everything out in old, nonrelational format (default is relational) 
+ -c: Average over the complete set of queries in the relevance judgements  
+      instead of the queries in the intersection of relevance judgements 
+      and results.  Missing queries will contribute a value of 0 to all 
+      evaluation measures (which may or may not be reasonable for a  
+      particular evaluation measure, but is reasonable for standard TREC 
+      measures.) 
+ -l<num>: Num indicates the minimum relevance judgement value needed for 
+      a document to be called relevant. (All measures used by TREC eval are 
+      based on binary relevance).  Used if trec_rel_file contains relevance 
+      judged on a multi-relevance scale.  Default is 1. 
+ -N<num>: Number of docs in collection 
+ -M<num>: Max number of docs per topic to use in evaluation (discard rest). 
+ -Ua<num>: Value to use for 'a' coefficient of utility computation. 
+                        relevant  nonrelevant 
+      retrieved            a          b 
+      nonretrieved         c          d 
+ -Ub<num>: Value to use for 'b' coefficient of utility computation. 
+ -Uc<num>: Value to use for 'c' coefficient of utility computation. 
+ -Ud<num>: Value to use for 'd' coefficient of utility computation. 
+ -J: Calculate all values only over the judged (either relevant or  
+     nonrelevant) documents.  All unjudged documents are removed from the 
+     retrieved set before any calculations (possibly leaving an empty set). 
+     DO NOT USE, unless you really know what you're doing - very easy to get 
+     reasonable looking, but invalid, numbers.  
+ -T: Treat similarity as time that document retrieved.  Compute 
+      several time-based measures after ranking docs by time retrieved 
+      (first doc (lowest sim) retrieved ranked highest).  
+      Only done if -a selected. 
+ 
+ 
+Read text tuples from trec_top_file of the form 
+     030  Q0  ZF08-175-870  0   4238   prise1 
+     qid iter   docno      rank  sim   run_id 
+giving TREC document numbers (a string) retrieved by query qid  
+(a string) with similarity sim (a float).  The other fields are ignored, 
+with the exception that the run_id field of the last line is kept and 
+output.  In particular, note that the rank field is ignored here; 
+internally ranks are assigned by sorting by the sim field with ties  
+broken deterministicly (using docno). 
+Sim is assumed to be higher for the docs to be retrieved first. 
+File may contain no NULL characters. 
+Lines may contain fields after the run_id; they are ignored. 
+ 
+Relevance for each docno to qid is determined from text_qrels_file, which 
+consists of text tuples of the form 
+   qid  iter  docno  rel 
+giving TREC document numbers (docno, a string) and their relevance (rel,  
+an integer) to query qid (a string).  iter string field is ignored.   
+Fields are separated by whitespace, string fields can contain no whitespace. 
+File may contain no NULL characters. 
+ 
+The text tuples with relevance judgements are converted to TR_VEC form 
+and then submitted to the SMART evaluation routines. 
+The qid,did,rank,sim,rel fields of TR_VEC are filled in; 
+action,iter fields are set to 0. 
+The rel field is set to -1 if the document was not judged (not in  
+text_qrels_file).  Most measures, but not all, will treat -1 the same as 0, 
+namely nonrelevant.  Note that relevance_level is used to determine if the 
+document is relevant during score calculations. 
+Queries for which there are no relevant docs are ignored. 
+Warning: queries for which there are relevant docs but no retrieved docs 
+are also ignored by default.  This allows systems to evaluate over subsets  
+of the relevant docs, but means if a system improperly retrieves no docs,  
+it will not be detected.  Use the -c flag to avoid this behavior. 
+ 
+EXPLANATION OF OFFICIAL VALUES PRINTED OF OLD NON-RELATIONAL FORMAT. 
+Relational Format prints the same values, but all lines are of the form 
+    measure_name   query   value 
+ 
+1. Total number of documents over all queries 
+        Retrieved: 
+        Relevant: 
+        Rel_ret:     (relevant and retrieved) 
+   These should be self-explanatory.  All values are totals over all 
+   queries being evaluated. 
+2. Interpolated Recall - Precision Averages: 
+        at 0.00 
+        at 0.10 
+        ... 
+        at 1.00 
+   See any standard IR text (especially by Salton) for more details of  
+   recall-precision evaluation.  Measures precision (percent of retrieved 
+   docs that are relevant) at various recall levels (after a certain 
+   percentage of all the relevant docs for that query have been retrieved). 
+   'Interpolated' means that, for example, precision at recall 
+   0.10 (ie, after 10% of rel docs for a query have been retrieved) is 
+   taken to be MAXIMUM of precision at all recall points >= 0.10. 
+   Values are averaged over all queries (for each of the 11 recall levels). 
+   These values are used for Recall-Precision graphs. 
+3. Average precision (non-interpolated) over all rel docs 
+   The precision is calculated after each relevant doc is retrieved. 
+   If a relevant doc is not retrieved, its precision is 0.0. 
+   All precision values are then averaged together to get a single number 
+   for the performance of a query.  Conceptually this is the area 
+   underneath the recall-precision graph for the query. 
+   The values are then averaged over all queries. 
+4. Precision: 
+       at 5    docs 
+       at 10   docs 
+       ... 
+       at 1000 docs    
+   The precision (percent of retrieved docs that are relevant) after X 
+   documents (whether relevant or nonrelevant) have been retrieved. 
+   Values averaged over all queries.  If X docs were not retrieved 
+   for a query, then all missing docs are assumed to be non-relevant. 
+5. R-Precision (precision after R (= num_rel for a query) docs retrieved): 
+   Measures precision (or recall, they're the same) after R docs 
+   have been retrieved, where R is the total number of relevant docs 
+   for a query.  Thus if a query has 40 relevant docs, then precision 
+   is measured after 40 docs, while if it has 600 relevant docs, precision 
+   is measured after 600 docs.  This avoids some of the averaging 
+   problems of the 'precision at X docs' values in (4) above. 
+   If R is greater than the number of docs retrieved for a query, then 
+   the nonretrieved docs are all assumed to be nonrelevant. 
 
 Major measures (again) with their relational names:
 num_ret        	Total number of documents retrieved over all queries
 num_rel        	Total number of relevant documents over all queries
 num_rel_ret    	Total number of relevant documents retrieved over all queries
 map            	Mean Average Precision (MAP)
+gm_ap          	Average Precision. Geometric Mean, q_score=log(MAX(map,.00001))
 R-prec         	R-Precision (Precision after R (= num-rel for topic) documents retrieved)
 bpref          	Binary Preference, top R judged nonrel
 recip_rank     	Reciprical rank of top relevant document
@@ -255,10 +301,16 @@ bpref_top25pRnonrel	Binary Preference, top 25 + R judged nonrel
 bpref_top50pRnonrel	Binary Preference, top 50 + R judged nonrel
 bpref_top25p2Rnonrel	Binary Preference, top 25 + 2*R judged nonrel
 bpref_retall   	Binary Preference, Only retrieved judged rel and nonrel
-bpref_num_all  	Binary Preference, Number not retrieved before (all judged)
-bpref_num_ret  	Binary Preference, Number retrieved after
 bpref_5        	Binary Preference, top 5 rel, top 5 nonrel
 bpref_10       	Binary Preference, top 10 rel, top 10 nonrel
+bpref_num_all  	Binary Preference, Number not retrieved before (all judged)
+bpref_num_ret  	Binary Preference, Number retrieved after
+bpref_num_correct	Binary Preference, Number correct preferences
+bpref_num_possible	Binary Preference, Number possible correct_preferences
+old_bpref      	Buggy Version 7.3. Binary Preference, top R judged nonrel
+old_bpref_top10pRnonrel	Buggy Version 7.3. Binary Preference,top 10+R judged nonrel
+gm_bpref       	Binary Preference, top R judged nonrel, Geometric Mean, q_score=log(MAX(bpref,.00001))
+rank_first_rel 	Rank of top relevant document (0 if none)
 recall5        	Recall after 5 docs retrieved
 recall10       	Recall after 10 docs retrieved
 recall15       	Recall after 15 docs retrieved
@@ -328,3 +380,6 @@ int_1.40R-prec 	Interpolated R-based precision, after 1.40 * R docs retrieved
 int_1.60R-prec 	Interpolated R-based precision, after 1.60 * R docs retrieved
 int_1.80R-prec 	Interpolated R-based precision, after 1.80 * R docs retrieved
 int_2.00R-prec 	Interpolated R-based precision, after 2.00 * R docs retrieved
+micro_prec     	Total relevant retrieved documents / Total retrieved documents
+micro_recall   	Total relevant retrieved documents / Total relevant documents
+micro_bpref    	Total correct preferences / Total possible preferences

@@ -75,6 +75,11 @@ ALL_TREC_TOP *all_trec_top;
 	/* Get current line */
 	/* Get qid */
 	while (*ptr != '\n' && isspace (*ptr)) ptr++;
+	if (*ptr == '\n') {
+	    /* Ignore blank lines (people seem to insist on them!) */
+	    ptr++;
+	    continue;
+	}
 	qid_ptr = ptr;
 	while (! isspace (*ptr)) ptr++;
 	if (*ptr == '\n') {

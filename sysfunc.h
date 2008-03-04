@@ -6,7 +6,7 @@
    /usr/include.  Until then... */
 
 #include <unistd.h>
-/* #include <values.h> */
+#include <limits.h>
 #include <ctype.h>
 #include <fcntl.h>
 #include <stdio.h>

@@ -58,15 +58,28 @@ long *num_rel;
            sizeof (TEXT_TR),
            comp_tr_docno);
 
+    for (i = 1; i < trec_top->num_text_tr; i++) {
+	if (0 == strcmp (trec_top->text_tr[i].docno,
+			 trec_top->text_tr[i-1].docno)) {
+	    set_error (SM_ILLPA_ERR, "Duplicate top docs docno", "trec_eval");
+	    return (UNDEF);
+	}
+    }
+
     /* Sort trec_qrels lexicographically */
     qsort ((char *) trec_qrels->text_qrels,
            (int) trec_qrels->num_text_qrels,
            sizeof (TEXT_QRELS),
            comp_qrels_docno);
 
-    /* Find number of relevant docs */
+    /* Find number of relevant docs, and check for duplicates */
     *num_rel = 0;
     for (i = 0; i < trec_qrels->num_text_qrels; i++) {
+	if (i > 0 && (0 == strcmp (trec_qrels->text_qrels[i].docno,
+				   trec_qrels->text_qrels[i-1].docno))) {
+	    set_error (SM_ILLPA_ERR, "Duplicate qrels docno", "trec_eval");
+	    return (UNDEF);
+	}
 	if (trec_qrels->text_qrels[i].rel >= epi->relevance_level)
 	    (*num_rel)++;
     }
@@ -95,6 +108,7 @@ long *num_rel;
         else {
             /* Doc is judged; assign relevance */
 	    tr_tup->rel = qrels_ptr->rel;
+	    qrels_ptr++;
         }
         tr_tup->did = i;
         tr_tup->rank = trec_top->text_tr[i].rank;

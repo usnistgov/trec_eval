@@ -1,6 +1,94 @@
 #ifndef TRECEVALH
 #define TRECEVALH
 
+/* Static state info; set at beginning, possibly from program options, */
+/* but then remains constant throughout. */
+typedef struct {
+    long query_flag;              /* 0. If set, evaluation output will be
+                                     printed for each query, in addition
+                                     to summary at end. */
+    long all_flag;                /* 0. If set, all evaluation measures will
+                                     be printed instead of just the
+                                     final TREC 2 measures. */
+    long time_flag;               /* 0. If set, calculate time-based measures*/
+    long relation_flag;           /* 1. If set, print in relational form */
+    long average_complete_flag;   /* 0. If set, average over the complete set
+				     of relevance judgements (qrels), instead
+				     of the number of queries 
+				     in the intersection of qrels and result */
+    long judged_docs_only_flag;   /* 0. If set, throw out all unjudged docs
+				     for the retrieved set before calculating
+				     any measures. */
+    double utility_a;             /* UTILITY_A. Default utility values */
+    double utility_b;             /* UTILITY_B. Default utility values */
+    double utility_c;             /* UTILITY_C. Default utility values */
+    double utility_d;             /* UTILITY_D. Default utility values */
+    long num_docs_in_coll;        /* 0. number of docs in collection */
+    long relevance_level;         /* 1. In relevance judgements, the level at
+				     which a doc is considered relevant for
+				     this evaluation */
+    long max_num_docs_per_topic;  /* MAXLONG. evaluate only this many docs */
+} EVAL_PARAM_INFO;
+
+/* Measure characteristics (how to print them, average them). */
+/* List of measures is in measures.c */
+/* Three types of measures:
+       single measures - single measure and name
+       parameterized measures - arrays of a measure, whose measure name
+              depends on parameter (eg P5, P10)
+       micro measures - measures defined as the micro average over all
+              docs retrieved independent of topic. Only calculated
+	      and printed for the "all" pseudo-query.
+	      Eg  micro_prec = num_rel_ret / num_ret
+*/
+typedef struct {
+    char *name;
+    char *long_name;
+    unsigned char is_long_flag;      /* otherwise float */
+    unsigned char print_short_flag;  /* if set, measure is always printed
+					(not just if all_flag set) */
+    unsigned char print_time_flag;   /* if set, measure is printed only
+					if time_flag is set */
+    unsigned char print_only_query_flag; /* if set, measure is printed only
+				        when printing individual query output*/
+    unsigned char print_only_average_flag; /* if set, measure is printed only
+				        when printing overall average output*/
+    unsigned char avg_results_flag;  /* if set, average results over queries */
+    unsigned char avg_rel_results_flag;/* if set,average results over num_rel*/
+    unsigned char gm_results_flag;   /* if set, measure uses geometric mean. ie
+				        exponentiate the average before
+				        printing */
+    long byte_offset;
+} SINGLE_MEASURE;
+
+typedef struct {
+    char *long_name;
+    unsigned char is_long_flag;      /* otherwise float */
+    unsigned char print_short_flag;  /* if set, print in short output */
+    unsigned char print_time_flag;   /* if set, measure is printed only
+					if time_flag is set */
+    unsigned char print_only_query_flag; /* if set, measure is printed only
+				        when printing individual query output*/
+    unsigned char print_only_average_flag; /* if set, measure is printed only
+				        when printing overall average output*/
+    unsigned char avg_results_flag;  /* if set, average results over queries */
+    long byte_offset;
+    long num_values;
+    char *format_string;
+    char *long_format_string;
+    char *(*get_param_str) (EVAL_PARAM_INFO *ip, long index);
+} PARAMETERIZED_MEASURE;
+
+typedef struct {
+    char *name;
+    char *long_name;
+    unsigned char print_short_flag;  /* if set, measure is always printed
+					(not just if all_flag set) */
+    long numerator_byte_offset;
+    long denominator_byte_offset;
+} MICRO_MEASURE;
+
+
 typedef struct {                    /* For each retrieved document result */
     char *docno;                       /* document id */
     float sim;                         /* score */
@@ -39,62 +127,6 @@ typedef struct {                    /* Overall relevance judgements */
     TREC_QRELS *trec_qrels;            /* Array of TREC_QRELS queries */
 } ALL_TREC_QRELS;
 
-
-/* Static state info; set at beginning, possibly from program options, */
-/* but then remains constant throughout. */
-typedef struct {
-    long query_flag;              /* 0. If set, evaluation output will be
-                                     printed for each query, in addition
-                                     to summary at end. */
-    long all_flag;                /* 0. If set, all evaluation measures will
-                                     be printed instead of just the
-                                     final TREC 2 measures. */
-    long time_flag;               /* 0. If set, calculate time-based measures*/
-    long relation_flag;           /* 1. If set, print in relational form */
-    long average_complete_flag;   /* 0. If set, average over the complete set
-				     of relevance judgements (qrels), instead
-				     of the number of queries 
-				     in the intersection of qrels and result */
-    long judged_docs_only_flag;   /* 0. If set, throw out all unjudged docs
-				     for the retrieved set before calculating
-				     any measures. */
-    double utility_a;             /* UTILITY_A. Default utility values */
-    double utility_b;             /* UTILITY_B. Default utility values */
-    double utility_c;             /* UTILITY_C. Default utility values */
-    double utility_d;             /* UTILITY_D. Default utility values */
-    long num_docs_in_coll;        /* 0. number of docs in collection */
-    long relevance_level;         /* 1. In relevance judgements, the level at
-				     which a doc is considered relevant for
-				     this evaluation */
-    long max_num_docs_per_topic;  /* MAXLONG. evaluate only this many docs */
-} EVAL_PARAM_INFO;
-
-typedef struct {
-    char *name;
-    char *long_name;
-    unsigned char is_long_flag;      /* otherwise float */
-    unsigned char print_short_flag;  /* if set, measure is always printed
-					(not just if all_flag set) */
-    unsigned char print_time_flag;   /* if set, measure is printed only
-					if time_flag is set */
-    unsigned char avg_results_flag;  /* if set, average results over queries */
-    unsigned char avg_rel_results_flag;/* if set,average results over num_rel*/
-    long byte_offset;
-} SINGLE_MEASURE;
-
-typedef struct {
-    char *long_name;
-    unsigned char is_long_flag;      /* otherwise float */
-    unsigned char print_short_flag;  /* if set, print in short output */
-    unsigned char print_time_flag;   /* if set, measure is printed only
-					if time_flag is set */
-    unsigned char avg_results_flag;  /* if set, average results over queries */
-    long byte_offset;
-    long num_values;
-    char *format_string;
-    char *long_format_string;
-    char *(*get_param_str) (EVAL_PARAM_INFO *ip, long index);
-} PARAMETERIZED_MEASURE;
 
 
 #define INIT_NUM_QUERIES 50
@@ -150,11 +182,13 @@ typedef struct {
 #define UTILITY_B -1.0
 #define UTILITY_C 0.0
 #define UTILITY_D 0.0
-
+#define MIN_GEO_MEAN .00001
 
 typedef struct {
     char  *qid;                     /* query id  */
     long num_queries;               /* Number of queries for this eval */
+    long num_orig_queries;          /* Number of queries for this eval without
+				       missing values, if using trec_eval -c */
     /* Summary Numbers over all queries */
     long num_rel;                   /* Number of relevant docs */
     long num_ret;                   /* Number of retrieved docs */
@@ -189,6 +223,8 @@ typedef struct {
 				       By default, a-b (or r - (n-r)) */
     float recip_rank;               /* reciprical rank of top retrieved
 				       relevant document */
+    long rank_first_rel;            /* Rank of top retrieved rel doc. Set to
+				       0 if none. Unaveraged */
 
     /* Measures after each document */
     float recall_cut[NUM_CUTOFF];   /* Recall after cutoff[i] docs */
@@ -213,7 +249,7 @@ typedef struct {
 
 
     /* Measures after each rel doc */
-    float av_recall_precis;         /* average(integral) of precision at
+    float av_recall_precis;         /* MAP! average(integral) of precision at
                                        all rel doc ranks. THE MAJOR
 				       EVALUATION MEASURE FOR RANKED DOCS */
     float int_av_recall_precis;     /* Same as above, but the precision values
@@ -278,21 +314,40 @@ typedef struct {
     /* Measures dependent on only judged documents */
     /* Binary Pref relations: fraction of nonrel documents retrieved after 
        each rel doc */
+    float bpref;                     /* real BPREF.  Top num_rel nonrel docs */
+    float bpref_top5Rnonrel;         /* Top 5 * num_rel nonrel docs */
+    float bpref_top10Rnonrel;        /* Top 10 * num_rel nonrel docs */
+/*    float bpref_topRnonrel;         *  renamed as bpref */
     float bpref_allnonrel;           /* all judged nonrel docs */
     float bpref_retnonrel;           /* Only retrieved nonrel docs */
     float bpref_topnonrel;           /* Top PREF_TOPNREL_NUM nonrel docs */
-    float bpref_top5Rnonrel;         /* Top 5 * num_rel nonrel docs */
-    float bpref_top10Rnonrel;        /* Top 10 * num_rel nonrel docs */
     float bpref_top50pRnonrel;       /* Top 50 + num_rel nonrel docs */
     float bpref_top25pRnonrel;       /* Top 25 + num_rel nonrel docs */
-    float bpref_top10pRnonrel;       /* Top 10 + num_rel nonrel docs */
-    float bpref_topRnonrel;          /* Top num_rel nonrel docs */
+    float bpref_top10pRnonrel;       /* Top 10 + num_rel nonrel docs.
+                                        Bad version used in SIGIR 2004 paper */
+    float old_bpref_top10pRnonrel;   /* bad old version. Top 10 + num_rel 
+                                        nonrel docs. Used in SIGIR 2004 paper*/
     float bpref_top25p2Rnonrel;      /* Top 25 + 2 * num_rel nonrel docs */
     float bpref_retall;              /* Only retrieved rel,nonrel docs */
-    float bpref_num_all;             /* num not retrieved before (all judged)*/
-    float bpref_num_ret;             /* num retrieved after */
     float bpref_5;                   /* Only top 5 rel, top 5 nonrel */
     float bpref_10;                  /* Only top 10 rel, top 10 nonrel */
+    float old_bpref;                 /* Bad old bpref. Top num_rel nonrel docs.
+					Only used retrieved nonrel docs.
+					Used in TREC 12,13, mention in 
+					SIGIR 2004 paper */
+    float bpref_num_all;             /* num not retrieved before (all judged)*/
+    float bpref_num_ret;             /* num retrieved after */
+    long  bpref_num_correct;         /* num correct preferences */
+    long  bpref_num_possible;        /* num possible correct preferences */
+
+    /* Measures that use Geometric Mean
+       avg_Score = exp (SUM (log (MAX (query_score, .00001))) / N)     
+       WARNING: Geometric Mean measures special cased for "trec_eval -c".
+       Works, but be careful when implementing new measure */
+    float gm_ap;                     /* Geometric Mean version of MAP */
+    float gm_bpref;                  /* Geometric Mean version of bpref.  Note
+					bpref has lots of 0.0 values */
+
 } TREC_EVAL;
 
 #endif /* TRECEVALH */

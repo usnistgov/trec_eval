@@ -19,7 +19,8 @@ int add_buf_string();
 
 extern SINGLE_MEASURE sing_meas[];
 extern PARAMETERIZED_MEASURE param_meas[];
-extern int num_param_meas, num_sing_meas;
+extern MICRO_MEASURE micro_meas[];
+extern int num_param_meas, num_sing_meas, num_micro_meas;
 
 int
 accumulate_results (query_eval, accum_eval)
@@ -75,7 +76,8 @@ TREC_EVAL *accum_eval;
 }
 
 void
-print_rel_trec_eval_list (epi, eval, output)
+print_rel_trec_eval_list (is_single_query_flag, epi, eval, output)
+long is_single_query_flag;
 EVAL_PARAM_INFO *epi;
 TREC_EVAL *eval;
 SM_BUF *output;
@@ -95,7 +97,7 @@ SM_BUF *output;
     else
         out_p = output;
 
-    if (eval->num_queries == 1) {
+    if (is_single_query_flag) {
         (void) sprintf (q_buf, "%.20s", eval[0].qid);
     }
     else {
@@ -107,9 +109,13 @@ SM_BUF *output;
     }
 
     for (i = 0; i < num_sing_meas; i++) {
-        if ((! epi->all_flag) && (! sing_meas[i].print_short_flag))
+        if ((! sing_meas[i].print_short_flag) && (! epi->all_flag))
             continue;
         if (sing_meas[i].print_time_flag && (!epi->time_flag))
+            continue;
+	if (sing_meas[i].print_only_query_flag && (!is_single_query_flag))
+            continue;
+	if (sing_meas[i].print_only_average_flag && (is_single_query_flag))
             continue;
         if (sing_meas[i].is_long_flag) {
             long_eval = *((long *) (((char *) eval) + 
@@ -125,7 +131,18 @@ SM_BUF *output;
             if (sing_meas[i].avg_results_flag)
 		float_eval /= eval->num_queries;
 	    else if (sing_meas[i].avg_rel_results_flag && eval->num_rel > 0)
+		/* average over number of rel docs instead of number queries */
 		float_eval /= eval->num_rel;
+	    else if (sing_meas[i].gm_results_flag) {
+		/* computing geometric mean instead of mean */
+		if (!is_single_query_flag && epi->average_complete_flag)
+		    /* Must patch up averages for any missing queries, since */
+		    /* value of 0 means perfection */
+		    float_eval += (eval->num_queries - eval->num_orig_queries)*
+			log (MIN_GEO_MEAN);
+		float_eval = (float) exp ((double) (float_eval /
+						    eval->num_queries));
+	    }
 	    (void) sprintf (temp_buf, "%-15s\t%s\t%6.4f\n",
 			    sing_meas[i].name, q_buf, float_eval);
         }
@@ -134,9 +151,13 @@ SM_BUF *output;
     }
 
     for (i = 0; i < num_param_meas; i++) {
-        if ((! epi->all_flag) && (! param_meas[i].print_short_flag))
+        if ((! param_meas[i].print_short_flag) && (! epi->all_flag))
             continue;
         if (param_meas[i].print_time_flag && (!epi->time_flag))
+            continue;
+	if (param_meas[i].print_only_query_flag && (!is_single_query_flag))
+            continue;
+	if (param_meas[i].print_only_average_flag && (is_single_query_flag))
             continue;
         for (j = 0; j < param_meas[i].num_values; j++) {
             sprintf (name_buf, param_meas[i].format_string,
@@ -160,6 +181,23 @@ SM_BUF *output;
             if (UNDEF == add_buf_string (temp_buf, out_p))
                 return;
         }
+    }
+
+    if (! is_single_query_flag) {
+	long denom_long_eval;
+	for (i = 0; i < num_micro_meas; i++) {
+	    if ((! micro_meas[i].print_short_flag) && (! epi->all_flag))
+		continue;
+	    long_eval = *((long *) (((char *) eval) + 
+				micro_meas[i].numerator_byte_offset));
+	    denom_long_eval = *((long *) (((char *) eval) + 
+				micro_meas[i].denominator_byte_offset));
+	    float_eval = (float) long_eval / (float) denom_long_eval;
+	    (void) sprintf (temp_buf, "%-15s\t%s\t%6.4f\n",
+			    micro_meas[i].name, q_buf, float_eval);
+            if (UNDEF == add_buf_string (temp_buf, out_p))
+                return;
+	}
     }
 
     if (output == NULL) {
