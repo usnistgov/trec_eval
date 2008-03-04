@@ -63,19 +63,23 @@ Relevance for each docno to qid is determined from text_qrels_file, which \n\
 consists of text tuples of the form \n\
    qid  iter  docno  rel \n\
 giving TREC document numbers (docno, a string) and their relevance (rel,  \n\
-an integer) to query qid (a string).  iter string field is ignored.   \n\
+a non-negative integer less than 128, or -1 (unjudged)) \n\
+to query qid (a string).  iter string field is ignored.   \n\
 Fields are separated by whitespace, string fields can contain no whitespace. \n\
 File may contain no NULL characters. \n\
  \n\
 The text tuples with relevance judgements are converted to TR_VEC form \n\
 and then submitted to the SMART evaluation routines. \n\
-The qid,did,rank,sim,rel fields of TR_VEC are filled in; \n\
+The did,rank,sim fields of TR_VEC are filled in from trec_top_file; \n\
 action,iter fields are set to 0. \n\
-The rel field is set to -1 if the document was not judged (not in  \n\
-text_qrels_file).  Most measures, but not all, will treat -1 the same as 0, \n\
-namely nonrelevant.  Note that relevance_level is used to determine if the \n\
-document is relevant during score calculations. \n\
-Queries for which there are no relevant docs are ignored. \n\
+The rel field is set to -1 if the document was not in the pool (not in \n\
+text_qrels_file) or -2 if the document was in the pool but unjudged (some \n\
+measures (infAP) allow the pool to be sampled instead of judged fully).  \n\
+Otherwise it is set to the value in text_qrels_file. \n\
+Most measures, but not all, will treat -1 or -2 the same as 0, \n\
+namely nonrelevant.  Note that relevance_level is used to \n\
+determine if the document is relevant during score calculations. \n\
+Queries for which there is no relevance information are ignored. \n\
 Warning: queries for which there are relevant docs but no retrieved docs \n\
 are also ignored by default.  This allows systems to evaluate over subsets  \n\
 of the relevant docs, but means if a system improperly retrieves no docs,  \n\
@@ -143,8 +147,9 @@ trec_eval_help(epi)
 EVAL_PARAM_INFO *epi;
 {
     long i, j;
-    char temp_buf1[30];
-    char temp_buf2[80];
+    /* Note this trusts the format_strings  in measures.c will not overflow */
+    char temp_buf1[200];
+    char temp_buf2[200];
 
     printf ("%s\n", help_message);
 

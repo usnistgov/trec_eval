@@ -80,7 +80,7 @@ long num_nonrel;            /* Number nonrelevant judged */
     /* Also includes recip_rank and rank_first_rel */
     calc_cutoff_measures (epi, tr_vec, eval, num_rel, num_nonrel);
 
-    /* Calculate bpref measures */
+    /* Calculate bpref and related measures (judged docs only) */
     calc_bpref_measures (epi, tr_vec, eval, num_rel, num_nonrel);
 
     /* Calculate measures that average over ret or rel docs */
@@ -300,14 +300,15 @@ long num_rel;               /* Number relevant judged */
 long num_nonrel;            /* Number nonrelevant judged */
 {
     long j;
-    long nonrel_ret, nonrel_so_far, rel_so_far;
+    long nonrel_ret;
+    long nonrel_so_far, rel_so_far, pool_unjudged_so_far;
+    long bounded_5R_nonrel_so_far, bounded_10R_nonrel_so_far;
     long pref_top_nonrel_num = PREF_TOP_NONREL_NUM;
     long pref_top_50pRnonrel_num;
     long pref_top_25pRnonrel_num;
     long pref_top_25p2Rnonrel_num;
     long pref_top_10pRnonrel_num;
     long pref_top_Rnonrel_num;
-    long bounded_5R_nonrel_so_far, bounded_10R_nonrel_so_far;
     
     /* Calculate judgement based measures (dependent on only
        judged docs; no assumption of non-relevance if not judged) */
@@ -322,15 +323,26 @@ long num_nonrel;            /* Number nonrelevant judged */
     pref_top_25p2Rnonrel_num = 25 + (2 * eval->num_rel);
     nonrel_ret = 0;
     for (j = 0; j < tr_vec->num_tr; j++) {
-	if (tr_vec->tr[j].rel == 0)
+	if (tr_vec->tr[j].rel >= 0 && tr_vec->tr[j].rel < epi->relevance_level)
 	    nonrel_ret++;
     }
     nonrel_so_far = 0;
     rel_so_far = 0;
+    pool_unjudged_so_far = 0;
     bounded_5R_nonrel_so_far = 0; 
     bounded_10R_nonrel_so_far = 0; 
     for (j = 0; j < tr_vec->num_tr; j++) {
-	if (tr_vec->tr[j].rel == 0) {
+	if (tr_vec->tr[j].rel == RELVALUE_NONPOOL)
+	    /* document not in pool. Skip */
+	    continue;
+	if (tr_vec->tr[j].rel == RELVALUE_UNJUDGED) {
+	    /* document in pool but unjudged. */
+	    pool_unjudged_so_far++;
+	    continue;
+	}
+
+	if (tr_vec->tr[j].rel >= 0 && tr_vec->tr[j].rel < epi->relevance_level) {
+	    /* Judged Nonrel document */
 	    if (nonrel_so_far < 5 * eval->num_rel) {
 		bounded_5R_nonrel_so_far++;
 		if (nonrel_so_far < 10 * eval->num_rel) {
@@ -339,7 +351,8 @@ long num_nonrel;            /* Number nonrelevant judged */
 	    }
 	    nonrel_so_far++;
 	}
-	else if (tr_vec->tr[j].rel >= epi->relevance_level) {
+	else {
+	    /* Judged Rel doc */
 	    rel_so_far++;
 	    /* Add fraction of correct preferences. */
 	    /* Special case nonrel_so_far == 0 to avoid division by 0 */
@@ -410,6 +423,17 @@ long num_nonrel;            /* Number nonrelevant judged */
 		 (float) MIN (num_nonrel, eval->num_rel * 10));
 	    eval->bpref_num_all += num_nonrel - nonrel_so_far;
 	    eval->bpref_num_ret += nonrel_ret - nonrel_so_far;
+	    /* inf_ap */
+	    if (0 == j)
+		eval->inf_ap += 1.0;
+	    else {
+		float fj = (float) j;
+		eval->inf_ap += 1.0 / (fj+1.0) +
+		    (fj / (fj+1.0)) *
+		    ((rel_so_far-1+nonrel_so_far+pool_unjudged_so_far) / fj)  *
+		    ((rel_so_far-1 + INFAP_EPSILON) / 
+		     (rel_so_far-1 + nonrel_so_far + 2 * INFAP_EPSILON));
+	    }
 	}
     }
     if (eval->num_rel) {
@@ -432,7 +456,10 @@ long num_nonrel;            /* Number nonrelevant judged */
 	}
 	eval->bpref_num_possible = eval->num_rel *
 	    MIN (num_nonrel, pref_top_Rnonrel_num);
+	eval->inf_ap /= eval->num_rel;
     }
+    eval->num_nonrel_judged_ret = nonrel_ret;
+
     /* For those bpref measure variants which use the geometric mean instead
        of straight averages, compute them here.  Original measure value
        is constrained to be greater than MIN_GEO_MEAN (for time being .00001,
@@ -585,7 +612,7 @@ long num_nonrel;            /* Number nonrelevant judged */
 {
     double recall, precis;     /* current recall, precision values */
     double rel_precis, rel_uap;/* relative precision, uap values */
-    double int_precis;         /* current interpolated precision values */
+    double int_precis = 0.0;   /* current interpolated precision values */
     
     long i,j;
 

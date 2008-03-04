@@ -5,6 +5,7 @@ map            	301	0.0324
 R-prec         	301	0.1456
 bpref          	301	0.1230
 recip_rank     	301	0.1667
+num_nonrel_judged_ret	301	188
 exact_prec     	301	0.1420
 exact_recall   	301	0.1498
 11-pt_avg      	301	0.0450
@@ -36,6 +37,7 @@ bpref_num_correct	301	27646
 bpref_num_possible	301	224676
 old_bpref      	301	0.0824
 old_bpref_top10pRnonrel	301	0.0824
+infAP          	301	0.0324
 rank_first_rel 	301	6
 ircl_prn.0.00  	301	0.2857
 ircl_prn.0.10  	301	0.2096
@@ -133,6 +135,7 @@ map            	303	0.2723
 R-prec         	303	0.4000
 bpref          	303	0.3300
 recip_rank     	303	0.3333
+num_nonrel_judged_ret	303	61
 exact_prec     	303	0.0714
 exact_recall   	303	0.6000
 11-pt_avg      	303	0.3354
@@ -164,6 +167,7 @@ bpref_num_correct	303	33
 bpref_num_possible	303	100
 old_bpref      	303	0.3300
 old_bpref_top10pRnonrel	303	0.4550
+infAP          	303	0.2723
 rank_first_rel 	303	3
 ircl_prn.0.00  	303	0.6000
 ircl_prn.0.10  	303	0.6000
@@ -263,6 +267,7 @@ gm_ap          	all	0.0045
 R-prec         	all	0.1819
 bpref          	all	0.1510
 recip_rank     	all	0.1667
+num_nonrel_judged_ret	all	249
 exact_prec     	all	0.0711
 exact_recall   	all	0.2499
 11-pt_avg      	all	0.1268
@@ -294,6 +299,7 @@ bpref_num_correct	all	27679
 bpref_num_possible	all	224776
 old_bpref      	all	0.1375
 old_bpref_top10pRnonrel	all	0.1791
+infAP          	all	0.1016
 gm_bpref       	all	0.0074
 ircl_prn.0.00  	all	0.2952
 ircl_prn.0.10  	all	0.2699

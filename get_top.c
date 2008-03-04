@@ -46,7 +46,7 @@ ALL_TREC_TOP *all_trec_top;
         size != read (fd, trec_top_buf, size) ||
 	-1 == close (fd)) {
 
-        set_error (SM_ILLPA_ERR, "Cannot read qrels file", "trec_eval");
+        set_error (SM_ILLPA_ERR, "Cannot read results file", "trec_eval");
         return (UNDEF);
     }
 

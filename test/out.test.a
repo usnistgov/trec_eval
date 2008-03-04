@@ -7,6 +7,7 @@ gm_ap          	all	0.1051
 R-prec         	all	0.2174
 bpref          	all	0.1981
 recip_rank     	all	0.4064
+num_nonrel_judged_ret	all	607
 exact_prec     	all	0.0873
 exact_recall   	all	0.5997
 11-pt_avg      	all	0.1947
@@ -38,6 +39,7 @@ bpref_num_correct	all	30286
 bpref_num_possible	all	230705
 old_bpref      	all	0.1845
 old_bpref_top10pRnonrel	all	0.1912
+infAP          	all	0.1785
 gm_bpref       	all	0.0083
 ircl_prn.0.00  	all	0.4665
 ircl_prn.0.10  	all	0.3884

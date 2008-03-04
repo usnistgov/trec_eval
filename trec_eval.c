@@ -19,7 +19,8 @@ static char *VersionID = VERSIONID;
  *7 consists of text tuples of the form
  *7    qid  iter  docno  rel
  *7 giving TREC document numbers (a string) and their relevance to query qid
- *7 (an integer). Tuples are asssumed to be sorted numerically by qid.
+ *7 (a non-negative integer less than 128, or -1 to indicate unjudged). 
+ *7 Tuples are asssumed to be sorted numerically by qid.
  *7 The text tuples with relevence judgements are converted to TR_VEC form
  *7 and then submitted to the evaluation routines.
  *7
@@ -49,7 +50,7 @@ static char *VersionID = VERSIONID;
  *8 and look up docno in the relevant docs to determine relevance.
  *8 The qid,did,rank,sim,rel fields of of TR_VEC are filled in; 
  *8 action,iter fields are set to 0.
- *8 Queries for which there are no relevant docs are ignored completely.
+ *8 Queries for which there is no relevance information are ignored completely.
 
 ***********************************************************************/
 

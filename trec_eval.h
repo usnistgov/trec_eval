@@ -133,6 +133,11 @@ typedef struct {                    /* Overall relevance judgements */
 #define INIT_NUM_RESULTS 1000
 #define INIT_NUM_RELS 2000
 
+/* Non standard values for tr_vec->rel field */
+#define RELVALUE_NONPOOL -1
+#define RELVALUE_UNJUDGED -2
+
+
 /* Set retrieval is based on contingency table:
                       relevant  nonrelevant
     retrieved            a          b
@@ -182,7 +187,9 @@ typedef struct {                    /* Overall relevance judgements */
 #define UTILITY_B -1.0
 #define UTILITY_C 0.0
 #define UTILITY_D 0.0
+
 #define MIN_GEO_MEAN .00001
+#define INFAP_EPSILON .00001
 
 typedef struct {
     char  *qid;                     /* query id  */
@@ -193,6 +200,8 @@ typedef struct {
     long num_rel;                   /* Number of relevant docs */
     long num_ret;                   /* Number of retrieved docs */
     long num_rel_ret;               /* Number of relevant retrieved docs */
+    long num_nonrel_judged_ret;     /* Number of non-relevant retrieved
+				       judged docs */
     float avg_doc_prec;             /* Average of precision over all
                                        relevant documents (query independent)*/
 
@@ -339,6 +348,17 @@ typedef struct {
     float bpref_num_ret;             /* num retrieved after */
     long  bpref_num_correct;         /* num correct preferences */
     long  bpref_num_possible;        /* num possible correct preferences */
+
+    /* Measures that allow sampling of judgement pool: Qrels/results divided 
+       into unpooled, pooled_but_unjudged, pooled_judged_rel, 
+       pooled_judged_nonrel. */
+    /* Inf_ap: "Estimating Average Precision with Incomplete and Imperfect 
+       Judgments", Emine Yilmaz and Javed A. Aslam.
+       My intuition of it: Calculate P at rel doc using higher retrieved judged
+       docs, then average in 0's from higher pooled docs. */
+    float inf_ap;                    /* Inferred AP.  see Aslam et al, 
+					Estimating Average Precision with
+					Incomplete Information */
 
     /* Measures that use Geometric Mean
        avg_Score = exp (SUM (log (MAX (query_score, .00001))) / N)     

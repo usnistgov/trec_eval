@@ -16,21 +16,21 @@ static char rcsid[] = "$Header: /home/smart/release/src/libevaluate/tr_eval.c,v 
 
 static long cutoff[] = CUTOFF_VALUES;
 static char param_val[20];
-char *get_param_str_ircl_prn(epi, index)
+static char *get_param_str_ircl_prn(epi, index)
 EVAL_PARAM_INFO *epi;
 long index;
 {
     sprintf (param_val, "%4.2f", (float) index / (NUM_RP_PTS -1));
     return (param_val);
 }
-char *get_param_str_cutoff(epi, index)
+static char *get_param_str_cutoff(epi, index)
 EVAL_PARAM_INFO *epi;
 long index;
 {
     sprintf (param_val, "%ld", cutoff[index]);
     return (param_val);
 }
-char *get_param_str_Rcutoff(epi, index)
+static char *get_param_str_Rcutoff(epi, index)
 EVAL_PARAM_INFO *epi;
 long index;
 {
@@ -38,7 +38,7 @@ long index;
 	     (float) MAX_RPREC * (index+1) /(float) (NUM_PREC_PTS - 1));
     return (param_val);
 }
-char *get_param_str_utility(epi, index)
+static char *get_param_str_utility(epi, index)
 EVAL_PARAM_INFO *epi;
 long index;
 {
@@ -46,14 +46,14 @@ long index;
 	     epi->utility_a, epi->utility_b, epi->utility_c, epi->utility_d);
     return (param_val);
 }
-char *get_param_str_maxfallout(epi, index)
+static char *get_param_str_maxfallout(epi, index)
 EVAL_PARAM_INFO *epi;
 long index;
 {
     sprintf (param_val, "%ld", (long) MAX_FALL_RET);
     return (param_val);
 }
-char *get_param_str_fall_recall(epi, index)
+static char *get_param_str_fall_recall(epi, index)
 EVAL_PARAM_INFO *epi;
 long index;
 {
@@ -61,7 +61,7 @@ long index;
 	     (long) (MAX_FALL_RET * index) / (NUM_FR_PTS - 1));
     return (param_val);
 }
-char *get_param_str_time_cutoff(epi, index)
+static char *get_param_str_time_cutoff(epi, index)
 EVAL_PARAM_INFO *epi;
 long index;
 {
@@ -69,7 +69,7 @@ long index;
 	     (long) (index * MAX_TIME / NUM_TIME_PTS));
     return (param_val);
 }
-char *get_param_str_time_utility_cutoff(epi, index)
+static char *get_param_str_time_utility_cutoff(epi, index)
 EVAL_PARAM_INFO *epi;
 long index;
 {
@@ -98,6 +98,8 @@ SINGLE_MEASURE sing_meas[] = {
      0, 1, 0, 0, 0, 1, 0, 0, offsetof(TREC_EVAL, recip_rank)},
     /* end of short output measures (the major ones) */
 
+    {"num_nonrel_judged_ret", "Total number of judged non-relevant documents retrieved over all queries",
+     1, 0, 0, 0, 0, 0, 0, 0, offsetof(TREC_EVAL, num_nonrel_judged_ret)},
     {"exact_prec", "Exact Precision over retrieved set",
      0, 0, 0, 0, 0, 1, 0, 0, offsetof(TREC_EVAL, exact_precis)},
     {"exact_recall", "Exact Recall over retrieved set",
@@ -170,6 +172,8 @@ SINGLE_MEASURE sing_meas[] = {
      0, 0, 0, 0, 0, 1, 0, 0, offsetof(TREC_EVAL, old_bpref)},
     {"old_bpref_top10pRnonrel", "Buggy Version 7.3. Binary Preference,top 10+R judged nonrel",
      0, 0, 0, 0, 0, 1, 0, 0, offsetof(TREC_EVAL, old_bpref_top10pRnonrel)},
+    {"infAP", "Inferred AP. Calculate AP using only a judged random sample of the pool, averaging in unpooled documents as nonrel.",
+     0, 0, 0, 0, 0, 1, 0, 0, offsetof(TREC_EVAL, inf_ap)},
     {"gm_bpref", "Binary Preference, top R judged nonrel, Geometric Mean, q_score=log(MAX(bpref,.00001))",
      0, 0, 0, 0, 1, 0, 0, 1, offsetof(TREC_EVAL, gm_bpref)},
     {"rank_first_rel", "Rank of top relevant document (0 if none)",

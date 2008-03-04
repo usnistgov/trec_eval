@@ -1,7 +1,7 @@
 BIN = /home/smart/bin
 H   = .
 
-VERSIONID = 8.0
+VERSIONID = 8.1
 
 # gcc
 CC       = gcc
@@ -27,7 +27,7 @@ SRCS = trec_eval.c get_qrels.c get_top.c form_trvec.c measures.c print_meas.c\
 
 SRCH = common.h trec_eval.h smart_error.h sysfunc.h tr_vec.h buf.h
 
-SRCOTHER = README Makefile test bpref_bug
+SRCOTHER = README Makefile test bpref_bug Changelog
 
 trec_eval: $(SRCS) Makefile $(SRCH)
 	$(CC) $(CFLAGS)  -o trec_eval $(SRCS) -lm
@@ -40,6 +40,7 @@ quicktest: trec_eval
 	./trec_eval -a -q test/qrels.test test/results.test | diff - test/out.test.aq
 	./trec_eval -a -q -c test/qrels.test test/results.trunc | diff - test/out.test.aqc
 	./trec_eval -a -q -c -M100 test/qrels.test test/results.trunc | diff - test/out.test.aqcM
+	./trec_eval -a -q -l2 test/qrels.rel_level test/results.test | diff - test/out.test.aql
 	/bin/echo "Test succeeeded"
 
 longtest: trec_eval
@@ -49,6 +50,7 @@ longtest: trec_eval
 	./trec_eval -a -q test/qrels.test test/results.test > test.long/out.test.aq
 	./trec_eval -a -q -c test/qrels.test test/results.trunc > test.long/out.test.aqc
 	./trec_eval -a -q -c -M100 test/qrels.test test/results.trunc > test.long/out.test.aqcM
+	./trec_eval -a -q -l2 test/qrels.rel_level test/results.test > test.long/out.test.aql
 	diff test.long test
 
 $(BIN)/trec_eval: trec_eval
@@ -65,10 +67,13 @@ $(BIN)/trec_eval: trec_eval
 # Odds and ends                                                         #
 #########################################################################
 clean semiclean:
-	/bin/rm -f *.o *.BAK *~ trec_eval trec_eval.*.shar out.trec_eval Makefile.bak
+	/bin/rm -f *.o *.BAK *~ trec_eval trec_eval.*.tar out.trec_eval Makefile.bak
 
-shar:
-	shar -X $(SRCOTHER) $(SRCS) $(SRCH) > trec_eval.$(VERSIONID).shar
+tar:
+	-/bin/rm -rf ./trec_eval.$(VERSIONID)
+	mkdir trec_eval.$(VERSIONID)
+	cp -rp $(SRCOTHER) $(SRCS) $(SRCH) trec_eval.$(VERSIONID)
+	tar cf - ./trec_eval.$(VERSIONID) > trec_eval.$(VERSIONID).tar
 
 lint:
 	lint $(SRCS)

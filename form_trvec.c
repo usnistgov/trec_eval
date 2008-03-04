@@ -12,6 +12,14 @@ static int comp_tr_tup_rank(), comp_tr_tup_did(), comp_tr_docno(),
 static TR_TUP *start_tr_tup;
 static long max_tr_tup = 0;
 
+/* Takes the top docs and pool docs for a query, and returns a
+   tr_vec object giving the relevance valuse for all top docs.
+   Relevance value is
+       value in trec_qrels if docno is in trec_qrels and was judged
+       RELVALUE_NONPOOL (-1) if docno is not in trec_qrels
+       RELVALUE_UNJUDGED (-2) if docno is in trec_qrels and was not judged
+*/
+
 int
 form_trvec (epi, trec_top, trec_qrels, tr_vec, num_rel)
 EVAL_PARAM_INFO *epi;
@@ -100,14 +108,18 @@ long *num_rel;
         if (qrels_ptr >= end_qrels ||
             strcmp (qrels_ptr->docno, trec_top->text_tr[i].docno) > 0) {
             /* Doc is non-judged */
-            tr_tup->rel = -1;
+            tr_tup->rel = RELVALUE_NONPOOL;
 	    /* Skip unjudged docs if desired */
 	    if (epi->judged_docs_only_flag) 
 		continue;
 	}
         else {
-            /* Doc is judged; assign relevance */
-	    tr_tup->rel = qrels_ptr->rel;
+            /* Doc is in pool, assign relevance */
+	    if (qrels_ptr->rel == -1)
+		/* In pool, but unjudged (eg, infAP uses a sample of pool) */
+		tr_tup->rel = RELVALUE_UNJUDGED;
+	    else
+		tr_tup->rel = qrels_ptr->rel;
 	    qrels_ptr++;
         }
         tr_tup->did = i;
