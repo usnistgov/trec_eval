@@ -1,3 +1,9 @@
+/* 
+   Copyright (c) 2008 - Chris Buckley. 
+
+   Permission is granted for use and modification of this file for
+   research, non-commercial purposes. 
+*/
 /* Copyright 2008 Chris Buckley */
 
 #include "common.h"
@@ -143,44 +149,53 @@ static void debug_print_prefs_and_ranks (PREFS_AND_RANKS *par, long num_prefs,
 					 char *location);
 
 
+/* Intermediate Temp storage. Not malloc'd and freed every query just
+   for memory management efficiency (avoids fragmentations and
+   thus effects on caching) */
+ /* Temp Structure for mapping results docno to results rank */
+
+/* Current cached query */
+static char *current_query = "no query";
+static long max_current_query = 0;
+
+/* Space reserved for cached returned values */
+static long num_judged_ret;
+static long num_judged;
+static long num_jgs;
+static JG *jgs;
+static long max_num_jgs = 0;
+static long *rank_pool;
+static long max_rank_pool = 0;
+static EC *ec_pool;
+static long max_ec_pool = 0;
+static unsigned short *ca_pool;      
+static long max_ca_pool = 0;
+static unsigned short **ca_ptr_pool; 
+static long max_ca_ptr_pool = 0;
+static unsigned char *pa_pool;
+static long max_pa_pool = 0;
+static unsigned char **pa_ptr_pool;
+static long max_pa_ptr_pool = 0;
+static float *rel_pool;
+static long max_rel_pool = 0;
+/* Space reserved for intermediate values */
+static PREFS_AND_RANKS *prefs_and_ranks;
+static long max_prefs_and_ranks = 0;
+static DOCNO_RESULTS *docno_results;
+static long max_docno_results = 0;
+static unsigned char *temp_pa_pool;
+static long max_temp_pa_pool;
+static unsigned char **temp_pa_ptr_pool;
+static long max_temp_pa_ptr_pool;
+
+static long saved_num_judged = 0;
+
+
+
 int
 form_prefs_counts (const EPI *epi, const REL_INFO *rel_info,
 		   const RESULTS *results, RESULTS_PREFS *results_prefs)
 {
-    /* Intermediate Temp storage. Not malloc'd and freed every query just
-       for memory management efficiency (avoids fragmentations and
-       thus effects on caching) */
-
-    /* Temp Structure for mapping results docno to results rank */
-    
-    /* Current cached query */
-    static char current_query[MAX_LEN_QUERY] = "no query";
-
-    /* Space reserved for cached returned values */
-    static long num_judged_ret;
-    static long num_judged;
-    static long num_jgs;
-
-    static JG *jgs;
-    static long max_num_jgs = 0;
-    static long *rank_pool;
-    static long max_rank_pool = 0;
-    static EC *ec_pool;
-    static long max_ec_pool = 0;
-    static unsigned short *ca_pool;      
-    static long max_ca_pool = 0;
-    static unsigned short **ca_ptr_pool; 
-    static long max_ca_ptr_pool = 0;
-    static unsigned char *pa_pool;
-    static long max_pa_pool = 0;
-    static unsigned char **pa_ptr_pool;
-    static long max_pa_ptr_pool = 0;
-    static float *rel_pool;
-    static long max_rel_pool = 0;
-    /* Space reserved for intermediate values */
-    static PREFS_AND_RANKS *prefs_and_ranks;
-    static long max_prefs_and_ranks = 0;
-
     long i;
     char *jgid, *jsgid;
     long jg_ind;
@@ -203,7 +218,7 @@ form_prefs_counts (const EPI *epi, const REL_INFO *rel_info,
     if (epi->debug_level >= 3)
 	printf ("Debug: Form_prefs starting query '%s'\n", results->qid);
 
-    if (0 == strncmp (current_query, results->qid, MAX_LEN_QUERY)) {
+    if (0 == strcmp (current_query, results->qid)) {
 	/* Have done this query already. Return cached values */
 	results_prefs->num_jgs = num_jgs;
 	results_prefs->jgs = jgs;
@@ -225,7 +240,13 @@ form_prefs_counts (const EPI *epi, const REL_INFO *rel_info,
 	return (UNDEF);
     }
 
-    (void) strncpy (current_query, results->qid, MAX_LEN_QUERY);
+    /* Make sure enough space for query and save copy */
+    i = strlen(results->qid)+1;
+    if (NULL == (current_query =
+		 te_chk_and_malloc (current_query, &max_current_query,
+				    i, sizeof (char))))
+	return (UNDEF);
+    (void) strncpy (current_query, results->qid, i);
 
     text_results_info = (TEXT_RESULTS_INFO *) results->q_results;
     trec_prefs = (TEXT_PREFS_INFO *) rel_info->q_rel_info;
@@ -586,13 +607,6 @@ form_jg_pa (const PREFS_AND_RANKS *prefs, const long num_prefs,
 static int
 add_transitives(PREFS_ARRAY *pa)
 {
-    static unsigned char *temp_pa_pool;
-    static long max_temp_pa_pool;
-    static unsigned char **temp_pa_ptr_pool;
-    static long max_temp_pa_ptr_pool;
-
-    static long saved_num_judged = 0;
-
     PREFS_ARRAY m1;
     PREFS_ARRAY m2;
 
@@ -778,9 +792,6 @@ static int form_prefs_and_ranks (const EPI*epi,
 				 PREFS_AND_RANKS *prefs_and_ranks,
 				 long *num_judged, long *num_judged_ret)
 {
-    static DOCNO_RESULTS *docno_results;
-    static long max_docno_results = 0;
-
     long lnum_judged_ret; /* local num_judged_ret */
     long next_unretrieved_rank;
     long i;
@@ -1146,4 +1157,63 @@ debug_print_results_prefs (RESULTS_PREFS *rp) {
     for (i = 0; i < rp->num_jgs; i++)
 	debug_print_jg (&rp->jgs[i]);
     debug_print_counts_array (&rp->pref_counts);
+}
+
+int 
+te_form_pref_counts_cleanup ()
+{
+    if (max_current_query > 0) {
+	Free (current_query);
+	max_current_query = 0;
+	current_query = "no_query";
+    }
+    if (max_num_jgs > 0) {
+	Free (jgs);
+	max_num_jgs = 0;
+    }
+    if (max_rank_pool > 0) {
+	Free (rank_pool);
+	max_rank_pool = 0;
+    }
+    if (max_ec_pool > 0) {
+	Free (ec_pool);
+	max_ec_pool = 0;
+    }
+    if (max_ca_pool > 0) {
+	Free (ca_pool);
+	max_ca_pool = 0;
+    }
+    if (max_ca_ptr_pool > 0) {
+	Free (ca_ptr_pool);
+	max_ca_ptr_pool = 0;
+    }
+    if (max_pa_pool > 0) {
+	Free (pa_pool);
+	max_pa_pool = 0;
+    }
+    if (max_pa_ptr_pool > 0) {
+	Free (pa_ptr_pool);
+	max_pa_ptr_pool = 0;
+    }
+    if (max_rel_pool > 0) {
+	Free (rel_pool);
+	max_rel_pool = 0;
+    }
+    if (max_prefs_and_ranks > 0) {
+	Free (prefs_and_ranks);
+	max_prefs_and_ranks = 0;
+    }
+    if (max_docno_results > 0) {
+	Free (docno_results);
+	max_docno_results = 0;
+    }
+    if (max_temp_pa_pool > 0) {
+	Free (temp_pa_pool);
+	max_temp_pa_pool = 0;
+    }
+    if (max_temp_pa_ptr_pool > 0) {
+	Free (temp_pa_ptr_pool);
+	max_temp_pa_ptr_pool = 0;
+    }
+    return (1);
 }

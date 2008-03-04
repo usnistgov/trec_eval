@@ -1,8 +1,8 @@
-#ifdef RCSID
-static char rcsid[] = "$Header: /home/smart/release/src/libevaluate/trvec_trec_eval.c,v 11.0 1992/07/21 18:20:35 chrisb Exp chrisb $";
-#endif
+/* 
+   Copyright (c) 2008 - Chris Buckley. 
 
-/* Copyright (c) 2008
+   Permission is granted for use and modification of this file for
+   research, non-commercial purposes. 
 */
 
 #include "common.h"
@@ -21,19 +21,19 @@ int
 te_calc_set_F (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
 	       const TREC_MEAS *tm, TREC_EVAL *eval)
 {
-    RANK_REL rank_rel;
+    double *params = (double *) tm->meas_params->param_values;
+    RES_RELS res_rels;
     double x, P, R;
-    FLOAT_PARAMS *params = (FLOAT_PARAMS *) tm->meas_params;
 
-    if (UNDEF == form_ordered_rel (epi, rel_info, results, &rank_rel))
+    if (UNDEF == te_form_res_rels (epi, rel_info, results, &res_rels))
 	return (UNDEF);
 
-    if (rank_rel.num_ret && rank_rel.num_rel)  {
-	P = (double) rank_rel.num_rel_ret /
-	    (double) rank_rel.num_ret;
-	R = (double) rank_rel.num_rel_ret /
-	    (double) rank_rel.num_rel;
-	x = params->param_values[0];
+    if (res_rels.num_ret && res_rels.num_rel)  {
+	P = (double) res_rels.num_rel_ret /
+	    (double) res_rels.num_ret;
+	R = (double) res_rels.num_rel_ret /
+	    (double) res_rels.num_rel;
+	x = params[0];
 	eval->values[tm->eval_index].value =
 	    (x + 1.0) * P * R / (x * P + R);
     }

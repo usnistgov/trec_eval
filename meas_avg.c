@@ -1,8 +1,9 @@
-#ifdef RCSID
-static char rcsid[] = "$Header: /home/smart/release/src/libevaluate/trvec_trec_eval.c,v 11.0 1992/07/21 18:20:35 chrisb Exp chrisb $";
-#endif
+/* 
+   Copyright (c) 2008 - Chris Buckley. 
 
-/* Copyright (c) 2008 Chris Buckley */
+   Permission is granted for use and modification of this file for
+   research, non-commercial purposes. 
+*/
 
 #include "common.h"
 #include "sysfunc.h"
@@ -38,33 +39,15 @@ te_calc_avg_meas_s (const EPI *epi, const TREC_MEAS *tm,
     return (1);
 }
 
-/* Measure is a float array with long cutoffs */
+/* Measure is an array with cutoffs */
 int
-te_calc_avg_meas_a_cut_long (const EPI *epi, const TREC_MEAS *tm,
+te_calc_avg_meas_a_cut (const EPI *epi, const TREC_MEAS *tm,
 			     TREC_EVAL *accum_eval)
 {
-    LONG_PARAMS *params = (LONG_PARAMS *) tm->meas_params;
     long i;
     
     if (accum_eval->num_queries) {
-	for (i = 0; i < params->num_params; i++) {
-	    accum_eval->values[tm->eval_index + i].value /=
-		accum_eval->num_queries;
-	}
-    }
-    return (1);
-}
-
-/* Measure is array with float cutoffs */
-int
-te_calc_avg_meas_a_cut_float (const EPI *epi, const TREC_MEAS *tm,
-			      TREC_EVAL *accum_eval)
-{
-    FLOAT_PARAMS *params = (FLOAT_PARAMS *) tm->meas_params;
-    long i;
-    
-    if (accum_eval->num_queries) {
-	for (i = 0; i < params->num_params; i++) {
+	for (i = 0; i < tm->meas_params->num_params; i++) {
 	    accum_eval->values[tm->eval_index + i].value /=
 		accum_eval->num_queries;
 	}

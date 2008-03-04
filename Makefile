@@ -1,13 +1,19 @@
 BIN = /usr/local/bin
+#   Copyright (c) 2008 - Chris Buckley. 
+#
+#   Permission is granted for use and modification of this file for
+#   research, non-commercial purposes. 
+
 H   = .
 
-VERSIONID = 9.0alpha.1
+VERSIONID = 9.0alpha.2
 
 # gcc
 CC       = gcc
+CFLAGS   = -g -I$H  -Wall -DVERSIONID=\"$(VERSIONID)\"
+CFLAGS   = -pg -I$H -O3 -Wall -DVERSIONID=\"$(VERSIONID)\"
 CFLAGS   = -g -I$H  -Wall -DMDEBUG -DVERSIONID=\"$(VERSIONID)\"
 CFLAGS   = -g -I$H -O3 -Wall -DVERSIONID=\"$(VERSIONID)\"
-CFLAGS   = -g -I$H  -Wall -DVERSIONID=\"$(VERSIONID)\"
 
 # Other macros used in some or all makefiles
 INSTALL = /bin/mv
@@ -15,20 +21,23 @@ INSTALL = /bin/mv
 TOP_SRCS = trec_eval.c formats.c meas_init.c meas_acc.c meas_avg.c 
 
 FORMAT_SRCS = get_qrels.c get_trec_results.c get_prefs.c get_qrels_prefs.c \
-           form_ordered_rel.c form_prefs_counts.c utility_pool.c
+	get_qrels_jg.c form_res_rels.c form_res_rels_jg.c \
+        form_prefs_counts.c utility_pool.c
 
 MEAS_SRCS =  measures.c  m_map.c m_P.c m_num_q.c m_num_ret.c m_num_rel.c \
-        m_num_rel_ret.c m_gm_ap.c m_Rprec.c m_recip_rank.c m_bpref.c \
-	m_ircl_prn.c m_recall.c m_R-prec-at.c m_utility.c m_11-pt_avg.c \
-        m_ndcg.c m_ndcg_at.c m_ndcg_p.c m_rel_P.c m_success.c \
-        m_set_P.c m_set_recall.c m_set_rel_P.c \
-	m_set_map.c m_set_F.c m_num_nonrel_judged_ret.c \
+        m_num_rel_ret.c m_gm_map.c m_Rprec.c m_recip_rank.c m_bpref.c \
+	m_iprec_at_recall.c m_recall.c m_Rprec_mult.c m_utility.c m_11pt_avg.c \
+        m_ndcg.c m_ndcg_cut.c m_ndcg_p.c m_rel_P.c m_success.c m_infap.c \
+	m_gm_bpref.c \
+        m_set_P.c m_set_recall.c m_set_rel_P.c m_set_map.c m_set_F.c \
+        m_num_nonrel_judged_ret.c \
 	m_prefs_num_prefs_poss.c m_prefs_num_prefs_ful.c \
         m_prefs_num_prefs_ful_ret.c\
 	m_prefs_simp.c m_prefs_pair.c m_prefs_avgjg.c m_prefs_avgjg_Rnonrel.c \
 	m_prefs_simp_ret.c m_prefs_pair_ret.c m_prefs_avgjg_ret.c\
         m_prefs_avgjg_Rnonrel_ret.c \
 	m_prefs_simp_imp.c m_prefs_pair_imp.c m_prefs_avgjg_imp.c\
+        m_map_avgjg.c m_Rprec_mult_avgjg.c m_P_avgjg.c
 
 SRCS = $(TOP_SRCS) $(FORMAT_SRCS) $(MEAS_SRCS)
 
@@ -50,7 +59,8 @@ quicktest: trec_eval
 	./trec_eval -m all_trec -q -l2 test/qrels.rel_level test/results.test | diff - test/out.test.aql
 	./trec_eval -m all_prefs -q -R prefs test/prefs.test test/prefs.results.test | diff - test/out.test.prefs
 	./trec_eval -m all_prefs -q -R qrels_prefs test/qrels.test test/results.test | diff - test/out.test.qrels_prefs
-
+	./trec_eval -m qrels_jg -q -R qrels_jg  test/qrels.123 test/results.test | diff - test/out.test.qrels_jg
+	./trec_eval -q -miprec_at_recall..10,.20,.25,.75,.50 -m P.5,7,3 -m recall.20,2000 -m Rprec_mult.5.0,0.2,0.35 -mutility.2,-1,0,0 -m 11pt_avg..25,.5,.75 -mndcg_p.1=3,2=9,4=4.5 -mndcg_cut.10,20,23.4 -msuccess.2,5,20 test/qrels.test test/results.test | diff - test/out.test.meas_params
 	/bin/echo "Test succeeeded"
 
 longtest: trec_eval
@@ -63,6 +73,8 @@ longtest: trec_eval
 	./trec_eval -m all_trec -q -l2 test/qrels.rel_level test/results.test > test.long/out.test.aql
 	./trec_eval -m all_prefs -q -R prefs test/prefs.test test/prefs.results.test > test.long/out.test.prefs
 	./trec_eval -m all_prefs -q -R qrels_prefs test/qrels.test test/results.test > test.long/out.test.qrels_prefs
+	./trec_eval -m qrels_jg -q -R qrels_jg  test/qrels.123 test/results.test > test.long/out.test.qrels_jg
+	./trec_eval -q -miprec_at_recall..10,.20,.25,.75,.50 -m P.5,7,3 -m recall.20,2000 -m Rprec_mult.5.0,0.2,0.35 -mutility.2,-1,0,0 -m 11pt_avg..25,.5,.75 -mndcg_p.1=3,2=9,4=4.5 -mndcg_cut.10,20,23.4 -msuccess.2,5,20 test/qrels.test test/results.test > test.long/out.test.meas_params
 	diff test.long test
 
 $(BIN)/trec_eval: trec_eval

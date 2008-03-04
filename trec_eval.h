@@ -1,3 +1,9 @@
+/* 
+   Copyright (c) 2008 - Chris Buckley. 
+
+   Permission is granted for use and modification of this file for
+   research, non-commercial purposes. 
+*/
 #ifndef TRECEVALH
 #define TRECEVALH
 
@@ -49,7 +55,7 @@ typedef struct {
     char *name;                    /* Full measure name for a trec_eval value.
 				      This includes root measure name, plus
 				      any changes due to cutoffs, parameters */
-    long print_flags;              /* Any print flags.  See below */
+    long print_clean_flags;        /* Any print or cleanup flags.  See below */
     double value;                  /* Actual value */
 } TREC_EVAL_VALUE;
 
@@ -58,6 +64,9 @@ typedef struct {
 #define TE_MVALUE_PRINT_LONG       1
 #define TE_MVALUE_NO_PRINT_Q       2
 #define TE_MVALUE_NO_PRINT_SUMMARY 4
+/* Cleanup Flags. */
+#define TE_MVALUE_CLEAN_NAME       64
+#define TE_MVALUE_CLEAN_PARAM     128
 
 /* Evaluation values being calculated */
 typedef struct {
@@ -70,6 +79,19 @@ typedef struct {
     long max_num_values;            /* Max number of measures space for */
 } TREC_EVAL;
 
+
+/* Standard Parameter structures used for some measures in
+   trec_meas.meas_params */
+typedef struct {
+    char *printable_params;       /* Desired printable non-default version of 
+				     params (assumed malloc'd) */
+    long num_params;
+    void *param_values;
+} PARAMS;
+typedef struct {
+    char* name;
+    double value;
+} FLOAT_PARAM_PAIR;
 
 /* Definitions of internal formats for retrieval ranking and relevance info */
 /* These are format independent definitions, which have a pointer
@@ -130,7 +152,7 @@ typedef struct trec_meas {
 
     /* Measure dependent parameters, defaults given here can normally be
        overridden from command line by init_meas procedure */
-    void *meas_params;    
+    PARAMS *meas_params;    
      /* Index within TREC_EVAL.values for values for measure.
 	-1 indicates measure not to be calculated (default).
 	-2 indicates measure to be calculated, but has not yet been initialized.
@@ -146,41 +168,32 @@ typedef struct {
 } TREC_MEASURE_NICKNAMES;
 
 
-/* File Formats for retrieval and rel info */
+/* File Formats for retrieval and rel info, and procedures to merge them */
 /* List of formats is in formats.c */
 typedef struct {
     char *name;
     char *explanation;
     int (* get_file) (EPI *epi, char *text_qrels_file,
 		      ALL_REL_INFO *all_rel_info);
+    int (* cleanup) ();
 } REL_INFO_FILE_FORMAT;
 typedef struct {
     char *name;
     char *explanation;
     int (* get_file) (EPI *epi, char *text_results_file,
 		      ALL_RESULTS *all_results);
+    int (* cleanup) ();
 } RESULTS_FILE_FORMAT;
+/* FORM_INTER_PROCS is not used except for clean up and eventually
+   documentation */
+typedef struct {
+    char *rel_info_format;
+    char *results_info_format;
+    char *explanation;
+    /*    int (*form_file) (); */
+    int (*cleanup) ();
+} FORM_INTER_PROCS;
 
-/* Standard Parameter structures used for some measures in
-   trec_meas.meas_params */
-typedef struct {
-    long num_params;
-    long *param_values;
-} LONG_PARAMS;
-typedef struct {
-    char *printable_params;       /* Desired printable version of params */
-    long num_params;
-    double *param_values;
-} FLOAT_PARAMS;
-typedef struct {
-    char* name;
-    double value;
-} FLOAT_PARAM_PAIR;
-typedef struct {
-    char *printable_params;       /* Desired printable version of params */
-    long num_params;             
-    FLOAT_PARAM_PAIR *param_values;
-} PAIR_PARAMS;
 
 /* Macros for marking measures to be calculated in this invocation */
 #define MARK_MEASURE(x)  x.eval_index = -2;
@@ -197,9 +210,7 @@ typedef struct {
 #define INIT_NUM_RESULTS 1000
 #define INIT_NUM_RELS 2000
 #define INIT_NUM_REL_LEVELS 5
-
-#define MAX_LEN_QUERY 127
-#define MAX_LEN_MEASURE 100
+#define INIT_NUM_MEAS_ARG 5
 
 /* Defined epsilon constants for several measures */
 #define MIN_GEO_MEAN .00001

@@ -1,8 +1,8 @@
-#ifdef RCSID
-static char rcsid[] = "$Header: /home/smart/release/src/libevaluate/trvec_trec_eval.c,v 11.0 1992/07/21 18:20:35 chrisb Exp chrisb $";
-#endif
+/* 
+   Copyright (c) 2008 - Chris Buckley. 
 
-/* Copyright (c) 2008
+   Permission is granted for use and modification of this file for
+   research, non-commercial purposes. 
 */
 
 #include "common.h"
@@ -29,24 +29,24 @@ int
 te_calc_Rprec (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
 	       const TREC_MEAS *tm, TREC_EVAL *eval)
 {
-    RANK_REL rank_rel;
+    RES_RELS res_rels;
     long num_to_look_at;
     long rel_so_far;
     long i;
 
-    if (UNDEF == form_ordered_rel (epi, rel_info, results, &rank_rel))
+    if (UNDEF == te_form_res_rels (epi, rel_info, results, &res_rels))
 	return (UNDEF);
 
     rel_so_far = 0;
-    num_to_look_at = MIN (rank_rel.num_ret, rank_rel.num_rel);
+    num_to_look_at = MIN (res_rels.num_ret, res_rels.num_rel);
     if (0 == num_to_look_at)
 	return (0);
 
     for (i = 0; i < num_to_look_at; i++) {
-	if (rank_rel.results_rel_list[i] >= epi->relevance_level)
+	if (res_rels.results_rel_list[i] >= epi->relevance_level)
 	    rel_so_far++;
     }
     eval->values[tm->eval_index].value =
-	(double) rel_so_far / (double) rank_rel.num_rel;
+	(double) rel_so_far / (double) res_rels.num_rel;
     return (1);
 }

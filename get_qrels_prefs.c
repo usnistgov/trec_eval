@@ -1,4 +1,9 @@
-/* Copyright (c) 2008 Chris Buckley */
+/* 
+   Copyright (c) 2008 - Chris Buckley. 
+
+   Permission is granted for use and modification of this file for
+   research, non-commercial purposes. 
+*/
 
 #include "common.h"
 #include "sysfunc.h"
@@ -80,44 +85,56 @@ important future research problem.
 */
 
 static int parse_qrels_prefs_line (char **start_ptr, char **qid_ptr,
-				   char **jg_ptr, char **jsg_ptr,
-				   char **docno_ptr, char **rel_ptr);
+				   char **jg_ptr, char **docno_ptr,
+				   char **rel_ptr);
 
-int 
+static int comp_lines_qid_docno ();
+
+
+/* static pools of memory, allocated here and never changed.  
+   Declared static so one day I can write a cleanup procedure to free them */
+static char *trec_prefs_buf = NULL;
+static TEXT_PREFS_INFO *text_info_pool = NULL;
+static TEXT_PREFS *text_prefs_pool = NULL;
+static REL_INFO *rel_info_pool = NULL;
+
+/* Temp structure for values in input line */
+typedef struct {
+    char *qid;
+    char *jg;
+    char *docno;
+    char *rel;
+} LINES;
+
+int
 te_get_qrels_prefs (EPI *epi, char *text_prefs_file, ALL_REL_INFO *all_rel_info)
 {
     int fd;
     int size = 0;
-    char *trec_prefs_buf;
     char *ptr;
     char *current_qid;
-    char *qid_ptr, *jg_ptr, *jsg_ptr, *docno_ptr, *rel_ptr;
     long i;
-    TEXT_PREFS_INFO *current_prefs = NULL;
-    long line_num;
-
+    LINES *lines;
+    LINES *line_ptr;
+    long num_lines;
+    long num_qid;
+    /* current pointers into static pools above */
+    REL_INFO *rel_info_ptr;
+    TEXT_PREFS_INFO *text_info_ptr;
+    TEXT_PREFS *text_prefs_ptr;
+    
     /* Read entire file into memory */
     if (-1 == (fd = open (text_prefs_file, 0)) ||
-        -1 == (size = lseek (fd, 0L, 2)) ||
+        0 >= (size = lseek (fd, 0L, 2)) ||
         NULL == (trec_prefs_buf = malloc ((unsigned) size+2)) ||
         -1 == lseek (fd, 0L, 0) ||
         size != read (fd, trec_prefs_buf, size) ||
 	-1 == close (fd)) {
-        fprintf (stderr, "trec_eval.get_prefs: Cannot read prefs file\n");
+        fprintf (stderr,
+		 "trec_eval.get_prefs: Cannot read prefs file '%s'\n",
+		 text_prefs_file);
         return (UNDEF);
     }
-
-    current_qid = "";
-
-    /* Initialize all_rel_info */
-    all_rel_info->num_q_rels = 0;
-    all_rel_info->max_num_q_rels = INIT_NUM_QUERIES;
-    if (NULL == (all_rel_info->rel_info = Malloc (INIT_NUM_QUERIES,
-						  REL_INFO)))
-	return (UNDEF);
-    
-    if (size == 0)
-	return (0);
 
     /* Append ending newline if not present, Append NULL terminator */
     if (trec_prefs_buf[size-1] != '\n') {
@@ -126,106 +143,95 @@ te_get_qrels_prefs (EPI *epi, char *text_prefs_file, ALL_REL_INFO *all_rel_info)
     }
     trec_prefs_buf[size] = '\0';
 
+    /* Count number of lines in file */
+    num_lines = 0;
+    for (ptr = trec_prefs_buf; *ptr; ptr = index(ptr,'\n')+1)
+	num_lines++;
+
+    /* Get all lines */
+    if (NULL == (lines = Malloc (num_lines, LINES)))
+	return (UNDEF);
+    line_ptr = lines;
     ptr = trec_prefs_buf;
-    line_num = 0;
     while (*ptr) {
-	line_num++;
-	/* Get current line */
-	if (UNDEF == parse_qrels_prefs_line (&ptr, &qid_ptr, &jg_ptr, &jsg_ptr,
-				       &docno_ptr, &rel_ptr)) {
-	    fprintf (stderr, "trec_eval.get_prefs: Malformed line %ld\n",
-		     line_num);
+	if (UNDEF == parse_qrels_prefs_line (&ptr, &line_ptr->qid,&line_ptr->jg,
+					     &line_ptr->docno, &line_ptr->rel)){
+	    fprintf (stderr, "trec_eval.get_qrels_prefs: Malformed line %d\n",
+		     line_ptr - lines + 1);
 	    return (UNDEF);
 	}
-	if (0 != strcmp (qid_ptr, current_qid)) {
-	    /* Query has changed. Must check if new query or this is more
-	       judgements for an old query */
-	    current_qid = qid_ptr;
-	    for (i = 0; i < all_rel_info->num_q_rels; i++) {
-		if (0 == strcmp (qid_ptr, all_rel_info->rel_info[i].qid))
-		    break;
-	    }
-	    if (i >= all_rel_info->num_q_rels) {
-		/* New unseen query, add and initialize it */
-		if (all_rel_info->num_q_rels >=
-		    all_rel_info->max_num_q_rels) {
-		    all_rel_info->max_num_q_rels *= 10;
-		    if (NULL == (all_rel_info->rel_info = 
-				 Realloc (all_rel_info->rel_info,
-					  all_rel_info->max_num_q_rels,
-					  REL_INFO)))
-			return (UNDEF);
-		}
-		all_rel_info->rel_info[i].qid = qid_ptr;
-		all_rel_info->rel_info[i].rel_format = "prefs";
-		if (NULL == (all_rel_info->rel_info[i].q_rel_info = 
-			     Malloc (1, TEXT_PREFS_INFO)))
-		    return (UNDEF);
-		current_prefs = all_rel_info->rel_info[i].q_rel_info;
-		current_prefs->num_text_prefs = 0;
-		current_prefs->max_num_text_prefs = INIT_NUM_RELS;
-		if (NULL == (current_prefs->text_prefs =
-			     Malloc (INIT_NUM_RELS, TEXT_PREFS)))
-		    return (UNDEF);
-		all_rel_info->num_q_rels++;
-	    }
-	    else {
-		/* Old query, just switch current_prefs */
-		current_prefs = (TEXT_PREFS_INFO *)
-		    all_rel_info->rel_info[i].q_rel_info;
-	    }
-	}
-	
-	/* Add judgement to current query's list */
-	if (current_prefs->num_text_prefs >= 
-	    current_prefs->max_num_text_prefs) {
-	    /* Need more space */
-	    current_prefs->max_num_text_prefs *= 10;
-	    if (NULL == (current_prefs->text_prefs = 
-			 Realloc (current_prefs->text_prefs,
-				  current_prefs->max_num_text_prefs,
-				  TEXT_PREFS)))
-		return (UNDEF);
-	}
-	current_prefs->text_prefs[current_prefs->num_text_prefs].jg = jg_ptr;
-	current_prefs->text_prefs[current_prefs->num_text_prefs].docno =
-		docno_ptr;
-	current_prefs->text_prefs[current_prefs->num_text_prefs].jsg = jsg_ptr;
-	current_prefs->text_prefs[current_prefs->num_text_prefs].rel_level =
-	    atof (rel_ptr);
-	current_prefs->num_text_prefs++;
+	line_ptr++;
+    }
+    num_lines = line_ptr-lines;
+
+    /* Sort all lines by qid, then docno */
+    qsort ((char *) lines,
+	   (int) num_lines,
+	   sizeof (LINES),
+	   comp_lines_qid_docno);
+
+    /* Go through lines and count number of qid */
+    num_qid = 1;
+    for (i = 1; i < num_lines; i++) {
+	if (strcmp (lines[i-1].qid, lines[i].qid))
+	    /* New query */
+	    num_qid++;
     }
 
-    if (epi->debug_level >= 5) {
-	TEXT_PREFS_INFO *tpi;
-	long i,j;
-	char *qid;
-	/* Dump prefs file */
-	printf ("Prefs File Dump - %ld queries\n", all_rel_info->num_q_rels);
-	for (i = 0; i < all_rel_info->num_q_rels; i++) {
-	    qid = all_rel_info->rel_info[i].qid;
-	    tpi = (TEXT_PREFS_INFO *) all_rel_info->rel_info[i].q_rel_info;
-	    printf ("  QID '%s', format '%s', num_pref lines %ld\n",
-		     qid, all_rel_info->rel_info[i].rel_format,
-		     tpi->num_text_prefs);
-	    for (j = 0; j < tpi->num_text_prefs; j++) {
-		printf ("  %s\t%s\t%s\t%2.4f\t%s\n",
-			qid, tpi->text_prefs[j].jg, tpi->text_prefs[j].jsg,
-			tpi->text_prefs[j].rel_level, tpi->text_prefs[j].docno);
-	    }
-	}
-	fflush (stdout);
-    }
+    /* Allocate space for queries */
+    if (NULL == (rel_info_pool = Malloc (num_qid, REL_INFO)) ||
+	NULL == (text_info_pool = Malloc (num_qid, TEXT_PREFS_INFO)) ||
+	NULL == (text_prefs_pool = Malloc (num_lines, TEXT_PREFS)))
+	return (UNDEF);
 
+    rel_info_ptr = rel_info_pool;
+    text_info_ptr = text_info_pool;
+    text_prefs_ptr = text_prefs_pool;
+    
+    /* Go through lines and store all info */
+    current_qid = "";
+    for (i = 0; i < num_lines; i++) {
+	if (strcmp (current_qid, lines[i].qid)) {
+	    /* New query.  End old query and start new one */
+	    if (i != 0) {
+		text_info_ptr->num_text_prefs =
+		    text_prefs_ptr - text_info_ptr->text_prefs;
+		text_info_ptr++;
+		rel_info_ptr++;
+	    }
+	    current_qid = lines[i].qid;
+	    text_info_ptr->text_prefs = text_prefs_ptr;
+	    *rel_info_ptr =
+		(REL_INFO) {current_qid, "prefs", text_info_ptr};
+	}
+	text_prefs_ptr->jg = lines[i].jg;
+	text_prefs_ptr->jsg = "0";
+	text_prefs_ptr->rel_level = atof (lines[i].rel);
+	text_prefs_ptr->docno = lines[i].docno;
+	text_prefs_ptr++;
+    }
+    /* End last qid */
+    text_info_ptr->num_text_prefs = text_prefs_ptr - text_info_ptr->text_prefs;
+
+    all_rel_info->num_q_rels = num_qid;
+    all_rel_info->rel_info = rel_info_pool;
+
+    Free (lines);
     return (1);
+}
+
+static int comp_lines_qid_docno (LINES *ptr1, LINES *ptr2)
+{
+    int cmp = strcmp (ptr1->qid, ptr2->qid);
+    if (cmp) return (cmp);
+    return (strcmp (ptr1->docno, ptr2->docno));
 }
 
 static int
 parse_qrels_prefs_line (char **start_ptr, char **qid_ptr, char**jg_ptr,
-		  char **jsg_ptr, char **docno_ptr, char **rel_ptr)
+			char **docno_ptr, char **rel_ptr)
 {
     char *ptr = *start_ptr;
-    *jsg_ptr = "0";
 
     /* Get qid */
     while (*ptr != '\n' && isspace (*ptr)) ptr++;
@@ -258,4 +264,26 @@ parse_qrels_prefs_line (char **start_ptr, char **qid_ptr, char**jg_ptr,
     *ptr++ = '\0';
     *start_ptr = ptr;
     return (0);
+}
+
+int 
+te_get_qrels_prefs_cleanup ()
+{
+    if (trec_prefs_buf != NULL) {
+	Free (trec_prefs_buf);
+	trec_prefs_buf = NULL;
+    }
+    if (text_info_pool != NULL) {
+	Free (text_info_pool);
+	text_info_pool = NULL;
+    }
+    if (text_prefs_pool != NULL) {
+	Free (text_prefs_pool);
+	text_prefs_pool = NULL;
+    }
+    if (rel_info_pool != NULL) {
+	Free (rel_info_pool);
+	rel_info_pool = NULL;
+    }
+    return (1);
 }

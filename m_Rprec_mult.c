@@ -1,8 +1,8 @@
-#ifdef RCSID
-static char rcsid[] = "$Header: /home/smart/release/src/libevaluate/trvec_trec_eval.c,v 11.0 1992/07/21 18:20:35 chrisb Exp chrisb $";
-#endif
+/* 
+   Copyright (c) 2008 - Chris Buckley. 
 
-/* Copyright (c) 2008
+   Permission is granted for use and modification of this file for
+   research, non-commercial purposes. 
 */
 
 #include "common.h"
@@ -20,30 +20,31 @@ static char rcsid[] = "$Header: /home/smart/release/src/libevaluate/trvec_trec_e
 */
 
 int 
-te_calc_Rprec_at (const EPI *epi, const REL_INFO *rel_info,
-		  const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval)
+te_calc_Rprec_mult (const EPI *epi, const REL_INFO *rel_info,
+		    const RESULTS *results, const TREC_MEAS *tm,
+		    TREC_EVAL *eval)
 {
-    FLOAT_PARAMS *cutoff_percents = (FLOAT_PARAMS *) tm->meas_params;
+    double *cutoff_percents = (double *) tm->meas_params->param_values;
     long *cutoffs;    /* cutoffs expressed in num ret docs instead of percents*/
     long current_cut; /* current index into cutoffs */
-    RANK_REL rr;
+    RES_RELS rr;
     long rel_so_far;
     long i;
     double precis, int_precis;
 
-    if (UNDEF == form_ordered_rel (epi, rel_info, results, &rr))
+    if (UNDEF == te_form_res_rels (epi, rel_info, results, &rr))
 	return (UNDEF);
 
     /* translate percentage of rels as given in the measure params, to
        an actual cutoff number of docs. */
-    if (NULL == (cutoffs = Malloc (cutoff_percents->num_params, long)))
+    if (NULL == (cutoffs = Malloc (tm->meas_params->num_params, long)))
 	return (UNDEF);
-    for (i = 0; i < cutoff_percents->num_params; i++)
-	cutoffs[i] = (long)(cutoff_percents->param_values[i] * rr.num_rel +0.9);
+    for (i = 0; i < tm->meas_params->num_params; i++)
+	cutoffs[i] = (long)(cutoff_percents[i] * rr.num_rel +0.9);
     precis = (double) rr.num_rel_ret / (double) rr.num_ret;
     int_precis = precis;
 
-    current_cut = cutoff_percents->num_params - 1;
+    current_cut = tm->meas_params->num_params - 1;
     while (current_cut >= 0 && cutoffs[current_cut] > rr.num_ret) {
 	eval->values[tm->eval_index + current_cut].value =
 	    (double) rr.num_rel_ret / (double) cutoffs[current_cut];

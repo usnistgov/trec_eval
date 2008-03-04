@@ -1,23 +1,29 @@
-#ifdef RCSID
-static char rcsid[] = "$Header: /home/smart/release/src/libevaluate/tr_eval.c,v 11.0 1992/07/21 18:20:33 chrisb Exp chrisb $";
-#endif
+/* 
+   Copyright (c) 2008 - Chris Buckley. 
 
-/* Copyright (c) 2008 Chris Buckley
-
-   Permission is granted for use of this file for research purposes.
+   Permission is granted for use and modification of this file for
+   research, non-commercial purposes. 
 */
 
 #include "common.h"
 #include "sysfunc.h"
 #include "functions.h"
 #include "trec_eval.h"
+#include "trec_format.h"
 
 int te_get_qrels (EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info);
+int te_get_qrels_jg (EPI *epi, char *text_qrels_file,
+		     ALL_REL_INFO *all_rel_info);
 int te_get_prefs (EPI *epi, char *text_prefs_file, ALL_REL_INFO *all_rel_info);
 int te_get_qrels_prefs (EPI *epi, char *text_prefs_file,
 			ALL_REL_INFO *all_rel_info);
 int te_get_trec_results (EPI *epi, char *trec_results_file,
-		      ALL_RESULTS *all_results);
+			 ALL_RESULTS *all_results);
+int te_get_qrels_cleanup ();
+int te_get_qrels_jg_cleanup ();
+int te_get_prefs_cleanup ();
+int te_get_qrels_prefs_cleanup ();
+int te_get_trec_results_cleanup ();
 
 REL_INFO_FILE_FORMAT te_rel_info_format[] = {
     {"qrels",
@@ -30,9 +36,24 @@ a non-negative integer less than 128, or -1 (unjudged)) \n\
 to query qid (a string).  iter string field is ignored.   \n\
 Fields are separated by whitespace, string fields can contain no whitespace. \n\
 File may contain no NULL characters. \n\
-qid must be unique in the first 128 characters.\n\
 ",
-     te_get_qrels},
+     te_get_qrels, te_get_qrels_cleanup},
+
+
+    {"qrels_jg",
+"Rel_info_file format: Standard 'qrels'\n\
+Relevance for each docno to qid is determined from rel_info_file, which \n\
+consists of text tuples of the form \n\
+   qid  ujg  docno  rel \n\
+giving TREC document numbers (docno, a string) and their relevance (rel,  \n\
+a non-negative integer less than 128, or -1 (unjudged)) \n\
+to query qid (a string) for a particular user judgment group. \n\
+This allows averaging (or other operations) of appropriate evaluation measures\n\
+across multiple users, whoc may differ in their judgments. \n\
+Fields are separated by whitespace, string fields can contain no whitespace. \n\
+File may contain no NULL characters. \n\
+",
+     te_get_qrels_jg, te_get_qrels_jg_cleanup},
 
 
     {"prefs", 
@@ -46,7 +67,6 @@ user judgment sub-group (ujsubg, a string) within a user judgment\n\
 group (ujg, a string).\n\
 Fields are separated by whitespace, string fields can contain no whitespace.\n\
 File may contain no NULL characters.\n\
-qid must be unique in the first 128 characters.\n\
 \n\
 Preferences are indicated indirectly by comparing rel_level of\n\
 different docnos within the same user judgment sub group(JSG).  A\n\
@@ -134,7 +154,7 @@ topic (even given identical retrieval on the added nonrel docs).  How\n\
 to handle this correctly for preference evaluation will be an\n\
 important future research problem.\n\
 ",
-     te_get_prefs},
+     te_get_prefs, te_get_prefs_cleanup},
 
 {"qrels_prefs", 
 "Rel_info_file format: Non-standard 'qrels_prefs'\n\
@@ -154,7 +174,6 @@ level (rel_level,a non-negative float) to query qid (a string) for a \n\
  user judgment group (ujg, a string).\n\
 Fields are separated by whitespace, string fields can contain no whitespace.\n\
 File may contain no NULL characters.\n\
-qid must be unique in the first 128 characters.\n\
 \n\
 Preferences are indicated indirectly by comparing rel_level of\n\
 different docnos within the same user judgment group(JG).  A\n\
@@ -208,7 +227,7 @@ topic (even given identical retrieval on the added nonrel docs).  How\n\
 to handle this correctly for preference evaluation will be an\n\
 important future research problem.\n\
 ", 
-    te_get_qrels_prefs},
+ te_get_qrels_prefs, te_get_qrels_prefs_cleanup},
 };
 int te_num_rel_info_format =
     sizeof (te_rel_info_format)/sizeof (te_rel_info_format[0]);
@@ -228,11 +247,40 @@ broken deterministicly (using docno). \n\
 Sim is assumed to be higher for the docs to be retrieved first. \n\
 File may contain no NULL characters. \n\
 Lines may contain fields after the run_id; they are ignored. \n\
-qid must be unique in the first 128 characters.\n",
-     te_get_trec_results},
+",
+     te_get_trec_results, te_get_trec_results_cleanup},
 };
 int te_num_results_format =
     sizeof (te_results_format)/sizeof (te_results_format[0]);
 
+int te_form_res_rels_cleanup (), te_form_res_rels_jg_cleanup (),
+    te_form_pref_counts_cleanup (), te_form_pref_counts_cleanup ();
+
+FORM_INTER_PROCS te_form_inter_procs[] = {
+    {"qrels", "trec_results",
+     "Process for evaluating qrels and trec_results",
+     /* te_form_res_rels, */
+     te_form_res_rels_cleanup},
+    {"qrels_jg", "trec_results",
+     "Process for evaluating qrels_jg and trec_results",
+     /* te_form_res_rels_jg, */
+     te_form_res_rels_jg_cleanup},
+    {"prefs", "trec_results",
+     "Process for evaluating prefs and trec_results",
+     /* te_form_prefs_counts, */
+     te_form_pref_counts_cleanup},
+    {"qrels_prefs", "trec_results",
+     "   Copyright (c) 2008 - Chris Buckley. \n\
+\n\
+   Permission is granted for use and modification of this file for\n\
+   research, non-commercial purposes. \n\
+\n\
+   Process for evaluating qrels_prefs and trec_results",
+     /* te_form_prefs_counts, */
+     te_form_pref_counts_cleanup},
+};
+
+int te_num_form_inter_procs =
+    sizeof (te_form_inter_procs)/sizeof (te_form_inter_procs[0]);
 
 

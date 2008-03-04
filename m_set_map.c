@@ -1,8 +1,8 @@
-#ifdef RCSID
-static char rcsid[] = "$Header: /home/smart/release/src/libevaluate/trvec_trec_eval.c,v 11.0 1992/07/21 18:20:35 chrisb Exp chrisb $";
-#endif
+/* 
+   Copyright (c) 2008 - Chris Buckley. 
 
-/* Copyright (c) 2008
+   Permission is granted for use and modification of this file for
+   research, non-commercial purposes. 
 */
 
 #include "common.h"
@@ -24,17 +24,17 @@ int
 te_calc_set_map (const EPI *epi, const REL_INFO *rel_info,
 		 const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval)
 {
-    RANK_REL rank_rel;
+    RES_RELS res_rels;
 
-    if (UNDEF == form_ordered_rel (epi, rel_info, results, &rank_rel))
+    if (UNDEF == te_form_res_rels (epi, rel_info, results, &res_rels))
 	return (UNDEF);
 
-    if (rank_rel.num_ret)
+    if (res_rels.num_ret)
 	eval->values[tm->eval_index].value =
-	    ((double) rank_rel.num_rel_ret *
-	     (double) rank_rel.num_rel_ret)      /
-	    ((double) rank_rel.num_ret *
-	     (double) rank_rel.num_rel);
+	    ((double) res_rels.num_rel_ret *
+	     (double) res_rels.num_rel_ret)      /
+	    ((double) res_rels.num_ret *
+	     (double) res_rels.num_rel);
 
     return (1);
 }

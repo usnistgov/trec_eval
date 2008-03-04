@@ -1,8 +1,8 @@
-#ifdef RCSID
-static char rcsid[] = "$Header: /home/smart/release/src/libevaluate/trvec_trec_eval.c,v 11.0 1992/07/21 18:20:35 chrisb Exp chrisb $";
-#endif
+/* 
+   Copyright (c) 2008 - Chris Buckley. 
 
-/* Copyright (c) 2008
+   Permission is granted for use and modification of this file for
+   research, non-commercial purposes. 
 */
 
 #include "common.h"
@@ -29,38 +29,43 @@ double log2(double x);
 
 /* Keep track of valid rel_levels and associated gains */
 /* Initialized in setup_gains */
-static struct rel_gain {
+typedef struct {
     long rel_level;
     long num_at_level;
     double gain;
-} *gain_ptr = NULL;
-static long num_gains = 0;
-static long max_num_gains = 0;
-static long total_num_at_levels = 0;
+} REL_GAIN;
 
-static int setup_gains (const TREC_MEAS *tm, const RANK_REL *rank_rel);
-static double get_gain (long rel_level);
+typedef struct {
+    REL_GAIN *rel_gains;
+    long num_gains;
+    long total_num_at_levels;
+} GAINS;
+
+static int setup_gains (const TREC_MEAS *tm, const RES_RELS *res_rels,
+			GAINS *gains);
+static double get_gain (const long rel_level, const GAINS *gains);
 static int comp_rel_gain ();
 
 int 
 te_calc_ndcg_p (const EPI *epi, const REL_INFO *rel_info,
 		const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval)
 {
-    RANK_REL rank_rel;
+    RES_RELS res_rels;
     double gain, sum;
     double ideal_dcg;          /* ideal discounted cumulative gain */
     long cur_lvl, lvl_count;
     long i;
+    GAINS gains;
    
-    if (UNDEF == form_ordered_rel (epi, rel_info, results, &rank_rel))
+    if (UNDEF == te_form_res_rels (epi, rel_info, results, &res_rels))
 	return (UNDEF);
 
-    if (UNDEF == setup_gains (tm, &rank_rel))
+    if (UNDEF == setup_gains (tm, &res_rels, &gains))
 	return (UNDEF);
 
     sum = 0.0;
-    for (i = 0; i < rank_rel.num_ret; i++) {
-	gain = get_gain (rank_rel.results_rel_list[i]);
+    for (i = 0; i < res_rels.num_ret; i++) {
+	gain = get_gain (res_rels.results_rel_list[i], &gains);
 	if (gain != 0) {
 	    if (i > 0)
 		sum += gain / log2((double) (i+1));
@@ -71,20 +76,20 @@ te_calc_ndcg_p (const EPI *epi, const REL_INFO *rel_info,
 	}
     }
     /* Calculate ideal discounted cumulative gain for this topic */
-    cur_lvl = num_gains - 1;
+    cur_lvl = gains.num_gains - 1;
     lvl_count = 0;
     ideal_dcg = 0.0;
-    for (i = 0; i < total_num_at_levels; i++) {
+    for (i = 0; i < gains.total_num_at_levels; i++) {
 	lvl_count++;
-	while (lvl_count > gain_ptr[cur_lvl].num_at_level) {
+	while (lvl_count > gains.rel_gains[cur_lvl].num_at_level) {
 	    lvl_count = 1;
 	    cur_lvl--;
-	    if (cur_lvl < 0 || gain_ptr[cur_lvl].gain <= 0.0)
+	    if (cur_lvl < 0 || gains.rel_gains[cur_lvl].gain <= 0.0)
 		break;
 	}
-	if (cur_lvl < 0 || gain_ptr[cur_lvl].gain <= 0.0)
+	if (cur_lvl < 0 || gains.rel_gains[cur_lvl].gain <= 0.0)
 	    break;
-	gain = gain_ptr[cur_lvl].gain;
+	gain = gains.rel_gains[cur_lvl].gain;
 	if (i == 0)
 	    ideal_dcg += gain;
 	else
@@ -94,78 +99,80 @@ te_calc_ndcg_p (const EPI *epi, const REL_INFO *rel_info,
     }
 
     /* Compare sum to ideal NDCG */
-    if (rank_rel.num_rel_ret > 0) {
+    if (res_rels.num_rel_ret > 0) {
         eval->values[tm->eval_index].value =
 	    sum / ideal_dcg;
     }
+
+    Free (gains.rel_gains);
     return (1);
 }
 
 static int
-setup_gains (const TREC_MEAS *tm, const RANK_REL *rank_rel)
+setup_gains (const TREC_MEAS *tm, const RES_RELS *res_rels, GAINS *gains)
 {
-    PAIR_PARAMS *params = (PAIR_PARAMS *) tm->meas_params;
-    long num_params = (params ? params->num_params : 0);
+    FLOAT_PARAM_PAIR *pairs = NULL;
+    long num_pairs = 0;
     long i,j;
+    long num_gains;
 
-    if (rank_rel->num_rel_levels + num_params > max_num_gains) {
-	/* Need more space (num_rel_levels may change on per query basis) */
-	if (max_num_gains > 0)
-	    Free (gain_ptr);
-	max_num_gains += rank_rel->num_rel_levels + num_params;
-	if (NULL == (gain_ptr = Malloc(max_num_gains, struct rel_gain)))
-	    return (UNDEF);
-	num_gains = 0;
-	for (i = 0; i < num_params; i++) {
-	    gain_ptr[num_gains].rel_level = atol (params->param_values[i].name);
-	    gain_ptr[num_gains].gain = (double) params->param_values[i].value;
-	    gain_ptr[num_gains].num_at_level = 0;
-	    num_gains++;
-	}
-    }
-    else {
-	for (i = 0; i < max_num_gains; i++)
-	    gain_ptr[i].num_at_level = 0;
+    if (tm->meas_params) {
+	pairs = (FLOAT_PARAM_PAIR *) tm->meas_params->param_values;
+	num_pairs = tm->meas_params->num_params;
     }
 
-    for (i = 0; i < rank_rel->num_rel_levels; i++) {
-	for (j = 0; j < num_gains && gain_ptr[j].rel_level != i; j++)
+    if (NULL == (gains->rel_gains = Malloc(res_rels->num_rel_levels + num_pairs,
+					   REL_GAIN)))
+	return (UNDEF);
+    num_gains = 0;
+    for (i = 0; i < num_pairs; i++) {
+	gains->rel_gains[num_gains].rel_level = atol (pairs[i].name);
+	gains->rel_gains[num_gains].gain = (double) pairs[i].value;
+	gains->rel_gains[num_gains].num_at_level = 0;
+	num_gains++;
+    }
+
+    for (i = 0; i < res_rels->num_rel_levels; i++) {
+	for (j = 0; j < num_gains && gains->rel_gains[j].rel_level != i; j++)
 	    ;
 	if (j < num_gains)
-	    gain_ptr[j].num_at_level = rank_rel->rel_levels[i];
+	    /* Was included in list of parameters. Update occurrence info */
+	    gains->rel_gains[j].num_at_level = res_rels->rel_levels[i];
 	else {
-	    gain_ptr[num_gains].rel_level = i;
-	    gain_ptr[num_gains].gain = (double) i;
-	    gain_ptr[num_gains].num_at_level = rank_rel->rel_levels[i];
+	    /* Not included in list of parameters. New gain level */
+	    gains->rel_gains[num_gains].rel_level = i;
+	    gains->rel_gains[num_gains].gain = (double) i;
+	    gains->rel_gains[num_gains].num_at_level = res_rels->rel_levels[i];
 	    num_gains++;
 	}
     }
 
     /* Sort gains by increasing gain value */
-    qsort ((char *) gain_ptr,
+    qsort ((char *) gains->rel_gains,
            (int) num_gains,
-           sizeof (struct rel_gain),
+           sizeof (REL_GAIN),
            comp_rel_gain);
 
-    total_num_at_levels = 0;
+    gains->total_num_at_levels = 0;
     for (i = 0; i < num_gains; i++)
-	total_num_at_levels += gain_ptr[i].num_at_level;	
+	gains->total_num_at_levels += gains->rel_gains[i].num_at_level;	
 
+    gains->num_gains = num_gains;
     return (1);
 }
 
-static int comp_rel_gain (struct rel_gain *ptr1, struct rel_gain *ptr2)
+static int comp_rel_gain (REL_GAIN *ptr1, REL_GAIN *ptr2)
 {
     return (ptr1->gain - ptr2->gain);
 }
 
 static double
-get_gain (long rel_level)
+get_gain (const long rel_level, const GAINS *gains)
 {
     long i;
-    for (i = 0; i < num_gains; i++)
-	if (rel_level == gain_ptr[i].rel_level)
-	    return (gain_ptr[i].gain);
+    for (i = 0; i < gains->num_gains; i++)
+	if (rel_level == gains->rel_gains[i].rel_level)
+	    return (gains->rel_gains[i].gain);
     return (0.0);   /* Print Error ?? */
 }
 

@@ -1,8 +1,8 @@
-#ifdef RCSID
-static char rcsid[] = "$Header: /home/smart/release/src/libevaluate/trvec_trec_eval.c,v 11.0 1992/07/21 18:20:35 chrisb Exp chrisb $";
-#endif
+/* 
+   Copyright (c) 2008 - Chris Buckley. 
 
-/* Copyright (c) 2008
+   Permission is granted for use and modification of this file for
+   research, non-commercial purposes. 
 */
 
 #include "common.h"
@@ -22,31 +22,31 @@ int
 te_calc_rel_P (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
 	       const TREC_MEAS *tm, TREC_EVAL *eval)
 {
-    LONG_PARAMS *cutoffs = (LONG_PARAMS *) tm->meas_params;
+    long *cutoffs = (long *) tm->meas_params->param_values;
     long cutoff_index = 0;
     long i;
-    RANK_REL rr;
+    RES_RELS rr;
     long rel_so_far = 0;
 
-    if (UNDEF == form_ordered_rel (epi, rel_info, results, &rr))
+    if (UNDEF == te_form_res_rels (epi, rel_info, results, &rr))
 	return (UNDEF);
 
     for (i = 0; i < rr.num_ret; i++) {
-	if (i == cutoffs->param_values[cutoff_index]) {
+	if (i == cutoffs[cutoff_index]) {
 	    /* Calculate previous cutoff threshold.
 	       Note cutoffs guaranteed to be positive by init_meas */
 	    eval->values[tm->eval_index + cutoff_index].value =
 		(double) rel_so_far / (double)((i > rr.num_rel) ? rr.num_rel:i);
-	    if (++cutoff_index == cutoffs->num_params)
+	    if (++cutoff_index == tm->meas_params->num_params)
 		break;
 	}
 	if (rr.results_rel_list[i] >= epi->relevance_level)
 	    rel_so_far++;
     }
     /* calculate values for those cutoffs not achieved */
-    while (cutoff_index < cutoffs->num_params) {
-	i = cutoffs->param_values[cutoff_index];
-	    eval->values[tm->eval_index + cutoff_index].value =
+    while (cutoff_index < tm->meas_params->num_params) {
+	i = cutoffs[cutoff_index];
+	eval->values[tm->eval_index + cutoff_index].value =
 	    (double) rel_so_far / (double) ((i > rr.num_rel) ? rr.num_rel : i);
 	cutoff_index++;
     }

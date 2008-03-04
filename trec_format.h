@@ -1,3 +1,9 @@
+/* 
+   Copyright (c) 2008 - Chris Buckley. 
+
+   Permission is granted for use and modification of this file for
+   research, non-commercial purposes. 
+*/
 #ifndef TRECFORMATH
 #define TRECFORMATH
 
@@ -23,12 +29,22 @@ typedef struct {                    /* For each relevance judgement */
 
 typedef struct {                    /* For each query in rel judgments */
     long num_text_qrels;               /* number of judged documents */
-    long max_num_text_qrels;           /* Num docs space reserved for */
+    long max_num_text_qrels;           /* Num docs space reserved for 
+					  Private, unused */
     TEXT_QRELS *text_qrels;            /* Array of judged TEXT_QRELS.
 					  Kept sorted by docno */
-    long max_num_rel_levels;           /* Number of relevance judgment levels */
-    long *rel_count;                   /* Count of docs with each judgment */
 } TEXT_QRELS_INFO;
+
+typedef struct {                    /* For each jg in query */
+    long num_text_qrels;               /* number of judged documents */
+    TEXT_QRELS *text_qrels;            /* Array of judged TEXT_QRELS.
+					  Kept sorted by docno */
+} TEXT_QRELS_JG;
+
+typedef struct {                    /* For each query in rel judgments */
+    long num_text_qrels_jg;            /* number of judgment groups */
+    TEXT_QRELS_JG *text_qrels_jg;      /* Array of judged TEXT_QRELS_JG */
+} TEXT_QRELS_JG_INFO;
 
 /* prefs pointed to by rel_info->q_rel_info */
 typedef struct {                 /* For each line in rel prefs judgments */
@@ -74,7 +90,14 @@ typedef struct {
 			      Eg, results_rel_list[2] gives relevance of the
 			      third retrieved doc in rank order.
 			      length of list is rank_rel->num_ret */
-} RANK_REL;
+} RES_RELS;
+
+/* If Judgments group info is included (qrels_jg), then return multiple jgs */
+typedef struct {
+    char *qid;
+    long num_jgs;
+    RES_RELS *jgs;
+} RES_RELS_JG;
 
 /* Merged trec_results and prefs info */
 
@@ -214,20 +237,23 @@ typedef struct {
 } RESULTS_PREFS;
 
 
-
-
 /* ----------------------------------------------------------------------*/
 /* Procedure prototypes for going from input format REL_INFO and 
    input format RESULTS to an intermediate form appropriate to the two
    input formats that can be more directly used by several measures */
 
-/* trec_results and qrels to RANK_REL */
-int form_ordered_rel (const EPI *epi, const REL_INFO *rel_info,
-		      const RESULTS *results, RANK_REL *rank_rel);
+/* trec_results and qrels to RES_RELS */
+int te_form_res_rels (const EPI *epi, const REL_INFO *rel_info,
+                      const RESULTS *results, RES_RELS *res_rels);
 
-/* trec_results and prefs to RESULT_PREFS */
+/* trec_results and qrels to RES_RELS */
+int te_form_res_rels_jg (const EPI *epi, const REL_INFO *rel_info,
+			 const RESULTS *results, RES_RELS_JG *res_rels);
+
+/* trec_results and prefs (or qrels_prefs) to RESULT_PREFS */
 int form_prefs_counts (const EPI *epi, const REL_INFO *rel_info,
-		       const RESULTS *results, RESULTS_PREFS *results_prefs);
+                       const RESULTS *results, RESULTS_PREFS *results_prefs);
+
 
 
 #endif /* TRECFORMATH */

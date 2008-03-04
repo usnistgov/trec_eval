@@ -1,10 +1,9 @@
-#ifdef RCSID
-static char rcsid[] = "$Header: /home/smart/release/src/libevaluate/trvec_trec_eval.c,v 11.0 1992/07/21 18:20:35 chrisb Exp chrisb $";
-#endif
+/* 
+   Copyright (c) 2008 - Chris Buckley. 
 
-/* Copyright (c) 2008
+   Permission is granted for use and modification of this file for
+   research, non-commercial purposes. 
 */
-
 #include "common.h"
 #include "sysfunc.h"
 #include "trec_eval.h"
@@ -35,23 +34,23 @@ int
 te_calc_utility (const EPI *epi, const REL_INFO *rel_info,
 		 const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval)
 {
-    FLOAT_PARAMS *params = (FLOAT_PARAMS *) tm->meas_params;
-    RANK_REL rr;
+    double *params = (double *) tm->meas_params->param_values;
+    RES_RELS rr;
 
-    if (UNDEF == form_ordered_rel (epi, rel_info, results, &rr))
+    if (UNDEF == te_form_res_rels (epi, rel_info, results, &rr))
 	return (UNDEF);
 
-    if (params->num_params != 4) {
+    if (tm->meas_params->num_params != 4) {
 	fprintf (stderr,
 		 "trec_eval.calc_utility: improper number of coefficients\n");
 	return (UNDEF);
     }
 
     eval->values[tm->eval_index].value =
-	params->param_values[0] * rr.num_rel_ret +
-	params->param_values[1] * (rr.num_ret - rr.num_rel_ret) +
-	params->param_values[2] * (rr.num_rel - rr.num_rel_ret) +
-	params->param_values[3] * (epi->num_docs_in_coll + rr.num_rel_ret -
-				   rr.num_ret - rr.num_rel);
+	params[0] * rr.num_rel_ret +
+	params[1] * (rr.num_ret - rr.num_rel_ret) +
+	params[2] * (rr.num_rel - rr.num_rel_ret) +
+	params[3] * (epi->num_docs_in_coll + rr.num_rel_ret - rr.num_ret -
+		     rr.num_rel);
     return (1);
 }

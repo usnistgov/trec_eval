@@ -27,27 +27,43 @@ If you wish to output only one particular measure:
 ------------------------------------------------------------------------------
 Change Log  (only recent)
 ------------------------------------------------------------------------------
-2/25/08 Version 9.0alpha.  Complete rewrite of entire trec_eval (needed for a 
-       long time!).  Complete separation of individual measure calculations -
+2/25/08 Version 9.0alpha.  
+       Complete rewrite of entire trec_eval (needed for a long time!).  
+       Complete separation of individual measure calculations -
        computers are now fast enough so can afford recalculation of lots
-       of intermediate values.  Should be much easier to add measures to, and
-       much easier to add new input file formats with associated measures.
+       of intermediate values.  
+       Should be much easier to add measures to, and much easier to add
+       new input file formats with associated measures.
        Parameters for measures (eg, cutoffs for P) can be specified on the
-       command line.  Choice of measures can be specifed on the command line.
+       command line.  
+       Choice of measures can be specifed on the command line.
        An initial set of preference evaluation measures (with their own
        input rel_info format) have been added.
-       Most important measures remain the same - the official TREC output
-       (short output in some versions) should be completely unchanged.
+       Help now gives targeted measure and format descriptions.  Try
+          trec_eval -h -m all_prefs -R prefs
+       to get info on preference measures and formats, for instance.
+       All internal calculations are in double rather than float. Yields
+       minor variations in output at rare times; mostly when going from a
+       double percentage to a corresponding doc cutoff (eg, in iprec_at_recall).
+       All globally known procedure names or variables now begin with 'te_'
+       to allow incorporation of procedures in other programs.
+       
        Measures added:
-       	        ndcg, ndcg_at, set_F
+       	        ndcg, ndcg_cut, set_F, success, map_avgjg, P_avgjg,
 		various preference evaluation measures.
        Measures renamed:
-                R-prec-at.*             was *R-prec
+                Rprec-mult_*            was *R-prec
                 set_P			was exact_prec
 	        set_recall 		was exact_recall
 	        set_relative_P		was exact_relative_prec
 	        set_recall		was exact_recall
 	        set_map			was exact_unranked_avg_prec
+		gm_map                  was gm_ap
+		11pt_avg                was 11-pt_avg
+		P_*                     was P*
+                recall_*                was recall*
+		relative_P_*            was relative_P*
+		iprec_at_recall_*       was ircl_prn.*
        Measures dropped for now:
        		3-pt_avg       	
 		avg_doc_prec   	
@@ -57,24 +73,6 @@ Change Log  (only recent)
                 int_map        	
                 exact_int_R_rcl_prec
                 int_map_at_R   	
-                bpref_allnonrel	
-                bpref_retnonrel	
-                bpref_topnonrel	
-                bpref_top5Rnonrel	
-                bpref_top10Rnonrel	
-                bpref_top10pRnonrel	
-                bpref_top25pRnonrel	
-                bpref_top50pRnonrel	
-                bpref_top25p2Rnonrel	
-                bpref_retall   	
-                bpref_5        	
-                bpref_10       	
-                bpref_num_all  	
-                bpref_num_ret  	
-                bpref_num_correct	
-                bpref_num_possible	
-                old_bpref      	
-                old_bpref_top10pRnonrel	
                 unranked_avg_prec*
                 relative_unranked_avg_prec*
                 rcl_at_142_nonrel	
@@ -83,7 +81,13 @@ Change Log  (only recent)
                 micro_prec     	
                 micro_recall   	
                 micro_bpref    	
+		bpref variants
 		time base measures.
+	Input formats added:
+	        prefs - allows expression of preferences
+		qrels_prefs - same as standard qrels, except treated as prefs
+		qrels_jg - same as standard qrels, except allows judgment sets
+                           from multiple users (judgment groups).
 
 Version 8.1, Added infAP, minor bug fixes
 7/24/06 Improved infAP comments (implementation verified by Yilmaz).
@@ -109,30 +113,40 @@ Version 8.0, full bpref bug fix, see file bpref_bug.  I decided to up the
 ------------------------------------------------------------------------------
 
 Files:
+Main procedure:
+trec_eval.c
+---
+Procedures to read input files of various formats:
+formats.c          Mapping names of input file formats to input procedures
+get_qrels.c        Read the standard judged documents (qrels format)
+get_qrels_jg.c     Read qrels format with multiple judgment groups per query
+get_prefs.c        Read preferences judgments instead of doc judgments - see
+		   formats.c for full description.
+get_qrels_prefs.c  Read qrels_jg format file, interpret as prefs file.
+get_trec_results.c Read the standard result file (trec_results format).
+---
+Procedures to merge rel_info and results from input into form that measures
+can easily use, if they wish:
+form_res_rels.c    'qrels' and 'trec_results' into RES_RELS format.
+form_res_rels_jg.c 'qrels_jg' and 'trec_results' into RES_RELS_JG format.
+form_pref_counts.c ('prefs' or 'qrels_prefs') and 'trec_results' format
+---
+The actual measures:
+measures.c   Associates measure name with parameters and
+             init, calculation, accumulation, printing procedures
+meas_*.c     Common procedures used by many measures for init, acc, printing.
+m_<measure_name>.c  measure specific procedures
+---
+Miscellaneous:
 Makefile     Compile and test trec_eval
 README       This file
 test         Directory of collection of sample input and output for trec_eval
-
-trec_eval.c  Main procedure
-
-formats.c          Mapping names of input file formats to input procedures
-get_qrels.c        Read the standard judged documents (qrels format)
-get_trec_results.c Read the standard result file (trec_results format).
-
-form_ordered_rel.c Called by measures to put the results and qrels for an 
-	     individual topic in an easy format to be evaluated.
-measures.c   Associates measure name with parameters and
-             init, calculation, accumulation, printing procedures
-m_<measure_name>.c  measure specific procedures
-meas_*.c     Common procedures used for many measures for init, acc, printing.
-
 trec_eval.h  Basic evaluation structures.
 functions.h  Prototype decorations of measure procedures.
 sysfunc.h
 common.h
 bpref_bug:   Description of bug in bpref that existed in trec_eval versions 6
              through 7.3.
-
 
 ------------------------------------------------------------------------------
 ------------------------------------------------------------------------------
@@ -143,8 +157,7 @@ Assuming it uses standard input files:
       initialize measure
       calculate measure
       accumulate measure (adding one topic's value to summary value over topics)
-      print measure for an individual topic
-      print measure for summary over all topics, normally after averaging.
+      calculate the ending average for a measure.
    Most measures require only a new calculate measure procedure - the
    other procedures are already implemented depending on the type of 
    measure (has cutoffs and value for each cutoff, parameters, is a float, etc).

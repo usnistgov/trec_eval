@@ -1,10 +1,8 @@
-#ifdef RCSID
-static char rcsid[] = "$Header: /home/smart/release/src/libevaluate/tr_eval.c,v 11.0 1992/07/21 18:20:33 chrisb Exp chrisb $";
-#endif
+/* 
+   Copyright (c) 2008 - Chris Buckley. 
 
-/* Copyright (c) 2008 Chris Buckley
-
-   Permission is granted for use of this file for research purposes.
+   Permission is granted for use and modification of this file for
+   research, non-commercial purposes. 
 */
 
 #include "common.h"
@@ -14,35 +12,62 @@ static char rcsid[] = "$Header: /home/smart/release/src/libevaluate/tr_eval.c,v 
 
 /* Default parameter settings for various measures */
 static long long_cutoff_array[] = {5, 10, 15, 20, 30, 100, 200, 500, 1000};
-static LONG_PARAMS default_long_cutoffs = {
+static PARAMS default_P_cutoffs = {
+    NULL,
+    sizeof (long_cutoff_array) / sizeof (long_cutoff_array[0]),
+    &long_cutoff_array[0]};
+static PARAMS default_recall_cutoffs = {
+    NULL,
+    sizeof (long_cutoff_array) / sizeof (long_cutoff_array[0]),
+    &long_cutoff_array[0]};
+static PARAMS default_ndcg_cutoffs = {
+    NULL,
+    sizeof (long_cutoff_array) / sizeof (long_cutoff_array[0]),
+    &long_cutoff_array[0]};
+static PARAMS default_relative_P_cutoffs = {
+    NULL,
+    sizeof (long_cutoff_array) / sizeof (long_cutoff_array[0]),
+    &long_cutoff_array[0]};
+static PARAMS default_P_avgjg_cutoffs = {
+    NULL,
     sizeof (long_cutoff_array) / sizeof (long_cutoff_array[0]),
     &long_cutoff_array[0]};
 static double float_cutoff_array[] = {
     0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
-static FLOAT_PARAMS default_float_cutoffs = {
+static PARAMS default_iprec_at_recall_cutoffs = {
+    NULL,
+    sizeof (float_cutoff_array) / sizeof (float_cutoff_array[0]),
+    &float_cutoff_array[0]};
+static PARAMS default_11ptavg_cutoffs = {
     NULL,
     sizeof (float_cutoff_array) / sizeof (float_cutoff_array[0]),
     &float_cutoff_array[0]};
 static double Rprec_cutoff_array[] = {
     0.2, 0.4,  0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0};
-static FLOAT_PARAMS default_Rprec_cutoffs = {
+static PARAMS default_Rprec_cutoffs = {
+    NULL,
+    sizeof (Rprec_cutoff_array) / sizeof (Rprec_cutoff_array[0]),
+    &Rprec_cutoff_array[0]};
+static PARAMS default_Rprec_avgjg_cutoffs = {
     NULL,
     sizeof (Rprec_cutoff_array) / sizeof (Rprec_cutoff_array[0]),
     &Rprec_cutoff_array[0]};
 static double utility_param_array[] = {1.0, -1.0, 0.0, 0.0};
-static FLOAT_PARAMS default_utility_params = {
-    "1,-1,0,0",
+static PARAMS default_utility_params = {
+    NULL,
     sizeof (utility_param_array) / sizeof (utility_param_array[0]),
     &utility_param_array[0]};
 static double set_F_param_array[] = {1.0};
-static FLOAT_PARAMS default_set_F_params = {
+static PARAMS default_set_F_params = {
     NULL,
     sizeof (set_F_param_array) / sizeof (set_F_param_array[0]),
     &set_F_param_array[0]};
 static long success_cutoff_array[] = {1, 5, 10};
-static LONG_PARAMS default_success_cutoffs = {
+static PARAMS default_success_cutoffs = {
+    NULL,
     sizeof (success_cutoff_array) / sizeof (success_cutoff_array[0]),
     &success_cutoff_array[0]};
+static PARAMS default_ndcg_gains = { NULL, 0, NULL};
 
 
 /* Actual measures.  Definition of TREC_MEAS below is from "trec_eval.h".
@@ -148,7 +173,7 @@ TREC_MEAS te_trec_measures[] = {
      te_acc_meas_s,
      te_calc_avg_meas_s,
      NULL, -1},
-    {"gm_ap",
+    {"gm_map",
      "    Geometric Mean Average Precision\n\
     This is the same measure as 'map' (see description of 'map') on an\n\
     individual topic, but the geometric mean is calculated when averaging\n\
@@ -158,11 +183,11 @@ TREC_MEAS te_trec_measures[] = {
     gm_ap is reported only in the summary over all topics, not for individual\n\
     topics.\n",
      te_init_meas_s_float_summ,
-     te_calc_gm_ap,
+     te_calc_gm_map,
      te_acc_meas_s,
      te_calc_avg_meas_s_gm,
      NULL, -1},
-    {"R-prec",
+    {"Rprec",
     "    Precision after R documents have been retrieved.\n\
     R is the total number of relevant docs for the topic.  \n\
     This is a good single point measure for an entire retrieval\n\
@@ -203,7 +228,7 @@ TREC_MEAS te_trec_measures[] = {
      te_acc_meas_s,
      te_calc_avg_meas_s,
      NULL, -1},
-    {"ircl_prn",
+    {"iprec_at_recall",
      "    Interpolated Precision at recall cutoffs.\n\
     This is the data shown in the standard Recall-Precision graph.\n\
     The standard cutoffs and interpolation are needed to average data over\n\
@@ -211,14 +236,12 @@ TREC_MEAS te_trec_measures[] = {
     with a topic with 3 relevant docs for graphing purposes?  The Precision \n\
     interpolation used here is\n\
       Int_Prec (rankX) == MAX (Prec (rankY)) for all Y >= X.\n\
-    Default usage: trec_eval -m ircl_prn.0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1. ...\n\
-    Name should really be changed (how many abbreviations for 'precision'\n\
-    should one program use?), but kept for backward compatibility\n",
+    Default usage: -m iprec_at_recall.0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1 ...\n",
      te_init_meas_a_float_cut_float,
-     te_calc_ircl_prn,
-     te_acc_meas_a_cut_float, 
-     te_calc_avg_meas_a_cut_float,
-     (void *) &default_float_cutoffs, -1},
+     te_calc_iprec_at_recall,
+     te_acc_meas_a_cut, 
+     te_calc_avg_meas_a_cut,
+     (void *) &default_iprec_at_recall_cutoffs, -1},
     {"P",
      "    Precision at cutoffs\n\
     Precision measured at various doc level cutoffs in the ranking.\n\
@@ -235,12 +258,12 @@ TREC_MEAS te_trec_measures[] = {
     in that the latter will not fill in with nonrel docs if less than 50\n\
     docs retrieved\n\
     Cutoffs must be positive without duplicates\n\
-    Default param: trec_eval -m P.5,10,15,20,30,100,200,500,1000\n",
+    Default param: -m P.5,10,15,20,30,100,200,500,1000\n",
      te_init_meas_a_float_cut_long,
      te_calc_P,
-     te_acc_meas_a_cut_long,
-     te_calc_avg_meas_a_cut_long,
-     (void *) &default_long_cutoffs, -1},
+     te_acc_meas_a_cut,
+     te_calc_avg_meas_a_cut,
+     (void *) &default_P_cutoffs, -1},
     {"recall",
      "    Recall at cutoffs\n\
     Recall (relevant retrieved / relevant) measured at various doc level\n\
@@ -248,26 +271,26 @@ TREC_MEAS te_trec_measures[] = {
     retrieved, then it is assumed nonrelevant docs fill in the rest.\n\
     REcall is a fine single topic measure, but does not average well.\n\
     Cutoffs must be positive without duplicates\n\
-    Default param: trec_eval -m recall.5,10,15,20,30,100,200,500,1000\n",
+    Default param: -m recall.5,10,15,20,30,100,200,500,1000\n",
      te_init_meas_a_float_cut_long,
      te_calc_recall,
-     te_acc_meas_a_cut_long,
-     te_calc_avg_meas_a_cut_long,
-     (void *) &default_long_cutoffs, -1},
+     te_acc_meas_a_cut,
+     te_calc_avg_meas_a_cut,
+     (void *) &default_recall_cutoffs, -1},
     {"infAP",
      "    Inferred AP\n\
     A measure that allows sampling of judgement pool: Qrels/results divided\n\
     into unpooled, pooled_but_unjudged, pooled_judged_rel,pooled_judged_nonrel.\n\
-    My intuition of infAP: Calculate P at rel doc using only the judged\n\
-    higher retrieved docs, then average in 0's from higher docs that were\n\
-    not in the judgment pool.  (Those in the pool but not judged are ignored,\n\
-    since they are assumed to be relevant in the same proportion as those \n\
-    judged.)\n\
+    My intuition of infAP:\n\
+    Assume a judgment pool with a random subset that has been judged.\n\
+    Calculate P at rel doc using only the judged higher retrieved docs,\n\
+    then average in 0's from higher docs that were not in the judgment pool.\n\
+    (Those in the pool but not judged are ignored, since they are assumed\n\
+    to be relevant in the same proportion as those judged.)\n\
     Cite:    'Estimating Average Precision with Incomplete and Imperfect\n\
     Judgments', Emine Yilmaz and Javed A. Aslam. CIKM \n",
      te_init_meas_s_float,
-     /* Note: calculated by bpref code because of historically fit. */
-     te_calc_bpref,
+     te_calc_infap,
      te_acc_meas_s,
      te_calc_avg_meas_s,
      NULL, -1},
@@ -280,21 +303,22 @@ TREC_MEAS te_trec_measures[] = {
     Gm_bpref is printed only as a summary measure across topics, not for the\n\
     individual topics.\n",
      te_init_meas_s_float_summ,
-     te_calc_bpref,
+     te_calc_gm_bpref,
      te_acc_meas_s,
      te_calc_avg_meas_s_gm,
      NULL, -1},
-    {"R-prec-at",
+    {"Rprec_mult",
      "    Precision measured at multiples of R (num_rel).\n\
     This is an attempt to measure topics at the same multiple milestones\n\
     in a retrieval (see explanation of R-prec), in order to determine\n\
     whether methods are precision oriented or recall oriented.  If method A\n\
     dominates method B at the low multiples but performs less well at the\n\
-    high multiples then it is precision oriented (compared to B).\n",
+    high multiples then it is precision oriented (compared to B).\n\
+    Default param: -m Rprec_mult.0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.6,1.8,2.0 ...\n",
      te_init_meas_a_float_cut_float,
-     te_calc_Rprec_at,
-     te_acc_meas_a_cut_float,
-     te_calc_avg_meas_a_cut_float,
+     te_calc_Rprec_mult,
+     te_acc_meas_a_cut,
+     te_calc_avg_meas_a_cut,
      (void *) &default_Rprec_cutoffs, -1},
     {"utility",
      "    Set utility measure\n\
@@ -311,7 +335,7 @@ TREC_MEAS te_trec_measures[] = {
     The overall measure is simply a weighted sum of these values.\n\
     If p4 is non-zero, then '-N num_docs_in_coll' may also be needed - the\n\
     standard results and rel_info files do not contain that information.\n\
-    Default usage: trec_eval -m utility.1.0,-1.0,0.0,0.0 ...\n\
+    Default usage: -m utility.1.0,-1.0,0.0,0.0 ...\n\
     Warning: Current version summary evaluation averages over all topics;\n\
     it could be argued that simply summing is more useful (but not backward\n\
     compatible)\n",
@@ -320,7 +344,7 @@ TREC_MEAS te_trec_measures[] = {
      te_acc_meas_s,
      te_calc_avg_meas_s,
      (void *) &default_utility_params, -1},
-    {"11-pt_avg",
+    {"11pt_avg",
      "    Interpolated Precision averaged over 11 recall points\n\
     Obsolete, only use for comparisons of old runs; should use map instead.\n\
     Average interpolated at the given recall points - default is the\n\
@@ -332,12 +356,12 @@ TREC_MEAS te_trec_measures[] = {
     Will actually average over all parameter values given.\n\
     To get 3-pt_avg as in trec_eval version 8 and earlier, use\n\
       trec_eval -m 11-pt_avg.0.2,0.5,0.8 ...\n\
-    Default usage: trec_eval -m 11-pt_avg.0.0,.1,.2,.3,.4,.5,.6,.7,.8..9,1.0\n",
+    Default usage: -m 11-pt_avg.0.0,.1,.2,.3,.4,.5,.6,.7,.8..9,1.0\n",
      te_init_meas_s_float_p_float,
      te_calc_11ptavg,
      te_acc_meas_s,
      te_calc_avg_meas_s,
-     &default_float_cutoffs, -1},
+     &default_11ptavg_cutoffs, -1},
     {"ndcg",
      "    Normalized Discounted Cumulative Gain\n\
     Compute a traditional nDCG measure according to Jarvelin and\n\
@@ -367,8 +391,8 @@ TREC_MEAS te_trec_measures[] = {
      te_calc_ndcg_p,
      te_acc_meas_s,
      te_calc_avg_meas_s,
-     NULL, -1},
-    {"ndcg_at",
+     &default_ndcg_gains, -1},
+    {"ndcg_cut",
      "    Normalized Discounted Cumulative Gain at cutoffs.\n\
     Compute a traditional nDCG measure according to Jarvelin and\n\
     Kekalainen (ACM ToIS v. 20, pp. 422-446, 2002) at cutoffs.\n\
@@ -376,24 +400,24 @@ TREC_MEAS te_trec_measures[] = {
     Gain values are the relevance values in the qrels file.  For now, if you\n\
     want different gains, change the qrels file appropriately.\n\
     Cutoffs must be positive without duplicates\n\
-    Default usage: trec_eval -m ndcg_at.5,10,15,20,30,100,200,500,1000\n\
+    Default params: -m ndcg_cut.5,10,15,20,30,100,200,500,1000\n\
     Based on an implementation by Ian Soboroff\n",
      te_init_meas_a_float_cut_long,
-     te_calc_ndcg_at,
-     te_acc_meas_a_cut_long,
-     te_calc_avg_meas_a_cut_long,
-     (void *) &default_long_cutoffs, -1},
+     te_calc_ndcg_cut,
+     te_acc_meas_a_cut,
+     te_calc_avg_meas_a_cut,
+     (void *) &default_ndcg_cutoffs, -1},
     {"relative_P",
      "    Relative Precision at cutoffs\n\
     Precision at cutoff relative to the maximum possible precision at that\n\
     cutoff.  Equivalent to Precision up until R, and then recall after R\n\
     Cutoffs must be positive without duplicates\n\
-    Default usage: trec_eval -m relative_P.5,10,15,20,30,100,200,500,1000\n",
+    Default params: -m relative_P.5,10,15,20,30,100,200,500,1000\n",
      te_init_meas_a_float_cut_long,
      te_calc_rel_P,
-     te_acc_meas_a_cut_long,
-     te_calc_avg_meas_a_cut_long,
-     (void *) &default_long_cutoffs, -1},
+     te_acc_meas_a_cut,
+     te_calc_avg_meas_a_cut,
+     (void *) &default_relative_P_cutoffs, -1},
     {"success",
      "    Success at cutoffs\n\
     Success (a relevant doc has been retrieved) measured at various doc level\n\
@@ -405,8 +429,8 @@ TREC_MEAS te_trec_measures[] = {
     History: Developed by Stephen Tomlinson.\n",
      te_init_meas_a_float_cut_long,
      te_calc_success,
-     te_acc_meas_a_cut_long,
-     te_calc_avg_meas_a_cut_long,
+     te_acc_meas_a_cut,
+     te_calc_avg_meas_a_cut,
      (void *) &default_success_cutoffs, -1},
     {"set_P",
      "    Set Precision: num_relevant_retrieved / num_retrieved \n\
@@ -705,18 +729,63 @@ TREC_MEAS te_trec_measures[] = {
      te_acc_meas_s,
      te_calc_avg_meas_s,
      NULL, -1},
+    {"map_avgjg",
+      "    Mean Average Precision over judgment groups \n\
+    Precision measured after each relevant doc is retrieved, then averaged\n\
+    for the topic, and then averaged over judgement group (user) and then \n\
+    averaged over topics (if more than one).\n\
+    Same as the workhorse measure 'map' except if there is more than one\n\
+    set of relevance judgments for this query (each set indicated by a\n\
+    different judgment group), the score will be averaged over the judgment\n\
+    groups.\n",
+     te_init_meas_s_float,
+     te_calc_map_avgjg,
+     te_acc_meas_s,
+     te_calc_avg_meas_s,
+     NULL, -1},
+    {"P_avgjg",
+     "    Precision at cutoffs, averaged over judgment groups (users)\n\
+    Precision measured at various doc level cutoffs in the ranking.\n\
+    If the cutoff is larger than the number of docs retrieved, then\n\
+    it is assumed nonrelevant docs fill in the rest.  Eg, if a method\n\
+    retrieves 15 docs of which 4 are relevant, then P20 is 0.2 (4/20).\n\
+    If there are multiple relevance judgment sets for this query, Precision\n\
+    is averaged over the judgment groups.\n\
+    Cutoffs must be positive without duplicates\n\
+    Default param: trec_eval -m P.5,10,15,20,30,100,200,500,1000\n",
+     te_init_meas_a_float_cut_long,
+     te_calc_P_avgjg,
+     te_acc_meas_a_cut,
+     te_calc_avg_meas_a_cut,
+     (void *) &default_P_avgjg_cutoffs, -1},
+    {"Rprec_mult_avgjg",
+    "    Precision measured at multiples of R(num_rel) averged over users.\n\
+    This is an attempt to measure topics at the same multiple milestones\n\
+    in a retrieval (see explanation of R-prec), in order to determine\n\
+    whether methods are precision oriented or recall oriented.  If method A\n\
+    dominates method B at the low multiples but performs less well at the\n\
+    high multiples then it is precision oriented (compared to B).\n\
+    If there is more than one judgment group (set of evalutation judgments\n\
+    of a user), then the measure is averaged over those jgs.\n\
+    Default param: \n\
+    trec_eval -m Rprec_mult_avgjg.0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.6,1.8,2.0  ...\n",
+     te_init_meas_a_float_cut_float,
+     te_calc_Rprec_mult_avgjg,
+     te_acc_meas_a_cut,
+     te_calc_avg_meas_a_cut,
+     (void *) &default_Rprec_avgjg_cutoffs, -1},
     
 };
 int te_num_trec_measures = sizeof (te_trec_measures) / sizeof (te_trec_measures[0]);
 
 static char *off_names[] =  {
-    "num_q", "num_ret", "num_rel", "num_rel_ret", "map", "gm_ap", 
-    "R-prec", "bpref", "recip_rank", "ircl_prn", "P", NULL};
+    "num_q", "num_ret", "num_rel", "num_rel_ret", "map", "gm_map", 
+    "Rprec", "bpref", "recip_rank", "iprec_at_recall", "P", NULL};
 static char *trec_names[] =  {
-    "num_q", "num_ret", "num_rel", "num_rel_ret", "map", "gm_ap", "R-prec",
-    "bpref", "recip_rank", "ircl_prn", "P", "recall", "infAP", "gm_bpref",
-    "utility", "11-pt_avg", "ndcg", "relative_P", "R-prec-at", "success",
-    "ndcg_at", "ndcg_p",
+    "num_q", "num_ret", "num_rel", "num_rel_ret", "map", "gm_map", "Rprec",
+    "bpref", "recip_rank", "iprec_at_recall", "P", "recall", "infAP","gm_bpref",
+    "utility", "11pt_avg", "ndcg", "relative_P", "Rprec_mult", "success",
+    "ndcg_cut", "ndcg_p",
     "set_P", "set_recall", "set_relative_P", "set_map", "set_F",
     "num_nonrel_judged_ret",
     NULL};
@@ -737,7 +806,10 @@ static char *prefs_off_name[] =  {
     "prefs_num_prefs_poss", "prefs_num_prefs_ful", "prefs_num_prefs_ful_ret",
     "prefs_simp", "prefs_pair", "prefs_avgjg",
     NULL};
-
+static char *qrels_jg_names[] = {
+    "num_q",
+    "map_avgjg", "P_avgjg", "Rprec_mult_avgjg",
+    NULL};
 
 TREC_MEASURE_NICKNAMES te_trec_measure_nicknames[] = {
     {"official", off_names},
@@ -745,6 +817,7 @@ TREC_MEASURE_NICKNAMES te_trec_measure_nicknames[] = {
     {"all_trec", trec_names},
     {"all_prefs", prefs_names},
     {"prefs", prefs_off_name},
+    {"qrels_jg", qrels_jg_names},
 };
 int te_num_trec_measure_nicknames =
     sizeof (te_trec_measure_nicknames) / sizeof (te_trec_measure_nicknames[0]);

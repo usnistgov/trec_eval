@@ -1,3 +1,9 @@
+/* 
+   Copyright (c) 2008 - Chris Buckley. 
+
+   Permission is granted for use and modification of this file for
+   research, non-commercial purposes. 
+*/
 static char *VersionID = VERSIONID;
 
 static char *help_message = 
@@ -114,11 +120,14 @@ extern long te_num_rel_info_format;
 extern REL_INFO_FILE_FORMAT te_rel_info_format[];
 extern long te_num_results_format;
 extern RESULTS_FILE_FORMAT te_results_format[];
+extern long te_num_form_inter_procs;
+extern RESULTS_FILE_FORMAT te_form_inter_procs[];
 
 static int mark_measure (EPI *epi, char *optarg);
 static int trec_eval_help(EPI *epi);
 static void get_debug_level_query (EPI *epi, char *optarg);
 static void print_measures (TREC_EVAL *eval, long summary_flag);
+static int cleanup (EPI *epi, TREC_EVAL *eval);
 
 
 int
@@ -159,8 +168,10 @@ char *argv[];
     epi.max_num_docs_per_topic = MAXLONG;
     epi.rel_info_format = "qrels";
     epi.results_format = "trec_results";
-    epi.meas_arg = NULL;
-
+    if (NULL == (epi.meas_arg = Malloc (argc+1, MEAS_ARG)))
+	exit (1);
+    epi.meas_arg[0].measure_name = NULL;
+    
     /* Get command line options */
     while (1) {
 	int option_index = 0;
@@ -407,6 +418,15 @@ char *argv[];
 	exit (10);
     }
 
+
+    if (UNDEF == cleanup (&epi, &accum_eval)) {
+	fprintf (stderr,"trec_eval: cleanup failed\n");
+	exit (10);
+    }
+    Free (q_eval.values);
+    Free (accum_eval.values);
+    Free (epi.meas_arg);
+
     exit (0);
 }
 
@@ -416,14 +436,14 @@ print_measures (TREC_EVAL *eval, long summary_flag)
     long i;
     for (i = 0; i < eval->num_values; i++) {
 	if (summary_flag) {
-	    if (TE_MVALUE_NO_PRINT_SUMMARY & eval->values[i].print_flags)
+	    if (TE_MVALUE_NO_PRINT_SUMMARY & eval->values[i].print_clean_flags)
 		continue;
 	}
 	else {
-	    if (TE_MVALUE_NO_PRINT_Q & eval->values[i].print_flags)
+	    if (TE_MVALUE_NO_PRINT_Q & eval->values[i].print_clean_flags)
 		continue;
 	}
-	if (TE_MVALUE_PRINT_LONG & eval->values[i].print_flags)
+	if (TE_MVALUE_PRINT_LONG & eval->values[i].print_clean_flags)
 	    printf ("%-22s\t%s\t%ld\n",
 		    eval->values[i].name, eval->qid,
 		    (long) eval->values[i].value);
@@ -433,21 +453,14 @@ print_measures (TREC_EVAL *eval, long summary_flag)
     }
 }
 
-#define INIT_NUM_MEAS_ARG 5
-static long max_num_meas_arg = 0; /* Number of epi.meas_arg space reserved for*/
-
 static int 
 add_meas_arg_info (EPI *epi, char *meas, char *param)
 {
     long i;
 
-    /* Ensure space for new arg */
-    if (0 == max_num_meas_arg) {
-	if (NULL == (epi->meas_arg = Malloc (INIT_NUM_MEAS_ARG, MEAS_ARG)))
-	    return (UNDEF);
-	max_num_meas_arg = INIT_NUM_MEAS_ARG;
-	epi->meas_arg[0].measure_name = NULL;
-    }
+    /* Guaranteed space since malloc'd argc+1 entries and can't be more
+       than one entry per command line argument */
+
     /* Find non-NULL entry */
     i = 0;
     while (epi->meas_arg[i].measure_name) i++;
@@ -461,15 +474,6 @@ add_meas_arg_info (EPI *epi, char *meas, char *param)
 	fprintf (stderr, "trec_eval: improper measure in parameter '%s'\n",
 		 epi->meas_arg[i].measure_name);
 	return (UNDEF);
-    }
-
-    if (i+1 == max_num_meas_arg) {
-	/* Need to add space for at least the sentinel */
-	if (NULL == (epi->meas_arg = Realloc (epi->meas_arg,
-					   max_num_meas_arg + INIT_NUM_MEAS_ARG,
-					      MEAS_ARG)))
-	    return (UNDEF);
-	max_num_meas_arg += INIT_NUM_MEAS_ARG;
     }
 
     epi->meas_arg[i+1].measure_name = NULL;
@@ -577,4 +581,51 @@ get_debug_level_query ( EPI *epi, char *optarg)
 	epi->debug_query = ptr;
     }
     epi->debug_level = atol (optarg);
+}
+
+static int
+cleanup (EPI *epi, TREC_EVAL *eval)
+{
+    long i;
+
+    for (i = 0; i < te_num_trec_measures; i++) {
+	if (MEASURE_REQUESTED(te_trec_measures[i]) &&
+	    (TE_MVALUE_CLEAN_PARAM &
+	     eval->values[te_trec_measures[i].eval_index].print_clean_flags)) {
+	    Free (te_trec_measures[i].meas_params->param_values);
+	    if (te_trec_measures[i].meas_params->printable_params)
+		Free (te_trec_measures[i].meas_params->printable_params);
+	}
+    }
+    for (i = 0; i < eval->num_values; i++) {
+	if (TE_MVALUE_CLEAN_NAME & eval->values[i].print_clean_flags)
+	    Free (eval->values[i].name);
+    }
+
+    for (i = 0; i < te_num_rel_info_format; i++) {
+	if (0 == strcmp (epi->rel_info_format, te_rel_info_format[i].name)) {
+	    if (UNDEF == te_rel_info_format[i].cleanup()) {
+		fprintf (stderr, "trec_eval: cleanup failed\n");
+		return (UNDEF);
+	    }
+	    break;
+	}
+    }
+    for (i = 0; i < te_num_results_format; i++) {
+	if (0 == strcmp (epi->results_format, te_results_format[i].name)) {
+	    if (UNDEF == te_results_format[i].cleanup ()) {
+		fprintf (stderr, "trec_eval: cleanup failed\n");
+		return (UNDEF);
+
+	    }
+	    break;
+	}
+    }
+    for (i = 0; i < te_num_form_inter_procs; i++) {
+	if (UNDEF == te_form_inter_procs[i].cleanup ()) {
+	    fprintf (stderr, "trec_eval: cleanup failed\n");
+	    return (UNDEF);
+	}
+    }
+    return (1);
 }

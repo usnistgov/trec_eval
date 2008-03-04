@@ -1,8 +1,8 @@
-#ifdef RCSID
-static char rcsid[] = "$Header: /home/smart/release/src/libevaluate/trvec_trec_eval.c,v 11.0 1992/07/21 18:20:35 chrisb Exp chrisb $";
-#endif
+/* 
+   Copyright (c) 2008 - Chris Buckley. 
 
-/* Copyright (c) 2008
+   Permission is granted for use and modification of this file for
+   research, non-commercial purposes. 
 */
 
 #include "common.h"
@@ -32,18 +32,18 @@ int
 te_calc_map (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
 	     const TREC_MEAS *tm, TREC_EVAL *eval)
 {
-    RANK_REL rank_rel;
+    RES_RELS res_rels;
     double sum;
     long rel_so_far;
     long i;
 
-    if (UNDEF == form_ordered_rel (epi, rel_info, results, &rank_rel))
+    if (UNDEF == te_form_res_rels (epi, rel_info, results, &res_rels))
 	return (UNDEF);
 
     rel_so_far = 0;
     sum = 0.0;
-    for (i = 0; i < rank_rel.num_ret; i++) {
-	if (rank_rel.results_rel_list[i] >= epi->relevance_level) {
+    for (i = 0; i < res_rels.num_ret; i++) {
+	if (res_rels.results_rel_list[i] >= epi->relevance_level) {
 	    rel_so_far++;
 	    sum += (double) rel_so_far / (double) (i + 1);
 	}
@@ -51,7 +51,7 @@ te_calc_map (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
     /* Average over the rel docs */
     if (rel_so_far) {
 	eval->values[tm->eval_index].value = 
-	    sum / (double) rank_rel.num_rel;
+	    sum / (double) res_rels.num_rel;
     }
     return (1);
 }

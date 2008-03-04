@@ -11,19 +11,18 @@
 #include "functions.h"
 #include "trec_format.h"
 
-/*     "    Main binary preference measure.\n\
-    Fraction of the top R nonrelevant docs that are retrieved after each\n\
-    relevant doc. Put another way: when looking at the R relevant docs, and\n\
-    the top R nonrelevant docs, if all relevant docs are to be preferred to\n\
-    nonrelevant docs, bpref is the fraction of the preferences that the\n\
-    ranking preserves\n\
-    Cite: 'Retrieval Evaluation with Incomplete Information', Chris Buckley\n\
-    and Ellen Voorhees. In Proceedings of 27th SIGIR, 2004.\n",
+/*      "   Binary preference (bpref), but using goemetric mean over topics\n\
+    See the explanation for 'bpref' for the base measure for a single topic.\n\
+    Gm_bpref uses the geometric mean to combine the single topic scores.\n\
+    This rewards methods that are more consistent across topics as opposed to\n\
+    high scores for some topics and low scores for others.\n\
+    Gm_bpref is printed only as a summary measure across topics, not for the\n\
+    individual topics.\n",
 */
 
 int 
-te_calc_bpref (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
-	       const TREC_MEAS *tm, TREC_EVAL *eval)
+te_calc_gm_bpref (const EPI *epi, const REL_INFO *rel_info,
+		  const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval)
 {
     RES_RELS res_rels;
     long j;
@@ -75,6 +74,16 @@ te_calc_bpref (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
     if (res_rels.num_rel)
 	bpref /= res_rels.num_rel;
 
-    eval->values[tm->eval_index].value = bpref;
+    /* Original measure value is constrained to be greater than
+       MIN_GEO_MEAN (for time being .00001, since trec_eval prints to
+       four significant digits) */
+    eval->values[tm->eval_index].value =
+	(double) log ((double)(MAX (bpref, MIN_GEO_MEAN)));
+
+    if (epi->debug_level > 1)
+	printf ("gm_bpref: bpref %6.4f, gm_bpref %6.4f",
+		bpref,     eval->values[tm->eval_index].value);
+
+  
     return (1);
 }
