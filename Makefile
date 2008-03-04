@@ -1,33 +1,40 @@
-BIN = /home/smart/bin
+BIN = /usr/local/bin
 H   = .
 
-VERSIONID = 8.1
+VERSIONID = 9.0alpha.1
 
 # gcc
 CC       = gcc
+CFLAGS   = -g -I$H  -Wall -DMDEBUG -DVERSIONID=\"$(VERSIONID)\"
 CFLAGS   = -g -I$H -O3 -Wall -DVERSIONID=\"$(VERSIONID)\"
 CFLAGS   = -g -I$H  -Wall -DVERSIONID=\"$(VERSIONID)\"
-
-# cc
-###CC       = cc
-###CFLAGS   = -I$H -g -DVERSIONID=\"$(VERSIONID)\"
 
 # Other macros used in some or all makefiles
 INSTALL = /bin/mv
 
+TOP_SRCS = trec_eval.c formats.c meas_init.c meas_acc.c meas_avg.c 
 
-OBJS = trec_eval.o get_qrels.o get_top.o form_trvec.o measures.o print_meas.o\
-	trvec_teval.o buf_util.o error_msgs.o \
-       trec_eval_help.o
+FORMAT_SRCS = get_qrels.c get_trec_results.c get_prefs.c get_qrels_prefs.c \
+           form_ordered_rel.c form_prefs_counts.c utility_pool.c
 
+MEAS_SRCS =  measures.c  m_map.c m_P.c m_num_q.c m_num_ret.c m_num_rel.c \
+        m_num_rel_ret.c m_gm_ap.c m_Rprec.c m_recip_rank.c m_bpref.c \
+	m_ircl_prn.c m_recall.c m_R-prec-at.c m_utility.c m_11-pt_avg.c \
+        m_ndcg.c m_ndcg_at.c m_ndcg_p.c m_rel_P.c m_success.c \
+        m_set_P.c m_set_recall.c m_set_rel_P.c \
+	m_set_map.c m_set_F.c m_num_nonrel_judged_ret.c \
+	m_prefs_num_prefs_poss.c m_prefs_num_prefs_ful.c \
+        m_prefs_num_prefs_ful_ret.c\
+	m_prefs_simp.c m_prefs_pair.c m_prefs_avgjg.c m_prefs_avgjg_Rnonrel.c \
+	m_prefs_simp_ret.c m_prefs_pair_ret.c m_prefs_avgjg_ret.c\
+        m_prefs_avgjg_Rnonrel_ret.c \
+	m_prefs_simp_imp.c m_prefs_pair_imp.c m_prefs_avgjg_imp.c\
 
-SRCS = trec_eval.c get_qrels.c get_top.c form_trvec.c measures.c print_meas.c\
-       trvec_teval.c buf_util.c error_msgs.c \
-       trec_eval_help.c
+SRCS = $(TOP_SRCS) $(FORMAT_SRCS) $(MEAS_SRCS)
 
-SRCH = common.h trec_eval.h smart_error.h sysfunc.h tr_vec.h buf.h
+SRCH = common.h trec_eval.h sysfunc.h functions.h trec_format.h
 
-SRCOTHER = README Makefile test bpref_bug Changelog
+SRCOTHER = README Makefile test bpref_bug
 
 trec_eval: $(SRCS) Makefile $(SRCH)
 	$(CC) $(CFLAGS)  -o trec_eval $(SRCS) -lm
@@ -36,21 +43,26 @@ install: $(BIN)/trec_eval
 
 quicktest: trec_eval
 	./trec_eval test/qrels.test test/results.test | diff - test/out.test
-	./trec_eval -a test/qrels.test test/results.test | diff - test/out.test.a
-	./trec_eval -a -q test/qrels.test test/results.test | diff - test/out.test.aq
-	./trec_eval -a -q -c test/qrels.test test/results.trunc | diff - test/out.test.aqc
-	./trec_eval -a -q -c -M100 test/qrels.test test/results.trunc | diff - test/out.test.aqcM
-	./trec_eval -a -q -l2 test/qrels.rel_level test/results.test | diff - test/out.test.aql
+	./trec_eval -m all_trec test/qrels.test test/results.test | diff - test/out.test.a
+	./trec_eval -m all_trec -q test/qrels.test test/results.test | diff - test/out.test.aq
+	./trec_eval -m all_trec -q -c test/qrels.test test/results.trunc | diff - test/out.test.aqc
+	./trec_eval -m all_trec -q -c -M100 test/qrels.test test/results.trunc | diff - test/out.test.aqcM
+	./trec_eval -m all_trec -q -l2 test/qrels.rel_level test/results.test | diff - test/out.test.aql
+	./trec_eval -m all_prefs -q -R prefs test/prefs.test test/prefs.results.test | diff - test/out.test.prefs
+	./trec_eval -m all_prefs -q -R qrels_prefs test/qrels.test test/results.test | diff - test/out.test.qrels_prefs
+
 	/bin/echo "Test succeeeded"
 
 longtest: trec_eval
 	/bin/rm -rf test.long; mkdir test.long
 	./trec_eval test/qrels.test test/results.test > test.long/out.test
-	./trec_eval -a test/qrels.test test/results.test > test.long/out.test.a
-	./trec_eval -a -q test/qrels.test test/results.test > test.long/out.test.aq
-	./trec_eval -a -q -c test/qrels.test test/results.trunc > test.long/out.test.aqc
-	./trec_eval -a -q -c -M100 test/qrels.test test/results.trunc > test.long/out.test.aqcM
-	./trec_eval -a -q -l2 test/qrels.rel_level test/results.test > test.long/out.test.aql
+	./trec_eval -m all_trec test/qrels.test test/results.test > test.long/out.test.a
+	./trec_eval -m all_trec -q test/qrels.test test/results.test > test.long/out.test.aq
+	./trec_eval -m all_trec -q -c test/qrels.test test/results.trunc > test.long/out.test.aqc
+	./trec_eval -m all_trec -q -c -M100 test/qrels.test test/results.trunc > test.long/out.test.aqcM
+	./trec_eval -m all_trec -q -l2 test/qrels.rel_level test/results.test > test.long/out.test.aql
+	./trec_eval -m all_prefs -q -R prefs test/prefs.test test/prefs.results.test > test.long/out.test.prefs
+	./trec_eval -m all_prefs -q -R qrels_prefs test/qrels.test test/results.test > test.long/out.test.qrels_prefs
 	diff test.long test
 
 $(BIN)/trec_eval: trec_eval
@@ -75,9 +87,6 @@ tar:
 	cp -rp $(SRCOTHER) $(SRCS) $(SRCH) trec_eval.$(VERSIONID)
 	tar cf - ./trec_eval.$(VERSIONID) > trec_eval.$(VERSIONID).tar
 
-lint:
-	lint $(SRCS)
-
 #########################################################################
 # Determining program dependencies                                      #
 #########################################################################
@@ -101,46 +110,6 @@ depend:
 	echo '# see make depend above' >> Makefile
 
 # DO NOT DELETE THIS LINE -- make depend uses it
-
-buf_util.o: ./common.h
-buf_util.o: ./sysfunc.h
-buf_util.o: ./buf.h
-error_msgs.o: ./smart_error.h
-error_msgs.o: ./sysfunc.h
-form_trvec.o: ./common.h
-form_trvec.o: ./sysfunc.h
-form_trvec.o: ./smart_error.h
-form_trvec.o: ./tr_vec.h
-form_trvec.o: ./trec_eval.h
-form_trvec.o: ./buf.h
-get_qrels.o: ./common.h
-get_qrels.o: ./sysfunc.h
-get_qrels.o: ./smart_error.h
-get_qrels.o: ./trec_eval.h
-get_top.o: ./common.h
-get_top.o: ./sysfunc.h
-get_top.o: ./smart_error.h
-get_top.o: ./trec_eval.h
-measures.o: ./common.h
-measures.o: ./sysfunc.h
-measures.o: ./buf.h
-measures.o: ./trec_eval.h
-print_meas.o: ./common.h
-print_meas.o: ./sysfunc.h
-print_meas.o: ./buf.h
-print_meas.o: ./trec_eval.h
-trec_eval.o: ./common.h
-trec_eval.o: ./sysfunc.h
-trec_eval.o: ./smart_error.h
-trec_eval.o: ./tr_vec.h
-trec_eval.o: ./trec_eval.h
-trec_eval.o: ./buf.h
-trec_eval_help.o: ./common.h
-trvec_teval.o: ./common.h
-trvec_teval.o: ./sysfunc.h
-trvec_teval.o: ./smart_error.h
-trvec_teval.o: ./tr_vec.h
-trvec_teval.o: ./trec_eval.h
 # DEPENDENCIES MUST END AT END OF FILE
 # IF YOU PUT STUFF HERE IT WILL GO AWAY
 # see make depend above

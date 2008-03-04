@@ -1,0 +1,9 @@
+#!/bin/tcsh
+
+# quick script to copy a standard retrieval ranking to every query
+# found in prefs.test.  Makes it easy to add more examples to prefs.test.
+set qids = (`gawk '{print $1}' prefs.test | sort -u -n`)
+cp /dev/null prefs.results.test
+foreach q ($qids)
+	gawk '{print q, $0}' q=$q prefs.rank20 >> prefs.results.test
+end
