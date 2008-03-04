@@ -483,6 +483,7 @@ TREC_QRELS *qrels;
     double int_precis;         /* current interpolated precision values */
     double ideal_dcg;          /* ideal discounted cumulative gain */
     double gain;
+    long rel;
 
     long i,j;
     long rel_so_far;
@@ -521,13 +522,16 @@ TREC_QRELS *qrels;
             eval->int_av_R_precis += int_precis;
         }
 
-        if (tr_vec->tr[j-1].rel >= epi->relevance_level) {
+	rel = tr_vec->tr[j-1].rel;
+        if (rel >= epi->relevance_level) {
             eval->int_av_recall_precis += int_precis;
             eval->av_recall_precis += precis;
             eval->avg_doc_prec += precis;
-	    /* Currently, NDCG gains are the rel value.
-	       To do: user-specified gains on the command line. */
-	    gain = tr_vec->tr[j-1].rel;
+
+	    if (rel > epi->max_gains)
+		gain = 0;
+	    else
+		gain = epi->gain[rel];
 	    if (gain > 0) {
 		if (j > 1)
 		    eval->norm_disc_cum_gain += gain / log2(j);
@@ -567,23 +571,27 @@ TREC_QRELS *qrels;
     cur_lvl = qrels->max_num_rel_levels;
     lvl_count = 0;
     for (j = 0; j < epi->max_num_docs_per_topic; j++) {
-	lvl_count++;
-	while (lvl_count > qrels->rel_count[cur_lvl]) {
+	while (lvl_count == 0 && cur_lvl > 0) {
 	    cur_lvl--;
-	    lvl_count = 1;
-	    if (cur_lvl == 0)
-		break;
+	    lvl_count = qrels->rel_count[epi->gain_order[cur_lvl]];
 	}
 	if (cur_lvl == 0)
 	    break;
-	gain = cur_lvl;
+	lvl_count--;
+
+	if (epi->gain_order[cur_lvl] < epi->relevance_level)
+	    gain = 0;
+	else
+	    gain = epi->gain[epi->gain_order[cur_lvl]];
+	
 	if (j == 0)
 	    ideal_dcg += gain;
 	else
 	    ideal_dcg += gain / log2(j + 1);
-	/* printf("%ld %ld %3.1f %6.4f\n", j, cur_lvl, gain, ideal_dcg); */
+	/* printf("%ld %ld %3.1f %6.4f\n", j, epi->gain_order[cur_lvl], gain, ideal_dcg); */
     }
-	
+    /* printf("QID %s %6.4f %6.4f\n", qrels->qid, eval->norm_disc_cum_gain,
+       ideal_dcg); */
 
     /* Calculate all the other averages */
     if (eval->num_rel_ret > 0) {

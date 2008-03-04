@@ -28,6 +28,9 @@ typedef struct {
 				     which a doc is considered relevant for
 				     this evaluation */
     long max_num_docs_per_topic;  /* MAXLONG. evaluate only this many docs */
+    long max_gains;               /* INIT_NUM_REL_LEVELS. */
+    double *gain;                 /* Gain values to use for NDCG */
+    long *gain_order;             /* Lookup for increasing order of gains */
 } EVAL_PARAM_INFO;
 
 /* Measure characteristics (how to print them, average them). */

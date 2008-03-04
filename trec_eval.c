@@ -43,6 +43,9 @@ static char *VersionID = VERSIONID;
  *7 -ud<num>: Value to use for 'd' coefficient of utility computation.
  *7 -N<num>: Number of docs in collection
  *7 -M<num>:Max number of results to evaluate per topic
+ *7 -G<lvl>=<num>,<lvl>=<num>...: Gain values for NDCG computation.  lvl
+ *7     is a relevance level, num is a floating-point gain value.  Default
+ *7     gain for any level is the level value itself.
 
  *8 Procedure is to read all the docs retrieved for a query, and all the
  *8 relevant docs for that query,
@@ -64,6 +67,7 @@ static char *VersionID = VERSIONID;
 void print_error();
 void old_print_trec_eval_list();
 void print_rel_trec_eval_list();
+static int gain_map();
 
 int trec_eval_help(EVAL_PARAM_INFO *epi);
 int accumulate_results (TREC_EVAL *query_eval, TREC_EVAL *accum_eval);
@@ -95,6 +99,9 @@ char *argv[];
     long num_rel;
     long num_eval_q;
     long i,j;
+    char *c;
+    long lvl;
+    double gain;
     EVAL_PARAM_INFO epi;
 
     /* Initialize static info before getting program optional args */
@@ -106,6 +113,11 @@ char *argv[];
     epi.num_docs_in_coll = 0;
     epi.relevance_level = 1;
     epi.max_num_docs_per_topic = MAXLONG;
+    epi.max_gains = INIT_NUM_REL_LEVELS;
+    epi.gain = Malloc(INIT_NUM_REL_LEVELS, double);
+
+    for (i = 0; i < INIT_NUM_REL_LEVELS; i++)
+	epi.gain[i] = i;
 
     /* Should use getopts, but some people may not have it. */
     /* This keeps growing over the years.  Should redo */
@@ -153,6 +165,33 @@ char *argv[];
 	}
         else if (argv[1][1] == 'T')
             epi.time_flag++;
+	else if (argv[1][1] == 'G') {
+	    c = &argv[1][2];
+	    while (*c != '\0') {
+		lvl = atoi(c);
+		if (lvl < 0) {
+		    (void) fputs (usage,stderr);
+		    exit (1);
+		}
+		while (*c != '=' && *c != '\0')
+		    c++;
+		if (*c != '=') {
+		    (void) fputs (usage,stderr);
+		    exit (1);
+		}
+		c++;
+		gain = atof(c);
+		if (lvl >= epi.max_gains) {
+		    epi.max_gains *= 2;
+		    epi.gain = Realloc(epi.gain, epi.max_gains, double);
+		}
+		epi.gain[lvl] = gain;
+		while (*c != ',' && *c != '\0')
+		    c++;
+		if (*c == ',')
+		    c++;
+	    }
+	}
         else {
             (void) fputs (usage,stderr);
             exit (1);
@@ -160,11 +199,18 @@ char *argv[];
         argc--; argv++;
     }
 
+    /* Make a mapping of the NDCG gain values in increasing order.
+       This is used in computing the ideal gain vector. */
+    epi.gain_order = Malloc(epi.max_gains, long);
+    for (i = 0; i < epi.max_gains; i++)
+	epi.gain_order[i] = i;
+    qsort_r(epi.gain_order, epi.max_gains, sizeof(long), &epi, gain_map);
+
     if (argc != 3) {
         (void) fputs (usage,stderr);
         exit (1);
     }
-
+    
     trec_rel_file = argv[1];
     trec_top_file = argv[2];
 
@@ -256,4 +302,18 @@ char *argv[];
 	old_print_trec_eval_list (&epi, &accum_eval, 1, (SM_BUF *) NULL);
 
     exit (0);
+}
+
+static int
+gain_map (epi, ptr1, ptr2)
+EVAL_PARAM_INFO *epi;
+const long *ptr1;
+const long *ptr2;
+{
+    if (epi->gain[*ptr1] < epi->gain[*ptr2])
+	return -1;
+    else if (epi->gain[*ptr1] > epi->gain[*ptr2])
+	return 1;
+    else
+	return 0;
 }

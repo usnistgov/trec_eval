@@ -6,8 +6,9 @@ Current state:
 - We compute a traditional nDCG measure according to Jarvelin and
   Kekalainen (ACM ToIS v. 20, pp. 422-446, 2002).
 
-- Gain values are the relevance values in the qrels file.  If you want
-  different gains, mod your qrels file.
+- Gain values default to the relevance values in the qrels file.  If
+  you want different gains, use the -G command line option to specify
+  them.
 
 - ndcg is reported as a short-output measure, to aid debugging.
 
@@ -19,12 +20,12 @@ calc_average_measures.  To further clean things up, num_rel and
 num_nonrel should be expunged, qrels passed around, and values
 computed where they're needed.
 
-2. currently, the gain value is the relevance judgment number.  The
+DONE 2. currently, the gain value is the relevance judgment number.  The
 user should be able to specify them on the command line.
 
 I think the notation should be -G<rel>=<gain>,<rel>=<gain>,...
 
-3. This exposes a bug in the computation of ideal DCG, which is that
+DONE 3. This exposes a bug in the computation of ideal DCG, which is that
 the gain values may not be decreasing in order of the judgment
 levels.  The ideal ranked list is where documents are retrieved in
 order of decreasing gain, which may not be in decreasing order of
