@@ -40,6 +40,7 @@ prefs_avgjg_Rnonrel_ret	303	0.0209
 prefs_simp_imp        	303	0.9384
 prefs_pair_imp        	303	0.9384
 prefs_avgjg_imp       	303	0.9384
+runid                 	all	STANDARD
 num_q                 	all	3
 prefs_num_prefs_poss  	all	669704
 prefs_num_prefs_ful   	all	137600

@@ -9,21 +9,37 @@
 #include "trec_eval.h"
 #include "functions.h"
 #include "trec_format.h"
-
 double log2(double x);
 
-/* From implementation by Ian Soboroff */
-/* ndcg at document cutoffs */
-/*     "    Normalized Discounted Cumulative Gain at cutoffs.\n\
+static int 
+te_calc_ndcg_cut (const EPI *epi, const REL_INFO *rel_info,
+		  const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval);
+static long long_cutoff_array[] = {5, 10, 15, 20, 30, 100, 200, 500, 1000};
+static PARAMS default_ndcg_cutoffs = {
+    NULL, sizeof (long_cutoff_array) / sizeof (long_cutoff_array[0]),
+    &long_cutoff_array[0]};
+
+/* See trec_eval.h for definition of TREC_MEAS */
+TREC_MEAS te_meas_ndcg_cut =
+    {"ndcg_cut",
+     "    Normalized Discounted Cumulative Gain at cutoffs.\n\
     Compute a traditional nDCG measure according to Jarvelin and\n\
     Kekalainen (ACM ToIS v. 20, pp. 422-446, 2002) at cutoffs.\n\
+    See comments for ndcg.\n\
     Gain values are the relevance values in the qrels file.  For now, if you\n\
     want different gains, change the qrels file appropriately.\n\
     Cutoffs must be positive without duplicates\n\
-    Default params: -m ndcg_cut.5,10,15,20,30,100,200,500,1000\n"
-*/
+    Default params: -m ndcg_cut.5,10,15,20,30,100,200,500,1000\n\
+    Based on an implementation by Ian Soboroff\n",
+     te_init_meas_a_float_cut_long,
+     te_calc_ndcg_cut,
+     te_acc_meas_a_cut,
+     te_calc_avg_meas_a_cut,
+     te_print_single_meas_a_cut,
+     te_print_final_meas_a_cut,
+     (void *) &default_ndcg_cutoffs, -1};
 
-int 
+static int 
 te_calc_ndcg_cut (const EPI *epi, const REL_INFO *rel_info,
 		  const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval)
 {

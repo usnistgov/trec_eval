@@ -11,15 +11,32 @@
 #include "functions.h"
 #include "trec_format.h"
 
-/* Average over doc pairs of preference ratio for that pair.
-   If a doc pair satisfies 3 preferences but fails 2 preferences (preferences
-   from 5 different users),  then the score for doc pair is 3/5.
-   Same as prefs_simp if there are no doc_pairs in multiple judgment groups.
-   For doc pref A>B, includes implied preferences (only one of A or B
-   retrieved), but ignores pair if neither A nor B retrieved.
-*/
+static int 
+te_calc_prefs_pair_imp (const EPI *epi, const REL_INFO *rel_info,
+			const RESULTS *results, const TREC_MEAS *tm,
+			TREC_EVAL *eval);
 
-int 
+/* See trec_eval.h for definition of TREC_MEAS */
+TREC_MEAS te_meas_prefs_pair_imp =
+    {"prefs_pair_imp",
+     "   Average over doc pairs of preference ratio for that pair.\n\
+    If a doc pair satisfies 3 preferences but fails 2 preferences (preferences\n\
+    from 5 different users),  then the score for doc pair is 3/5.\n\
+    Same as prefs_simp if there are no doc_pairs in multiple judgment groups.\n\
+    For doc pref A>B, this includes implied preferences (only one of A or B\n\
+    retrieved), but ignores pair if neither A nor B retrieved.\n\
+    pref_*_imp measures don't have any preferred applications that I know of,\n\
+    but some people like them.\n\
+    Assumes '-R prefs' or '-R qrels_prefs'\n",
+     te_init_meas_s_float,
+     te_calc_prefs_pair_imp,
+     te_acc_meas_s,
+     te_calc_avg_meas_s,
+     te_print_single_meas_s_float,
+     te_print_final_meas_s_float,
+     NULL, -1};
+
+static int 
 te_calc_prefs_pair_imp (const EPI *epi, const REL_INFO *rel_info,
 			const RESULTS *results, const TREC_MEAS *tm,
 			TREC_EVAL *eval)

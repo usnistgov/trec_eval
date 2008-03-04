@@ -11,33 +11,48 @@
 #include "functions.h"
 #include "trec_format.h"
 
-/* Ratio of preferences fulfilled to preferences possible within a
-   judgment group, averaged over jgs, except that the number of
-   nonrelevant retrieved docs (rel_level == 0.0) in each jg is set to
-   R, the number of relevant retrieved docs (rel_level > 0.0) in that jg.
+static int 
+te_calc_prefs_avgjg_Rnonrel (const EPI *epi, const REL_INFO *rel_info,
+			     const RESULTS *results, const TREC_MEAS *tm,
+			     TREC_EVAL *eval);
 
-   This addresses the general problem that the number of
-   nonrelevant docs judged for a topic can be critical to fair
-   evaluation - adding a couple of hundred preferences involving
-   nonrelevant docs (out of the possibly millions in a collection) can
-   both change the importance of the topic when averaging and even
-   change whether system A scores better than system B (even given
-   identical retrieval on the added nonrel docs).
-   
-   This measure conceptually sets the number of nonrelevant retrieved
-   docs of a jg to R. If the actual number, N, is less than R, then R
-   * (R-N) fulfilled preferences are added.  If N is greater than R,
-   then only the first R (rank order) docs in the single ec with
-   rel_level = 0.0 are used and the number of preferences are
-   recalculated.  
-   For doc pref A>B, this includes implied preferences (only one of A or B
-   retrieved), and counts as failure if neither A nor B retrieved.
- */
+/* See trec_eval.h for definition of TREC_MEAS */
+TREC_MEAS te_meas_prefs_avgjg_Rnonrel =
+    {"prefs_avgjg_Rnonrel",
+     "    Ratio of preferences fulfilled to preferences possible within a\n\
+    judgment group, averaged over jgs, except that the number of\n\
+    nonrelevant retrieved docs (rel_level == 0.0) in each jg is set to\n\
+    R, the number of relevant retrieved docs (rel_level > 0.0) in that jg.\n\
+    \n\
+    This addresses the general problem that the number of\n\
+    nonrelevant docs judged for a topic can be critical to fair\n\
+    evaluation - adding a couple of hundred preferences involving\n\
+    nonrelevant docs (out of the possibly millions in a collection) can\n\
+    both change the importance of the topic when averaging and even\n\
+    change whether system A scores better than system B (even given\n\
+    identical retrieval on the added nonrel docs).\n\
+    \n\
+    This measure conceptually sets the number of nonrelevant retrieved\n\
+    docs of a jg to R. If the actual number, N, is less than R, then R\n\
+    * (R-N) fulfilled preferences are added.  If N is greater than R,\n\
+    then only the first R (rank order) docs in the single ec with\n\
+    rel_level = 0.0 are used and the number of preferences are\n\
+    recalculated.  \n\
+    If there is a single jg with two equivalence classes (one of them 0.0), \n\
+    then prefs_avgjg_Rnonrel is akin to the ranked measure bpref.\n\
+    Assumes '-R prefs' or '-R qrels_prefs'\n",
+     te_init_meas_s_float,
+     te_calc_prefs_avgjg_Rnonrel,
+     te_acc_meas_s,
+     te_calc_avg_meas_s,
+     te_print_single_meas_s_float,
+     te_print_final_meas_s_float,
+     NULL, -1};
 
 static void recalculate (const JG *jg, const long num_judged_ret,
 			 long *ret_num_ful, long *ret_num_poss);
 
-int 
+static int 
 te_calc_prefs_avgjg_Rnonrel (const EPI *epi, const REL_INFO *rel_info,
 			     const RESULTS *results, const TREC_MEAS *tm,
 			     TREC_EVAL *eval)

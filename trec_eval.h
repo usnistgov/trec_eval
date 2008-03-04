@@ -55,18 +55,8 @@ typedef struct {
     char *name;                    /* Full measure name for a trec_eval value.
 				      This includes root measure name, plus
 				      any changes due to cutoffs, parameters */
-    long print_clean_flags;        /* Any print or cleanup flags.  See below */
     double value;                  /* Actual value */
 } TREC_EVAL_VALUE;
-
-/* Print Flags.  Gives long vs double, and whether to print for query or
-   summary. */
-#define TE_MVALUE_PRINT_LONG       1
-#define TE_MVALUE_NO_PRINT_Q       2
-#define TE_MVALUE_NO_PRINT_SUMMARY 4
-/* Cleanup Flags. */
-#define TE_MVALUE_CLEAN_NAME       64
-#define TE_MVALUE_CLEAN_PARAM     128
 
 /* Evaluation values being calculated */
 typedef struct {
@@ -74,9 +64,10 @@ typedef struct {
     long num_queries;               /* Number of queries for this eval */
     long num_orig_queries;          /* Number of queries for this eval without
                                        missing values, if using trec_eval -c */
-    TREC_EVAL_VALUE *values;       /* Actual measures and their values */
+    TREC_EVAL_VALUE *values;        /* Actual measures and their values */
     long num_values;                /* Number of individual measures */
-    long max_num_values;            /* Max number of measures space for */
+    long max_num_values;            /* Private: Max number of measures space
+				       is reserved for */
 } TREC_EVAL;
 
 
@@ -84,7 +75,9 @@ typedef struct {
    trec_meas.meas_params */
 typedef struct {
     char *printable_params;       /* Desired printable non-default version of 
-				     params (assumed malloc'd) */
+				     params (assumed malloc'd;  If non-NULL
+				     then this and eval->values.name must be
+				     free'd in measure cleanup */
     long num_params;
     void *param_values;
 } PARAMS;
@@ -102,13 +95,13 @@ typedef struct {
       TEXT_QRELS_INFO if rel_info->rel_type is "qrels". */
 typedef struct {
     char *qid;                      /* query id */
+    char *run_id;                   /* run id */
     char * ret_format;              /* format of retranked data.
 				       eg, "trec_results" */
     void *q_results;               /* retrieval ranking for this qid */
 } RESULTS;
 
 typedef struct {                    /* Overall retrieved results */
-    char *run_id;                   /* run id */
     long num_q_results;            /* Number of RESULTS queries */
     long max_num_q_results;        /* Num queries space reserved for*/
     RESULTS *results;             /* Array of RETRANK query results */
@@ -147,9 +140,15 @@ typedef struct trec_meas {
     int (* acc_meas) (const EPI *epi, const struct trec_meas *tm,
 		      const TREC_EVAL *q_eval, TREC_EVAL *summ_eval);
     /* Calculate final averages (if needed)  from summary info */
-    int (* calc_avg) (const EPI *epi, const struct trec_meas *tm,
-		      TREC_EVAL *eval);
-
+    int (* calc_avg_meas) (const EPI *epi, const struct trec_meas *tm,
+			   TREC_EVAL *eval);
+    /* Print single query value */
+    int (* print_single_meas) (const EPI *epi, const struct trec_meas *tm,
+			       const TREC_EVAL *eval);
+    /* Print final summary value, and cleanup measure malloc's */
+    int (* print_final_and_cleanup_meas) (const EPI *epi,
+					  struct trec_meas *tm,
+					  TREC_EVAL *eval);
     /* Measure dependent parameters, defaults given here can normally be
        overridden from command line by init_meas procedure */
     PARAMS *meas_params;    
@@ -196,16 +195,16 @@ typedef struct {
 
 
 /* Macros for marking measures to be calculated in this invocation */
-#define MARK_MEASURE(x)  x.eval_index = -2;
-#define MEASURE_MARKED(x) (-2 == x.eval_index)
-#define MEASURE_REQUESTED(x) (0 <= x.eval_index)
+#define MARK_MEASURE(x)  x->eval_index = -2;
+#define MEASURE_MARKED(x) (-2 == x->eval_index)
+#define MEASURE_REQUESTED(x) (0 <= x->eval_index)
 
 /* Non standard relevance values to be assigned retrieved docs */
 #define RELVALUE_NONPOOL -1
 #define RELVALUE_UNJUDGED -2
 
 
-/* Defined constants - non=important but used in several places */
+/* Defined constants - non-important but used in several places */
 #define INIT_NUM_QUERIES 50
 #define INIT_NUM_RESULTS 1000
 #define INIT_NUM_RELS 2000

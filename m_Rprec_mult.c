@@ -11,15 +11,35 @@
 #include "functions.h"
 #include "trec_format.h"
 
-/*      "    Precision measured at multiples of R (num_rel).\n\
+static int 
+te_calc_Rprec_mult (const EPI *epi, const REL_INFO *rel_info,
+		    const RESULTS *results, const TREC_MEAS *tm,
+		    TREC_EVAL *eval);
+static double Rprec_cutoff_array[] = {
+    0.2, 0.4,  0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0};
+static PARAMS default_Rprec_cutoffs = {
+    NULL, sizeof (Rprec_cutoff_array) / sizeof (Rprec_cutoff_array[0]),
+    &Rprec_cutoff_array[0]};
+
+/* See trec_eval.h for definition of TREC_MEAS */
+TREC_MEAS te_meas_Rprec_mult =
+   {"Rprec_mult",
+     "    Precision measured at multiples of R (num_rel).\n\
     This is an attempt to measure topics at the same multiple milestones\n\
     in a retrieval (see explanation of R-prec), in order to determine\n\
     whether methods are precision oriented or recall oriented.  If method A\n\
     dominates method B at the low multiples but performs less well at the\n\
-    high multiples then it is precision oriented (compared to B).\n",
-*/
+    high multiples then it is precision oriented (compared to B).\n\
+    Default param: -m Rprec_mult.0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.6,1.8,2.0 ...\n",
+     te_init_meas_a_float_cut_float,
+     te_calc_Rprec_mult,
+     te_acc_meas_a_cut,
+     te_calc_avg_meas_a_cut,
+     te_print_single_meas_a_cut,
+     te_print_final_meas_a_cut,
+    (void *) &default_Rprec_cutoffs, -1};
 
-int 
+static int 
 te_calc_Rprec_mult (const EPI *epi, const REL_INFO *rel_info,
 		    const RESULTS *results, const TREC_MEAS *tm,
 		    TREC_EVAL *eval)

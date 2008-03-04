@@ -11,12 +11,26 @@
 #include "functions.h"
 #include "trec_format.h"
 
-/*      "    Number of non-relevant judged documents retrieved for topic. \n\
+static int 
+te_calc_num_nonrel_judged_ret (const EPI *epi, const REL_INFO *rel_info,
+			       const RESULTS *results,  const TREC_MEAS *tm,
+			       TREC_EVAL *eval);
+
+/* See trec_eval.h for definition of TREC_MEAS */
+TREC_MEAS te_meas_num_nonrel_judged_ret =
+    {"num_nonrel_judged_ret",
+     "    Number of non-relevant judged documents retrieved for topic. \n\
     Not an evaluation number per se, but gives details of retrieval results.\n\
     Summary figure is sum of individual topics, not average.\n",
-*/
+     te_init_meas_s_long,
+     te_calc_num_nonrel_judged_ret,
+     te_acc_meas_s, 
+     te_calc_avg_meas_empty,
+     te_print_single_meas_s_long,
+     te_print_final_meas_s_long,
+     NULL, -1};
 
-int 
+static int 
 te_calc_num_nonrel_judged_ret (const EPI *epi, const REL_INFO *rel_info,
 			       const RESULTS *results,  const TREC_MEAS *tm,
 			       TREC_EVAL *eval)

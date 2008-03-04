@@ -154,7 +154,8 @@ te_get_trec_results (EPI *epi, char *text_results_file,
 	    current_qid = lines[i].qid;
 	    text_info_ptr->text_results = text_results_ptr;
 	    *q_results_ptr =
-		(RESULTS) {current_qid, "trec_results", text_info_ptr};
+		(RESULTS) {current_qid, run_id_ptr, "trec_results",
+			   text_info_ptr};
 	}
 	text_results_ptr->docno = lines[i].docno;
 	text_results_ptr->sim = atof (lines[i].sim);
@@ -166,7 +167,6 @@ te_get_trec_results (EPI *epi, char *text_results_file,
 
     all_results->num_q_results = num_qid;
     all_results->results = q_results_pool;
-    all_results->run_id = run_id_ptr;
 
     Free (lines);
     return (1);

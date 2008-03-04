@@ -10,22 +10,35 @@
 #include "trec_eval.h"
 #include "functions.h"
 #include "trec_format.h"
-
 double log2(double x);
 
-/* Based on implementation by Ian Soboroff
-   Compute a traditional nDCG measure according to Jarvelin and
-   Kekalainen (ACM ToIS v. 20, pp. 422-446, 2002).
+static int 
+te_calc_ndcg_p (const EPI *epi, const REL_INFO *rel_info,
+		const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval);
+static PARAMS default_ndcg_gains = { NULL, 0, NULL};
 
-   Gain values are set to the appropriate relevance level by default.  
-   The default gain can be overridden on the command line by having 
-   comma separated parameters 'rel_level=gain'.
-   Eg, 'trec_eval -m ndcg_p.1=3.5,2=9.0,4=7.0 ...'
-   will give gains 3.5, 9.0, 3.0, 7.0 for relevance levels 1,2,3,4
-   respectively (level 3 remains at the default).
-   Gains are allowed to be 0 or negative, and relevance level 0
-   can be given a gain\n"
-*/
+/* See trec_eval.h for definition of TREC_MEAS */
+TREC_MEAS te_meas_ndcg_p =
+    {"ndcg_p",
+     "    Normalized Discounted Cumulative Gain\n\
+    Compute a traditional nDCG measure according to Jarvelin and\n\
+    Kekalainen (ACM ToIS v. 20, pp. 422-446, 2002).\n\
+    Gain values are set to the appropriate relevance level by default.  \n\
+    The default gain can be overridden on the command line by having \n\
+    comma separated parameters 'rel_level=gain'.\n\
+    Eg, 'trec_eval -m ndcg_p.1=3.5,2=9.0,4=7.0 ...'\n\
+    will give gains 3.5, 9.0, 3.0, 7.0 for relevance levels 1,2,3,4\n\
+    respectively (level 3 remains at the default).\n\
+    Gains are allowed to be 0 or negative, and relevance level 0\n\
+    can be given a gain.\n\
+    Based on an implementation by Ian Soboroff\n",
+     te_init_meas_s_float_p_pair,
+     te_calc_ndcg_p,
+     te_acc_meas_s,
+     te_calc_avg_meas_s,
+     te_print_single_meas_s_float,
+     te_print_final_meas_s_float_p,
+     &default_ndcg_gains, -1};
 
 /* Keep track of valid rel_levels and associated gains */
 /* Initialized in setup_gains */
@@ -46,7 +59,7 @@ static int setup_gains (const TREC_MEAS *tm, const RES_RELS *res_rels,
 static double get_gain (const long rel_level, const GAINS *gains);
 static int comp_rel_gain ();
 
-int 
+static int 
 te_calc_ndcg_p (const EPI *epi, const REL_INFO *rel_info,
 		const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval)
 {

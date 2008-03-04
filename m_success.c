@@ -10,7 +10,18 @@
 #include "functions.h"
 #include "trec_format.h"
 
-/*     "    Success at cutoffs\n\
+static int 
+te_calc_success (const EPI *epi, const REL_INFO *rel_info,
+		 const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval);
+static long success_cutoff_array[] = {1, 5, 10};
+static PARAMS default_success_cutoffs = {
+    NULL, sizeof (success_cutoff_array) / sizeof (success_cutoff_array[0]),
+    &success_cutoff_array[0]};
+
+/* See trec_eval.h for definition of TREC_MEAS */
+TREC_MEAS te_meas_success =
+    {"success",
+     "    Success at cutoffs\n\
     Success (a relevant doc has been retrieved) measured at various doc level\n\
     cutoffs in the ranking.\n\
     If the cutoff is larger than the number of docs retrieved, then\n\
@@ -18,9 +29,15 @@
     Cutoffs must be positive without duplicates\n\
     Default param: trec_eval -m success.1,5,10\n\
     History: Developed by Stephen Tomlinson.\n",
-*/
+     te_init_meas_a_float_cut_long,
+     te_calc_success,
+     te_acc_meas_a_cut,
+     te_calc_avg_meas_a_cut,
+     te_print_single_meas_a_cut,
+     te_print_final_meas_a_cut,
+     (void *) &default_success_cutoffs, -1};
 
-int 
+static int 
 te_calc_success (const EPI *epi, const REL_INFO *rel_info,
 		 const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval)
 {

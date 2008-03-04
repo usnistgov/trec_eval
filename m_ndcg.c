@@ -10,18 +10,30 @@
 #include "trec_eval.h"
 #include "functions.h"
 #include "trec_format.h"
-
 double log2(double x);
 
-/*      "    Normalized Discounted Cumulative Gain\n\
+static int 
+te_calc_ndcg (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
+	      const TREC_MEAS *tm, TREC_EVAL *eval);
+
+/* See trec_eval.h for definition of TREC_MEAS */
+TREC_MEAS te_meas_ndcg = 
+    {"ndcg",
+     "    Normalized Discounted Cumulative Gain\n\
     Compute a traditional nDCG measure according to Jarvelin and\n\
     Kekalainen (ACM ToIS v. 20, pp. 422-446, 2002).\n\
     Gain values are the relevance values in the qrels file.  For now, if you\n\
     want different gains, change the qrels file appropriately, or use\n\
     ndcg_p.  Will be replaced by ndcg_p? ... \n",
-*/
+     te_init_meas_s_float,
+     te_calc_ndcg,
+     te_acc_meas_s,
+     te_calc_avg_meas_s,
+     te_print_single_meas_s_float,
+     te_print_final_meas_s_float,
+     NULL, -1};
 
-int 
+static int 
 te_calc_ndcg (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
 	      const TREC_MEAS *tm, TREC_EVAL *eval)
 {

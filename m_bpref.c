@@ -11,17 +11,30 @@
 #include "functions.h"
 #include "trec_format.h"
 
-/*     "    Main binary preference measure.\n\
+static int 
+te_calc_bpref (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
+	       const TREC_MEAS *tm, TREC_EVAL *eval);
+
+/* See trec_eval.h for definition of TREC_MEAS */
+TREC_MEAS te_meas_bpref =
+     {"bpref",
+     "    Main binary preference measure.\n\
     Fraction of the top R nonrelevant docs that are retrieved after each\n\
     relevant doc. Put another way: when looking at the R relevant docs, and\n\
     the top R nonrelevant docs, if all relevant docs are to be preferred to\n\
     nonrelevant docs, bpref is the fraction of the preferences that the\n\
-    ranking preserves\n\
+    ranking preserves.\n\
     Cite: 'Retrieval Evaluation with Incomplete Information', Chris Buckley\n\
     and Ellen Voorhees. In Proceedings of 27th SIGIR, 2004.\n",
-*/
+     te_init_meas_s_float,
+     te_calc_bpref,
+     te_acc_meas_s,
+     te_calc_avg_meas_s,
+     te_print_single_meas_s_float,
+     te_print_final_meas_s_float,
+      NULL, -1};
 
-int 
+static int 
 te_calc_bpref (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
 	       const TREC_MEAS *tm, TREC_EVAL *eval)
 {

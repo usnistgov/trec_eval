@@ -125,7 +125,7 @@ get_prefs.c        Read preferences judgments instead of doc judgments - see
 get_qrels_prefs.c  Read qrels_jg format file, interpret as prefs file.
 get_trec_results.c Read the standard result file (trec_results format).
 ---
-Procedures to merge rel_info and results from input into form that measures
+Procedures to merge rel_info and results from input form into form that measures
 can easily use, if they wish:
 form_res_rels.c    'qrels' and 'trec_results' into RES_RELS format.
 form_res_rels_jg.c 'qrels_jg' and 'trec_results' into RES_RELS_JG format.
@@ -140,6 +140,7 @@ m_<measure_name>.c  measure specific procedures
 Miscellaneous:
 Makefile     Compile and test trec_eval
 README       This file
+CHANGELOG    Recent changes
 test         Directory of collection of sample input and output for trec_eval
 trec_eval.h  Basic evaluation structures.
 functions.h  Prototype decorations of measure procedures.
@@ -158,14 +159,16 @@ Assuming it uses standard input files:
       calculate measure
       accumulate measure (adding one topic's value to summary value over topics)
       calculate the ending average for a measure.
+      print single
+      print final query measure value (and cleanup if needed)
    Most measures require only a new calculate measure procedure - the
-   other procedures are already implemented depending on the type of 
+   other procedures are generic and already implemented depending on the type of
    measure (has cutoffs and value for each cutoff, parameters, is a float, etc).
-   See functions.h to see any fit for these generic procedures.
-2. Add prototype decarations for your new procedures in "functions.h".
-3. Add any new default parameters for measure in "measures.c"
-4. Add entry for new measure in "measures.c"
-5. Add measure source file to Makefile
+   See functions.h to see fit for these generic procedures.
+2. In same file, construct TREC_MEAS te_meas* entry pointing to above 
+   procedures and any default cutoffs or parameters.
+3. Add pointer to that TREC_MEAS entry in "measures.c"
+4. Add measure source file to Makefile
 
 ------------------------------------------------------------------------------
 Adding a new file format

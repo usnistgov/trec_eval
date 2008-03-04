@@ -6,19 +6,20 @@ BIN = /usr/local/bin
 
 H   = .
 
-VERSIONID = 9.0alpha.2
+VERSIONID = 9.0alpha.3
 
 # gcc
 CC       = gcc
 CFLAGS   = -g -I$H  -Wall -DVERSIONID=\"$(VERSIONID)\"
-CFLAGS   = -pg -I$H -O3 -Wall -DVERSIONID=\"$(VERSIONID)\"
 CFLAGS   = -g -I$H  -Wall -DMDEBUG -DVERSIONID=\"$(VERSIONID)\"
+CFLAGS   = -pg -I$H -O3 -Wall -DVERSIONID=\"$(VERSIONID)\"
 CFLAGS   = -g -I$H -O3 -Wall -DVERSIONID=\"$(VERSIONID)\"
 
 # Other macros used in some or all makefiles
 INSTALL = /bin/mv
 
-TOP_SRCS = trec_eval.c formats.c meas_init.c meas_acc.c meas_avg.c 
+TOP_SRCS = trec_eval.c formats.c meas_init.c meas_acc.c meas_avg.c \
+	meas_print_single.c meas_print_final.c
 
 FORMAT_SRCS = get_qrels.c get_trec_results.c get_prefs.c get_qrels_prefs.c \
 	get_qrels_jg.c form_res_rels.c form_res_rels_jg.c \
@@ -28,7 +29,7 @@ MEAS_SRCS =  measures.c  m_map.c m_P.c m_num_q.c m_num_ret.c m_num_rel.c \
         m_num_rel_ret.c m_gm_map.c m_Rprec.c m_recip_rank.c m_bpref.c \
 	m_iprec_at_recall.c m_recall.c m_Rprec_mult.c m_utility.c m_11pt_avg.c \
         m_ndcg.c m_ndcg_cut.c m_ndcg_p.c m_rel_P.c m_success.c m_infap.c \
-	m_gm_bpref.c \
+	m_gm_bpref.c m_runid.c \
         m_set_P.c m_set_recall.c m_set_rel_P.c m_set_map.c m_set_F.c \
         m_num_nonrel_judged_ret.c \
 	m_prefs_num_prefs_poss.c m_prefs_num_prefs_ful.c \
@@ -43,7 +44,7 @@ SRCS = $(TOP_SRCS) $(FORMAT_SRCS) $(MEAS_SRCS)
 
 SRCH = common.h trec_eval.h sysfunc.h functions.h trec_format.h
 
-SRCOTHER = README Makefile test bpref_bug
+SRCOTHER = README Makefile test bpref_bug CHANGELOG
 
 trec_eval: $(SRCS) Makefile $(SRCH)
 	$(CC) $(CFLAGS)  -o trec_eval $(SRCS) -lm

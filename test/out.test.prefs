@@ -334,6 +334,7 @@ prefs_avgjg_Rnonrel_ret	7.EC.no	1.0000
 prefs_simp_imp        	7.EC.no	0.0000
 prefs_pair_imp        	7.EC.no	0.0000
 prefs_avgjg_imp       	7.EC.no	0.0000
+runid                 	all	STANDARD
 num_q                 	all	24
 prefs_num_prefs_poss  	all	326
 prefs_num_prefs_ful   	all	172

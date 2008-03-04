@@ -11,7 +11,14 @@
 #include "functions.h"
 #include "trec_format.h"
 
-/*     "    Geometric Mean Average Precision\n\
+static int 
+te_calc_gm_map (const EPI *epi, const REL_INFO *rel_info,
+		const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval);
+
+/* See trec_eval.h for definition of TREC_MEAS */
+TREC_MEAS te_meas_gm_map =
+    {"gm_map",
+     "    Geometric Mean Average Precision\n\
     This is the same measure as 'map' (see description of 'map') on an\n\
     individual topic, but the geometric mean is calculated when averaging\n\
     over topics.  This rewards methods that are more consistent over topics\n\
@@ -19,9 +26,15 @@
     for others.\n\
     gm_ap is reported only in the summary over all topics, not for individual\n\
     topics.\n",
-*/
+     te_init_meas_s_float,
+     te_calc_gm_map,
+     te_acc_meas_s,
+     te_calc_avg_meas_s_gm,
+     te_print_single_meas_empty,
+     te_print_final_meas_s_float,
+     NULL, -1};
 
-int 
+static int 
 te_calc_gm_map (const EPI *epi, const REL_INFO *rel_info,
 		const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval)
 {

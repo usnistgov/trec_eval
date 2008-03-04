@@ -58,6 +58,7 @@ Rprec_mult_avgjg_1.40 	303	0.0000
 Rprec_mult_avgjg_1.60 	303	0.0000
 Rprec_mult_avgjg_1.80 	303	0.0000
 Rprec_mult_avgjg_2.00 	303	0.0000
+runid                 	all	STANDARD
 num_q                 	all	3
 map_avgjg             	all	0.1130
 P_avgjg_5             	all	0.2444

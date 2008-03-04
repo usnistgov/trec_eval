@@ -44,9 +44,7 @@ te_init_meas_empty (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
     return (1);
 }
 
-
-/* Measure is a single float measure with no parameters,
-   always printed */
+/* Measure is a single float measure with no parameters */
 int 
 te_init_meas_s_float (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
 {
@@ -60,34 +58,12 @@ te_init_meas_s_float (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
     /* Set location of value of measure, zero it, and increment
        space used for values */
     tm->eval_index = eval->num_values;
-    eval->values[tm->eval_index] = (TREC_EVAL_VALUE) {tm->name, 0, 0.0};
+    eval->values[tm->eval_index] = (TREC_EVAL_VALUE) {tm->name, 0.0};
     eval->num_values++;
     return (1);
 }
 
-/* Measure is a single float measure with no parameters,
-   printed in summary only */
-int 
-te_init_meas_s_float_summ (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
-{
-    /* Make sure enough space */
-    if (NULL == (eval->values =
-		 te_chk_and_realloc (eval->values, &eval->max_num_values,
-				     eval->num_values + 1,
-				     sizeof (TREC_EVAL_VALUE))))
-	return (UNDEF);
-
-    /* Set location of value of measure, zero it, and increment
-       space used for values */
-    tm->eval_index = eval->num_values;
-    eval->values[tm->eval_index] = (TREC_EVAL_VALUE)
-	{tm->name, TE_MVALUE_NO_PRINT_Q, 0.0};
-    eval->num_values++;
-    return (1);
-}
-
-/* Measure is a single long measure with no parameters.
-   always printed */
+/* Measure is a single long measure with no parameters */
 int 
 te_init_meas_s_long (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
 {
@@ -101,29 +77,7 @@ te_init_meas_s_long (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
     /* Set location of value of measure, zero it, and increment
        space used for values */
     tm->eval_index = eval->num_values;
-    eval->values[tm->eval_index] = (TREC_EVAL_VALUE)
-	{tm->name, TE_MVALUE_PRINT_LONG, 0.0};
-    eval->num_values++;
-    return (1);
-}
-
-/* Measure is a single long measure with no parameters.
-   printed only in summary */
-int 
-te_init_meas_s_long_summ (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
-{
-    /* Make sure enough space */
-    if (NULL == (eval->values =
-		 te_chk_and_realloc (eval->values, &eval->max_num_values,
-				     eval->num_values + 1,
-				     sizeof (TREC_EVAL_VALUE))))
-	return (UNDEF);
-
-    /* Set location of value of measure, zero it, and increment
-       space used for values */
-    tm->eval_index = eval->num_values;
-    eval->values[tm->eval_index] = (TREC_EVAL_VALUE)
-	{tm->name, TE_MVALUE_PRINT_LONG | TE_MVALUE_NO_PRINT_Q, 0.0};
+    eval->values[tm->eval_index] = (TREC_EVAL_VALUE) {tm->name, 0.0};
     eval->num_values++;
     return (1);
 }
@@ -134,7 +88,6 @@ te_init_meas_a_float_cut_long (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
 {
     long *cutoffs;
     long i;
-    long pr_cl_flags = TE_MVALUE_CLEAN_NAME;
     /* See if there are command line parameters for this measure.
        Use those if given, otherwise use default cutoffs */
     if (epi->meas_arg) {
@@ -144,7 +97,6 @@ te_init_meas_a_float_cut_long (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
 		if (UNDEF == get_long_cutoffs (tm->meas_params,
 					       meas_arg_ptr->parameters))
 		    return (UNDEF);
-		pr_cl_flags |= TE_MVALUE_CLEAN_PARAM;
 		break;
 	    }
 	    meas_arg_ptr++;
@@ -162,7 +114,7 @@ te_init_meas_a_float_cut_long (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
     /* Initialize full measure name and value for each cutoff */
     for (i = 0; i < tm->meas_params->num_params; i++) {
 	eval->values[eval->num_values+i] = (TREC_EVAL_VALUE)
-	    {append_long (tm->name, cutoffs[i]), pr_cl_flags, 0.0};
+	    {append_long (tm->name, cutoffs[i]), 0.0};
 	if (NULL == eval->values[eval->num_values+i].name)
 	    return (UNDEF);
     }
@@ -179,7 +131,6 @@ te_init_meas_a_float_cut_float (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
 {
     double *cutoffs;
     long i;
-    long pr_cl_flags = TE_MVALUE_CLEAN_NAME;
     /* See if there are command line parameters for this measure.
        Use those if given, otherwise use default cutoffs */
     if (epi->meas_arg) {
@@ -189,7 +140,6 @@ te_init_meas_a_float_cut_float (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
 		if (UNDEF == get_float_cutoffs (tm->meas_params,
 						meas_arg_ptr->parameters))
 		    return (UNDEF);
-		pr_cl_flags |= TE_MVALUE_CLEAN_PARAM;
 		break;
 	    }
 	    meas_arg_ptr++;
@@ -207,7 +157,7 @@ te_init_meas_a_float_cut_float (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
     /* Initialize full measure name and value for each cutoff */
     for (i = 0; i < tm->meas_params->num_params; i++) {
 	eval->values[eval->num_values+i] = (TREC_EVAL_VALUE)
-	    {append_float (tm->name, cutoffs[i]), pr_cl_flags, 0.0};
+	    {append_float (tm->name, cutoffs[i]), 0.0};
 	if (NULL == eval->values[eval->num_values+i].name)
 	    return (UNDEF);
     }
@@ -227,7 +177,6 @@ te_init_meas_a_float_cut_float (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
 int 
 te_init_meas_s_float_p_float (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
 {
-    long pr_cl_flags = 0;
     /* See if there are command line parameters for this measure.
        Use those if given, otherwise use default cutoffs */
     if (epi->meas_arg) {
@@ -237,7 +186,6 @@ te_init_meas_s_float_p_float (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
 		if (UNDEF == get_float_params (tm->meas_params,
 					       meas_arg_ptr->parameters))
 		    return (UNDEF);
-		pr_cl_flags |= TE_MVALUE_CLEAN_PARAM;
 		break;
 	    }
 	    meas_arg_ptr++;
@@ -256,13 +204,9 @@ te_init_meas_s_float_p_float (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
     tm->eval_index = eval->num_values;
     if (tm->meas_params->printable_params) 
 	eval->values[tm->eval_index] = (TREC_EVAL_VALUE)
-	    {append_string(tm->name, tm->meas_params->printable_params),
-	     pr_cl_flags | TE_MVALUE_CLEAN_NAME,
-	     0.0};
+	    {append_string(tm->name, tm->meas_params->printable_params), 0.0};
     else
-	eval->values[tm->eval_index] = (TREC_EVAL_VALUE) {tm->name,
-							  pr_cl_flags,
-							  0.0};
+	eval->values[tm->eval_index] = (TREC_EVAL_VALUE) {tm->name, 0.0};
 
     if (NULL == eval->values[eval->num_values].name)
 	    return (UNDEF);
@@ -274,7 +218,6 @@ te_init_meas_s_float_p_float (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
 int
 te_init_meas_s_float_p_pair (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval) 
 {
-    long pr_cl_flags = 0;
      if (epi->meas_arg) {
         MEAS_ARG *meas_arg_ptr = epi->meas_arg;
         while (meas_arg_ptr->measure_name) {
@@ -282,7 +225,6 @@ te_init_meas_s_float_p_pair (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
 		if (UNDEF == get_param_pairs (tm->meas_params,
 					       meas_arg_ptr->parameters))
 		    return (UNDEF);
-		pr_cl_flags |= TE_MVALUE_CLEAN_PARAM;
 		break;
             }
             meas_arg_ptr++;
@@ -301,13 +243,9 @@ te_init_meas_s_float_p_pair (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
     tm->eval_index = eval->num_values;
     if (tm->meas_params->printable_params) 
 	eval->values[tm->eval_index] = (TREC_EVAL_VALUE)
-	    {append_string(tm->name, tm->meas_params->printable_params), 
-	     pr_cl_flags | TE_MVALUE_CLEAN_NAME,
-	     0.0};
+	    {append_string(tm->name, tm->meas_params->printable_params), 0.0};
     else
-	eval->values[tm->eval_index] = (TREC_EVAL_VALUE) {tm->name,
-							  pr_cl_flags,
-							  0.0};
+	eval->values[tm->eval_index] = (TREC_EVAL_VALUE) {tm->name, 0.0};
     if (NULL == eval->values[eval->num_values].name)
 	    return (UNDEF);
     eval->num_values++;
@@ -331,8 +269,13 @@ get_long_cutoffs (PARAMS *params, char *param_string)
     }
 
     /* Reserve space for cutoffs */
-    if (NULL == (cutoffs = Malloc (num_cutoffs, long)))
+    if (NULL == (params->printable_params =
+		 Malloc (strlen(param_string)+1, char)) ||
+	NULL == (cutoffs = Malloc (num_cutoffs, long)))
 	return (UNDEF);
+    (void) strncpy (params->printable_params,
+		    param_string,
+		    strlen(param_string)+1);
 
     params->num_params = num_cutoffs;
     params->param_values = cutoffs;
@@ -383,8 +326,13 @@ get_float_cutoffs (PARAMS *params, char *param_string)
     }
 
     /* Reserve space for cutoffs */
-    if (NULL == (cutoffs = Malloc (num_cutoffs, double)))
+    if (NULL == (params->printable_params =
+		 Malloc (strlen(param_string)+1, char)) ||
+	NULL == (cutoffs = Malloc (num_cutoffs, double)))
 	return (UNDEF);
+    (void) strncpy (params->printable_params,
+		    param_string,
+		    strlen(param_string)+1);
 
     params->num_params = num_cutoffs;
     params->param_values = cutoffs;

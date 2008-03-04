@@ -11,16 +11,29 @@
 #include "functions.h"
 #include "trec_format.h"
 
-/*      "   Binary preference (bpref), but using goemetric mean over topics\n\
+static int 
+te_calc_gm_bpref (const EPI *epi, const REL_INFO *rel_info,
+		  const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval);
+
+/* See trec_eval.h for definition of TREC_MEAS */
+TREC_MEAS te_meas_gm_bpref =
+    {"gm_bpref",
+     "   Binary preference (bpref), but using goemetric mean over topics\n\
     See the explanation for 'bpref' for the base measure for a single topic.\n\
     Gm_bpref uses the geometric mean to combine the single topic scores.\n\
     This rewards methods that are more consistent across topics as opposed to\n\
     high scores for some topics and low scores for others.\n\
     Gm_bpref is printed only as a summary measure across topics, not for the\n\
     individual topics.\n",
-*/
+     te_init_meas_s_float,
+     te_calc_gm_bpref,
+     te_acc_meas_s,
+     te_calc_avg_meas_s_gm,
+     te_print_single_meas_empty,
+     te_print_final_meas_s_float,
+     NULL, -1};
 
-int 
+static int 
 te_calc_gm_bpref (const EPI *epi, const REL_INFO *rel_info,
 		  const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval)
 {

@@ -113,7 +113,7 @@ static char *usage = "Usage: trec_eval [-h] [-q] {-m measure}* trec_rel_file tre
        ('-m all_qrels' prints all qrels measures, '-m official' is default)\n";
 
 extern long te_num_trec_measures;
-extern TREC_MEAS te_trec_measures[];
+extern TREC_MEAS *te_trec_measures[];
 extern long te_num_trec_measure_nicknames;
 extern TREC_MEASURE_NICKNAMES te_trec_measure_nicknames[];
 extern long te_num_rel_info_format;
@@ -126,8 +126,7 @@ extern RESULTS_FILE_FORMAT te_form_inter_procs[];
 static int mark_measure (EPI *epi, char *optarg);
 static int trec_eval_help(EPI *epi);
 static void get_debug_level_query (EPI *epi, char *optarg);
-static void print_measures (TREC_EVAL *eval, long summary_flag);
-static int cleanup (EPI *epi, TREC_EVAL *eval);
+static int cleanup (EPI *epi);
 
 
 int
@@ -314,11 +313,11 @@ char *argv[];
     accum_eval = (TREC_EVAL) {"all", 0, 0, NULL, 0, 0};
     for (m = 0; m < te_num_trec_measures; m++) {
 	if (MEASURE_MARKED(te_trec_measures[m])) {
-	    if (UNDEF == te_trec_measures[m].init_meas (&epi,
-							&te_trec_measures[m],
+	    if (UNDEF == te_trec_measures[m]->init_meas (&epi,
+							te_trec_measures[m],
 							&accum_eval)) {
 		fprintf (stderr, "trec_eval: Cannot initialize measure '%s'\n",
-			 te_trec_measures[m].name);
+			 te_trec_measures[m]->name);
 		exit (2);
 	    }
 	}
@@ -357,27 +356,34 @@ char *argv[];
 
 	for (m = 0; m < te_num_trec_measures; m++) {
 	    if (MEASURE_REQUESTED(te_trec_measures[m])) {
-		if (UNDEF == te_trec_measures[m].calc_meas (&epi,
+		if (UNDEF == te_trec_measures[m]->calc_meas (&epi,
 						    &all_rel_info.rel_info[j],
 						    &all_results.results[i],
-						    &te_trec_measures[m],
+						    te_trec_measures[m],
 						    &q_eval)) {
 		    fprintf (stderr,"trec_eval: Can't calculate measure '%s'\n",
-			     te_trec_measures[m].name);
+			     te_trec_measures[m]->name);
 		    exit (4);
 		}
-		if (UNDEF == te_trec_measures[m].acc_meas (&epi,
-						   &te_trec_measures[m],
+		if (UNDEF == te_trec_measures[m]->acc_meas (&epi,
+						   te_trec_measures[m],
 						   &q_eval,
 						   &accum_eval)) {
 		    fprintf(stderr,"trec_eval: Can't accumulate measure '%s'\n",
-			    te_trec_measures[m].name);
+			    te_trec_measures[m]->name);
 		    exit (5);
+		}
+		if (epi.query_flag &&
+		    UNDEF == te_trec_measures[m]->print_single_meas (&epi,
+						   te_trec_measures[m],
+						   &q_eval)) {
+		    fprintf(stderr,
+			    "trec_eval: Can't print query measure '%s'\n",
+			    te_trec_measures[m]->name);
+		    exit (6);
 		}
 	    }
 	}
-	if (epi.query_flag)
-	    print_measures (&q_eval, 0);
 	accum_eval.num_queries++;
     }
 
@@ -395,31 +401,20 @@ char *argv[];
     }
 
     /* Calculate final averages, and print (if desired) */
-    if (epi.relation_flag) {
-	if (epi.summary_flag) {
-	    for (m = 0; m < te_num_trec_measures; m++) {
-		if (MEASURE_REQUESTED(te_trec_measures[m])) {
-		    if (UNDEF ==
-			te_trec_measures[m].calc_avg (&epi,
-						      &te_trec_measures[m],
-						      &accum_eval)) {
-			fprintf (stderr,"trec_eval: Can't print measure '%s'\n",
-				 te_trec_measures[i].name);
-			exit (8);
-		    }
+    for (m = 0; m < te_num_trec_measures; m++) {
+	if (MEASURE_REQUESTED(te_trec_measures[m])) {
+	    if (UNDEF == te_trec_measures[m]->calc_avg_meas
+		    (&epi, te_trec_measures[m], &accum_eval) ||
+		UNDEF == te_trec_measures[m]->print_final_and_cleanup_meas 
+		(&epi, te_trec_measures[m],  &accum_eval)) {
+		    fprintf (stderr,"trec_eval: Can't print measure '%s'\n",
+			     te_trec_measures[m]->name);
+		    exit (8);
 		}
-	    }
-	    print_measures (&accum_eval, 1);
 	}
     }
-    else {
-	/* old_print_trec_eval_list (&epi, &accum_eval, 1, (SM_BUF *) NULL);*/
-	fprintf (stderr,"trec_eval: old format not yet supported\n");
-	exit (10);
-    }
 
-
-    if (UNDEF == cleanup (&epi, &accum_eval)) {
+    if (UNDEF == cleanup (&epi)) {
 	fprintf (stderr,"trec_eval: cleanup failed\n");
 	exit (10);
     }
@@ -428,29 +423,6 @@ char *argv[];
     Free (epi.meas_arg);
 
     exit (0);
-}
-
-static void
-print_measures (TREC_EVAL *eval, long summary_flag)
-{
-    long i;
-    for (i = 0; i < eval->num_values; i++) {
-	if (summary_flag) {
-	    if (TE_MVALUE_NO_PRINT_SUMMARY & eval->values[i].print_clean_flags)
-		continue;
-	}
-	else {
-	    if (TE_MVALUE_NO_PRINT_Q & eval->values[i].print_clean_flags)
-		continue;
-	}
-	if (TE_MVALUE_PRINT_LONG & eval->values[i].print_clean_flags)
-	    printf ("%-22s\t%s\t%ld\n",
-		    eval->values[i].name, eval->qid,
-		    (long) eval->values[i].value);
-	else
-	    printf ("%-22s\t%s\t%6.4f\n",
-		    eval->values[i].name, eval->qid, eval->values[i].value);
-    }
 }
 
 static int 
@@ -486,8 +458,8 @@ mark_single_measure (char *optarg)
     long i;
 
     for (i = 0; i < te_num_trec_measures; i++) {
-	if (0 == strcmp (optarg, te_trec_measures[i].name)) {
-	    te_trec_measures[i].eval_index = -2;
+	if (0 == strcmp (optarg, te_trec_measures[i]->name)) {
+	    te_trec_measures[i]->eval_index = -2;
 	    break;
 	}
     }
@@ -558,8 +530,8 @@ trec_eval_help(EPI *epi)
 	if (MEASURE_MARKED(te_trec_measures[m])) {
 	    m_marked = 1;
 	    printf ("%s\n%s",
-		    te_trec_measures[m].name,
-		    te_trec_measures[m].explanation);
+		    te_trec_measures[m]->name,
+		    te_trec_measures[m]->explanation);
 	}
     }
 
@@ -584,48 +556,27 @@ get_debug_level_query ( EPI *epi, char *optarg)
 }
 
 static int
-cleanup (EPI *epi, TREC_EVAL *eval)
+cleanup (EPI *epi)
 {
     long i;
 
-    for (i = 0; i < te_num_trec_measures; i++) {
-	if (MEASURE_REQUESTED(te_trec_measures[i]) &&
-	    (TE_MVALUE_CLEAN_PARAM &
-	     eval->values[te_trec_measures[i].eval_index].print_clean_flags)) {
-	    Free (te_trec_measures[i].meas_params->param_values);
-	    if (te_trec_measures[i].meas_params->printable_params)
-		Free (te_trec_measures[i].meas_params->printable_params);
-	}
-    }
-    for (i = 0; i < eval->num_values; i++) {
-	if (TE_MVALUE_CLEAN_NAME & eval->values[i].print_clean_flags)
-	    Free (eval->values[i].name);
-    }
-
     for (i = 0; i < te_num_rel_info_format; i++) {
 	if (0 == strcmp (epi->rel_info_format, te_rel_info_format[i].name)) {
-	    if (UNDEF == te_rel_info_format[i].cleanup()) {
-		fprintf (stderr, "trec_eval: cleanup failed\n");
+	    if (UNDEF == te_rel_info_format[i].cleanup())
 		return (UNDEF);
-	    }
 	    break;
 	}
     }
     for (i = 0; i < te_num_results_format; i++) {
 	if (0 == strcmp (epi->results_format, te_results_format[i].name)) {
-	    if (UNDEF == te_results_format[i].cleanup ()) {
-		fprintf (stderr, "trec_eval: cleanup failed\n");
+	    if (UNDEF == te_results_format[i].cleanup ())
 		return (UNDEF);
-
-	    }
 	    break;
 	}
     }
     for (i = 0; i < te_num_form_inter_procs; i++) {
-	if (UNDEF == te_form_inter_procs[i].cleanup ()) {
-	    fprintf (stderr, "trec_eval: cleanup failed\n");
+	if (UNDEF == te_form_inter_procs[i].cleanup ())
 	    return (UNDEF);
-	}
     }
     return (1);
 }

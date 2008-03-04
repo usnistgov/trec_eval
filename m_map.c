@@ -11,7 +11,12 @@
 #include "functions.h"
 #include "trec_format.h"
 
-/*      "    Mean Average Precision\n\
+static int
+te_calc_map (const EPI *epi, const REL_INFO *rel_info,
+	     const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval);
+/* See trec_eval.h for definition of TREC_MEAS */
+TREC_MEAS te_meas_map =  {"map",
+     "    Mean Average Precision\n\
     Precision measured after each relevant doc is retrieved, then averaged\n\
     for the topic, and then averaged over topics (if more than one).\n\
     This is the main single-valued number used to compare the entire rankings\n\
@@ -26,9 +31,15 @@
     Cite: 'Retrieval System Evaluation', Chris Buckley and Ellen Voorhees.\n\
     Chapter 3 in TREC: Experiment and Evaluation in Information Retrieval\n\
     edited by Ellen Voorhees and Donna Harman.  MIT Press 2005\n",
-*/
+     te_init_meas_s_float,
+     te_calc_map,
+     te_acc_meas_s,
+     te_calc_avg_meas_s,
+     te_print_single_meas_s_float,
+     te_print_final_meas_s_float,
+     NULL, -1};
 
-int 
+static int 
 te_calc_map (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
 	     const TREC_MEAS *tm, TREC_EVAL *eval)
 {

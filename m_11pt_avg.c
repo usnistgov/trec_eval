@@ -11,7 +11,19 @@
 #include "functions.h"
 #include "trec_format.h"
 
-/*      "    Interpolated Precision averaged over 11 recall points\n\
+static int 
+te_calc_11ptavg (const EPI *epi, const REL_INFO *rel_info,
+		 const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval);
+static double float_cutoff_array[] = {
+    0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
+static PARAMS default_11ptavg_cutoffs = {
+    NULL, sizeof (float_cutoff_array) / sizeof (float_cutoff_array[0]),
+    &float_cutoff_array[0]};
+
+/* See trec_eval.h for definition of TREC_MEAS */
+TREC_MEAS te_meas_11pt_avg =
+    {"11pt_avg",
+     "    Interpolated Precision averaged over 11 recall points\n\
     Obsolete, only use for comparisons of old runs; should use map instead.\n\
     Average interpolated at the given recall points - default is the\n\
     11 points being reported for ircl_prn.\n\
@@ -22,10 +34,16 @@
     Will actually average over all parameter values given.\n\
     To get 3-pt_avg as in trec_eval version 8 and earlier, use\n\
       trec_eval -m 11-pt_avg.0.2,0.5,0.8 ...\n\
-    Default usage: trec_eval -m 11-pt_avg.0.0,.1,.2,.3,.4,.5,.6,.7,.8..9,1.0\n",
-*/
+    Default usage: -m 11-pt_avg.0.0,.1,.2,.3,.4,.5,.6,.7,.8..9,1.0\n",
+     te_init_meas_s_float_p_float,
+     te_calc_11ptavg,
+     te_acc_meas_s,
+     te_calc_avg_meas_s,
+     te_print_single_meas_s_float,
+     te_print_final_meas_s_float_p,
+     &default_11ptavg_cutoffs, -1};
 
-int 
+static int 
 te_calc_11ptavg (const EPI *epi, const REL_INFO *rel_info,
 		 const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval)
 {

@@ -11,12 +11,26 @@
 #include "functions.h"
 #include "trec_format.h"
 
-/* Number of prefs fulfilled
-     For doc pref A>B, both A nd B must be retrieved to be counted.
-    Summary figure is sum of individual topics, not average.
- */
+static int 
+te_calc_prefs_num_prefs_ful_ret (const EPI *epi, const REL_INFO *rel_info,
+				 const RESULTS *results, const TREC_MEAS *tm,
+				 TREC_EVAL *eval);
 
-int 
+/* See trec_eval.h for definition of TREC_MEAS */
+TREC_MEAS te_meas_prefs_num_prefs_ful_ret =
+    {"prefs_num_prefs_ful_ret",
+     "    Number of prefs fulfilled among retrieved docs\n\
+    For doc pref A>B, both A nd B must be retrieved to be counted.\n\
+    Summary figure is sum of individual topics, not average.\n",
+     te_init_meas_s_long,
+     te_calc_prefs_num_prefs_ful_ret,
+     te_acc_meas_s, 
+     te_calc_avg_meas_empty,
+     te_print_single_meas_s_long,
+     te_print_final_meas_s_long,
+     NULL, -1};
+
+static int 
 te_calc_prefs_num_prefs_ful_ret (const EPI *epi, const REL_INFO *rel_info,
 				 const RESULTS *results, const TREC_MEAS *tm,
 				 TREC_EVAL *eval)

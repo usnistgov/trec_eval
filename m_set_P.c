@@ -11,14 +11,30 @@
 #include "functions.h"
 #include "trec_format.h"
 
-/*  Set Precision: num_relevant_retrieved / num_retrieved \n	\
+static int 
+te_calc_set_P (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
+	       const TREC_MEAS *tm, TREC_EVAL *eval);
+
+/* See trec_eval.h for definition of TREC_MEAS */
+TREC_MEAS te_meas_set_P =
+    {"set_P",
+     "    Set Precision: num_relevant_retrieved / num_retrieved \n\
     Precision over all docs retrieved for a topic.\n\
+    Was known as exact_prec in earlier versions of trec_eval\n\
     Note:   trec_eval -m P.50 ...\n\
     is different from \n\
-            trec_eval -M 50 -m set_P ...\n, */
-/* Was known as exact_prec in earlier versions of trec_eval */
+            trec_eval -M 50 -m set_P ...\n\
+    in that the latter will not fill in with nonrel docs if less than \n\
+    50 docs retrieved\n",
+     te_init_meas_s_float,
+     te_calc_set_P,
+     te_acc_meas_s,
+     te_calc_avg_meas_s,
+     te_print_single_meas_s_float,
+     te_print_final_meas_s_float,
+     NULL, -1};
 
-int 
+static int 
 te_calc_set_P (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
 	    const TREC_MEAS *tm, TREC_EVAL *eval)
 {

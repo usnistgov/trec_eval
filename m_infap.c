@@ -11,20 +11,33 @@
 #include "functions.h"
 #include "trec_format.h"
 
-/*     "    Inferred AP\n\
+static int 
+te_calc_infap (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
+	       const TREC_MEAS *tm, TREC_EVAL *eval);
+
+/* See trec_eval.h for definition of TREC_MEAS */
+TREC_MEAS te_meas_infAP =
+   {"infAP",
+     "    Inferred AP\n\
     A measure that allows sampling of judgement pool: Qrels/results divided\n\
     into unpooled, pooled_but_unjudged, pooled_judged_rel,pooled_judged_nonrel.\n\
-    My intuition of infAP: Calculate P at rel doc using only the judged\n\
-    higher retrieved docs, then average in 0's from higher docs that were\n\
-    not in the judgment pool.  (Those in the pool but not judged are ignored,\n\
-    since they are assumed to be relevant in the same proportion as those \n\
-    judged.)\n\
+    My intuition of infAP:\n\
+    Assume a judgment pool with a random subset that has been judged.\n\
+    Calculate P at rel doc using only the judged higher retrieved docs,\n\
+    then average in 0's from higher docs that were not in the judgment pool.\n\
+    (Those in the pool but not judged are ignored, since they are assumed\n\
+    to be relevant in the same proportion as those judged.)\n\
     Cite:    'Estimating Average Precision with Incomplete and Imperfect\n\
     Judgments', Emine Yilmaz and Javed A. Aslam. CIKM \n",
+     te_init_meas_s_float,
+     te_calc_infap,
+     te_acc_meas_s,
+     te_calc_avg_meas_s,
+     te_print_single_meas_s_float,
+     te_print_final_meas_s_float,
+    NULL, -1};
 
-*/
-
-int 
+static int 
 te_calc_infap (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
 	       const TREC_MEAS *tm, TREC_EVAL *eval)
 {

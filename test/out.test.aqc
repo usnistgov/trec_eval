@@ -154,6 +154,7 @@ set_recall            	303	0.6000
 set_map               	303	0.0429
 set_F                 	303	0.1277
 num_nonrel_judged_ret 	303	61
+runid                 	all	STANDARD
 num_q                 	all	3
 num_ret               	all	584
 num_rel               	all	484

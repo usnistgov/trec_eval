@@ -11,15 +11,28 @@
 #include "functions.h"
 #include "trec_format.h"
 
-/* "    Number of documents retrieved for topic. \n\
+static int 
+te_calc_num_ret (const EPI *epi, const REL_INFO *rel_info,
+		 const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval);
+
+/* See trec_eval.h for definition of TREC_MEAS */
+TREC_MEAS te_meas_num_ret =
+    {"num_ret",
+     "    Number of documents retrieved for topic. \n\
     May be affected by Judged_docs_only and Max_retrieved_per_topic command\n\
     line parameters (as are most measures).\n\
     Summary figure is sum of individual topics, not average.\n",
-*/
+     te_init_meas_s_long,
+     te_calc_num_ret,
+     te_acc_meas_s,
+     te_calc_avg_meas_empty,
+     te_print_single_meas_s_long,
+     te_print_final_meas_s_long,
+     NULL, -1};
 
-int 
-te_calc_num_ret (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
-	      const TREC_MEAS *tm, TREC_EVAL *eval)
+static int 
+te_calc_num_ret (const EPI *epi, const REL_INFO *rel_info,
+		 const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval)
 {
     RES_RELS res_rels;
 

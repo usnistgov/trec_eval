@@ -11,16 +11,34 @@
 #include "functions.h"
 #include "trec_format.h"
 
-/* Average over doc pairs of preference ratio for that pair among the
-   retrieved docs.
-   If a doc pair satisfies 3 preferences but fails 2 preferences (preferences
-   from 5 different users),  then the score for doc pair is 3/5.
-   Same as prefs_simp if there are no doc_pairs in multiple judgment groups.
-   For doc pref A>B, A and B must both be retrieved to be counted as either
-   fulfilled or possible.
-*/
+static int 
+te_calc_prefs_pair_ret (const EPI *epi, const REL_INFO *rel_info,
+			const RESULTS *results, const TREC_MEAS *tm,
+			TREC_EVAL *eval);
 
-int 
+/* See trec_eval.h for definition of TREC_MEAS */
+TREC_MEAS te_meas_prefs_pair_ret =
+   {"prefs_pair_ret",
+     "   Average over doc pairs of preference ratio for that pair.\n\
+    If a doc pair satisfies 3 preferences but fails 2 preferences (preferences\n\
+    from 5 different users),  then the score for doc pair is 3/5.\n\
+    Same as prefs_simp if there are no doc_pairs in multiple judgment groups.\n\
+    For doc pref A>B, A and B must both be retrieved to be counted as either\n\
+    fulfilled or possible.\n\
+    For doc pref A>B, this includes implied preferences (only one of A or B\n\
+    retrieved), and counts as failure if neither A nor B retrieved.\n\
+    pref_*_ret measures should be used for dynamic collections but are\n\
+    inferior in most other applications.\n\
+    Assumes '-R prefs' or '-R qrels_prefs'\n",
+     te_init_meas_s_float,
+     te_calc_prefs_pair_ret,
+     te_acc_meas_s,
+     te_calc_avg_meas_s,
+     te_print_single_meas_s_float,
+     te_print_final_meas_s_float,
+    NULL, -1};
+
+static int 
 te_calc_prefs_pair_ret (const EPI *epi, const REL_INFO *rel_info,
 			const RESULTS *results, const TREC_MEAS *tm,
 			TREC_EVAL *eval)
