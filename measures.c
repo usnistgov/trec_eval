@@ -178,6 +178,8 @@ SINGLE_MEASURE sing_meas[] = {
      0, 0, 0, 0, 1, 0, 0, 1, offsetof(TREC_EVAL, gm_bpref)},
     {"rank_first_rel", "Rank of top relevant document (0 if none)",
      1, 0, 0, 1, 0, 0, 0, 0, offsetof(TREC_EVAL, rank_first_rel)},
+    {"ndcg", "Normalized discounted cumulative gain",
+     0, 1, 0, 0, 0, 1, 0, 0, offsetof(TREC_EVAL, norm_disc_cum_gain)},
 };
 
 int num_sing_meas = sizeof (sing_meas) / sizeof (sing_meas[0]);

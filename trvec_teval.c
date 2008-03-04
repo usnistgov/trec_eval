@@ -20,7 +20,7 @@ static void calc_bpref_measures(EVAL_PARAM_INFO *epi, TR_VEC *tr_vec,
 				long num_nonrel);
 static void calc_average_measures(EVAL_PARAM_INFO *epi, TR_VEC *tr_vec,
 				  TREC_EVAL *eval, long num_rel,
-				  long num_nonrel);
+				  long num_nonrel, TREC_QRELS *qrels);
 static void calc_exact_measures(EVAL_PARAM_INFO *epi, TR_VEC *tr_vec,
 				TREC_EVAL *eval, long num_rel,
 				long num_nonrel);
@@ -29,12 +29,13 @@ static void calc_time_measures(EVAL_PARAM_INFO *epi, TR_VEC *tr_vec,
 			       long num_nonrel);
 
 int
-trvec_trec_eval (epi, tr_vec, eval, num_rel, num_nonrel)
+trvec_trec_eval (epi, tr_vec, eval, num_rel, num_nonrel, qrels)
 EVAL_PARAM_INFO *epi;
 TR_VEC *tr_vec;
 TREC_EVAL *eval;
 long num_rel;               /* Number relevant judged */
 long num_nonrel;            /* Number nonrelevant judged */
+TREC_QRELS *qrels;
 {
     long j;
     long max_iter;
@@ -84,7 +85,7 @@ long num_nonrel;            /* Number nonrelevant judged */
     calc_bpref_measures (epi, tr_vec, eval, num_rel, num_nonrel);
 
     /* Calculate measures that average over ret or rel docs */
-    calc_average_measures (epi, tr_vec, eval, num_rel, num_nonrel);
+    calc_average_measures (epi, tr_vec, eval, num_rel, num_nonrel, qrels);
 
     /* Calculate exact measures over entire retrieved sets */
     calc_exact_measures (epi, tr_vec, eval, num_rel, num_nonrel);
@@ -469,19 +470,23 @@ long num_nonrel;            /* Number nonrelevant judged */
 }
 
 static void
-calc_average_measures (epi, tr_vec, eval, num_rel, num_nonrel)
+calc_average_measures (epi, tr_vec, eval, num_rel, num_nonrel, qrels)
 EVAL_PARAM_INFO *epi;
 TR_VEC *tr_vec;
 TREC_EVAL *eval;
 long num_rel;               /* Number relevant judged */
 long num_nonrel;            /* Number nonrelevant judged */
+TREC_QRELS *qrels;
 {
     double recall, precis;     /* current recall, precision values */
     double rel_precis, rel_uap;/* relative precision, uap values */
     double int_precis;         /* current interpolated precision values */
-    
+    double ideal_dcg;          /* ideal discounted cumulative gain */
+    double gain;
+
     long i,j;
     long rel_so_far;
+    long cur_lvl, lvl_count;
 
     /* Note for interpolated precision values (Prec(X) = MAX (PREC(Y)) for all
        Y >= X) */
@@ -520,6 +525,15 @@ long num_nonrel;            /* Number nonrelevant judged */
             eval->int_av_recall_precis += int_precis;
             eval->av_recall_precis += precis;
             eval->avg_doc_prec += precis;
+	    /* Currently, NDCG gains are the rel value.
+	       To do: user-specified gains on the command line. */
+	    gain = tr_vec->tr[j-1].rel;
+	    if (gain > 0) {
+		if (j > 1)
+		    eval->norm_disc_cum_gain += gain / log2(j);
+		else
+		    eval->norm_disc_cum_gain += gain;
+	    }
             rel_so_far--;
         }
         else {
@@ -549,10 +563,33 @@ long num_nonrel;            /* Number nonrelevant judged */
         }
     }
 
+    /* Calculate ideal discounted cumulative gain for this topic */
+    cur_lvl = qrels->max_num_rel_levels;
+    lvl_count = 0;
+    for (j = 0; j < epi->max_num_docs_per_topic; j++) {
+	lvl_count++;
+	while (lvl_count > qrels->rel_count[cur_lvl]) {
+	    cur_lvl--;
+	    lvl_count = 1;
+	    if (cur_lvl == 0)
+		break;
+	}
+	if (cur_lvl == 0)
+	    break;
+	gain = cur_lvl;
+	if (j == 0)
+	    ideal_dcg += gain;
+	else
+	    ideal_dcg += gain / log2(j + 1);
+	/* printf("%ld %ld %3.1f %6.4f\n", j, cur_lvl, gain, ideal_dcg); */
+    }
+	
+
     /* Calculate all the other averages */
     if (eval->num_rel_ret > 0) {
         eval->av_recall_precis /= eval->num_rel;
         eval->int_av_recall_precis /= eval->num_rel;
+	eval->norm_disc_cum_gain /= ideal_dcg;
     }
 
     eval->av_fall_recall /= MAX_FALL_RET;

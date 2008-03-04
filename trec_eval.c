@@ -72,7 +72,8 @@ int get_qrels (char *text_qrels_file, ALL_TREC_QRELS *all_trec_qrels);
 int form_trvec (EVAL_PARAM_INFO *ep, TREC_TOP *trec_top,
 		TREC_QRELS *trec_qrels, TR_VEC *tr_vec, long *num_rel);
 int trvec_trec_eval (EVAL_PARAM_INFO *epi, TR_VEC *tr_vec,
-		     TREC_EVAL *eval, long num_rel, long num_nonrel);
+		     TREC_EVAL *eval, long num_rel, long num_nonrel,
+                     TREC_QRELS *trec_qrels);
 
 static char *usage = "Usage: trec_eval [-h] [-q] [-a] [-o] [-v] trec_rel_file trec_top_file\n\
    -h: Give full help information, including other options\n\
@@ -207,7 +208,8 @@ char *argv[];
 				      &tr_vec,
 				      &query_eval,
 				      num_rel,
-				      all_trec_qrels.trec_qrels[j].num_text_qrels - num_rel)) {
+				      all_trec_qrels.trec_qrels[j].num_text_qrels - num_rel,
+		                      &all_trec_qrels.trec_qrels[j])) {
 	    print_error ("trec_eval: evaluation error", "Quit");
 	    exit (4);
 	}

@@ -119,6 +119,8 @@ typedef struct {                    /* For each query in rel judgements */
     long num_text_qrels;               /* number of judged documents */
     long max_num_text_qrels;           /* Num docs space reserved for */
     TEXT_QRELS *text_qrels;            /* Array of judged TEXT_QRELS */
+    long max_num_rel_levels;           /* Number of relevance judgment levels */
+    long *rel_count;                   /* Count of docs with each judgment */
 } TREC_QRELS;
 
 typedef struct {                    /* Overall relevance judgements */
@@ -132,6 +134,7 @@ typedef struct {                    /* Overall relevance judgements */
 #define INIT_NUM_QUERIES 50
 #define INIT_NUM_RESULTS 1000
 #define INIT_NUM_RELS 2000
+#define INIT_NUM_REL_LEVELS 5
 
 /* Non standard values for tr_vec->rel field */
 #define RELVALUE_NONPOOL -1
@@ -234,6 +237,7 @@ typedef struct {
 				       relevant document */
     long rank_first_rel;            /* Rank of top retrieved rel doc. Set to
 				       0 if none. Unaveraged */
+    float norm_disc_cum_gain;       /* Normalized discounted cumulative gain */
 
     /* Measures after each document */
     float recall_cut[NUM_CUTOFF];   /* Recall after cutoff[i] docs */
