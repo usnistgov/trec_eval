@@ -178,7 +178,7 @@ SINGLE_MEASURE sing_meas[] = {
      0, 0, 0, 0, 1, 0, 0, 1, offsetof(TREC_EVAL, gm_bpref)},
     {"rank_first_rel", "Rank of top relevant document (0 if none)",
      1, 0, 0, 1, 0, 0, 0, 0, offsetof(TREC_EVAL, rank_first_rel)},
-    {"ndcg", "Normalized discounted cumulative gain",
+    {"ndcg_trec", "Normalized discounted cumulative gain after 1000 docs retrieved",
      0, 1, 0, 0, 0, 1, 0, 0, offsetof(TREC_EVAL, norm_disc_cum_gain)},
 };
 

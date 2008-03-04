@@ -141,6 +141,8 @@ ALL_TREC_QRELS *all_trec_qrels;
 		if (NULL == (current_qrels->rel_count =
 			     Malloc (INIT_NUM_REL_LEVELS, long)))
 		    return (UNDEF);
+		bzero(current_qrels->rel_count, 
+		      current_qrels->max_num_rel_levels * sizeof(long));
 		all_trec_qrels->num_q_qrels++;
 	    }
 	    else {
@@ -165,12 +167,15 @@ ALL_TREC_QRELS *all_trec_qrels;
 		docno_ptr;
 	rel = atol (rel_ptr);
 	if (rel >= current_qrels->max_num_rel_levels) {
-	    current_qrels->max_num_rel_levels *= 2;
+	    i = rel + 1;
 	    if (NULL == (current_qrels->rel_count =
-			 Realloc (current_qrels->rel_count,
-				  current_qrels->max_num_rel_levels,
-				  long)))
+			 Realloc (current_qrels->rel_count, i, long)))
 		return (UNDEF);
+	    while (current_qrels->max_num_rel_levels < i) {
+		current_qrels->rel_count[current_qrels->max_num_rel_levels] = 0;
+		current_qrels->max_num_rel_levels++;
+	    }
+	    current_qrels->max_num_rel_levels = i;
 	}
 	current_qrels->text_qrels[current_qrels->num_text_qrels++].rel =
 	    rel;

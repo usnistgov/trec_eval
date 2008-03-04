@@ -76,8 +76,7 @@ int get_qrels (char *text_qrels_file, ALL_TREC_QRELS *all_trec_qrels);
 int form_trvec (EVAL_PARAM_INFO *ep, TREC_TOP *trec_top,
 		TREC_QRELS *trec_qrels, TR_VEC *tr_vec, long *num_rel);
 int trvec_trec_eval (EVAL_PARAM_INFO *epi, TR_VEC *tr_vec,
-		     TREC_EVAL *eval, long num_rel, long num_nonrel,
-                     TREC_QRELS *trec_qrels);
+		     TREC_EVAL *eval, TREC_QRELS *trec_qrels);
 
 static char *usage = "Usage: trec_eval [-h] [-q] [-a] [-o] [-v] trec_rel_file trec_top_file\n\
    -h: Give full help information, including other options\n\
@@ -96,7 +95,6 @@ char *argv[];
     ALL_TREC_QRELS all_trec_qrels;
     TREC_EVAL accum_eval, query_eval;
     TR_VEC tr_vec;
-    long num_rel;
     long num_eval_q;
     long i,j;
     char *c;
@@ -114,7 +112,8 @@ char *argv[];
     epi.relevance_level = 1;
     epi.max_num_docs_per_topic = MAXLONG;
     epi.max_gains = INIT_NUM_REL_LEVELS;
-    epi.gain = Malloc(INIT_NUM_REL_LEVELS, double);
+    if (NULL == (epi.gain = Malloc(INIT_NUM_REL_LEVELS, double)))
+	exit(0);
 
     for (i = 0; i < INIT_NUM_REL_LEVELS; i++)
 	epi.gain[i] = i;
@@ -182,8 +181,12 @@ char *argv[];
 		c++;
 		gain = atof(c);
 		if (lvl >= epi.max_gains) {
-		    epi.max_gains *= 2;
-		    epi.gain = Realloc(epi.gain, epi.max_gains, double);
+		    j = lvl + 1;
+		    if (NULL == (epi.gain = Realloc(epi.gain, j, double)))
+			exit(0);
+		    for (i = epi.max_gains; i < j; i++)
+			epi.gain[i] = i;
+		    epi.max_gains = j;
 		}
 		epi.gain[lvl] = gain;
 		while (*c != ',' && *c != '\0')
@@ -198,13 +201,6 @@ char *argv[];
         }
         argc--; argv++;
     }
-
-    /* Make a mapping of the NDCG gain values in increasing order.
-       This is used in computing the ideal gain vector. */
-    epi.gain_order = Malloc(epi.max_gains, long);
-    for (i = 0; i < epi.max_gains; i++)
-	epi.gain_order[i] = i;
-    qsort_r(epi.gain_order, epi.max_gains, sizeof(long), &epi, gain_map);
 
     if (argc != 3) {
         (void) fputs (usage,stderr);
@@ -221,6 +217,30 @@ char *argv[];
         print_error ("trec_eval: input error", "Quit");
         exit (2);
     }
+
+    /* Check the qrels to see if there are relevance values outside
+       the range of known relevance values in the gain mapping.  Assign
+       defaults. */
+    j = epi.max_gains;
+    for (i = 0; i < all_trec_qrels.num_q_qrels; i++)
+	if (all_trec_qrels.trec_qrels[i].max_num_rel_levels > j)
+	    j = all_trec_qrels.trec_qrels[i].max_num_rel_levels;
+    if (j > epi.max_gains) {
+	if (NULL == (epi.gain = Realloc(epi.gain, j, double)))
+	    exit(2);
+	for (i = epi.max_gains; i < j; i++) {
+	    epi.gain[i] = i;
+	}
+	epi.max_gains = j;
+    }	
+
+    /* Make a mapping of the NDCG gain values in increasing order.
+       This is used in computing the ideal gain vector. */
+    if (NULL == (epi.gain_order = Malloc(epi.max_gains, long)))
+	exit(2);
+    for (i = 0; i < epi.max_gains; i++)
+	epi.gain_order[i] = i;
+    qsort_r(epi.gain_order, epi.max_gains, sizeof(long), &epi, gain_map);
 
     /* For each topic which has both qrels and top results information,
        calculate, possibly print (if query_flag), and accumulate
@@ -239,12 +259,15 @@ char *argv[];
 	if (j >= all_trec_qrels.num_q_qrels)
 	    continue;
 
+	/* Initialize eval struct to 0 */
+	bzero ((char *) &query_eval, sizeof (TREC_EVAL));
+
 	/* Form results/rel into SMART TR_VEC form */
 	if (UNDEF == form_trvec (&epi,
 				 &all_trec_top.trec_top[i],
 				 &all_trec_qrels.trec_qrels[j],
 				 &tr_vec,
-				 &num_rel)) {
+				 &query_eval.num_rel)) {
 	    print_error ("trec_eval: form_tr_vec error", "Quit");
 	    exit (3);
 	}
@@ -253,8 +276,6 @@ char *argv[];
 	if (UNDEF == trvec_trec_eval (&epi,
 				      &tr_vec,
 				      &query_eval,
-				      num_rel,
-				      all_trec_qrels.trec_qrels[j].num_text_qrels - num_rel,
 		                      &all_trec_qrels.trec_qrels[j])) {
 	    print_error ("trec_eval: evaluation error", "Quit");
 	    exit (4);

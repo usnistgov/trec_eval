@@ -35,6 +35,10 @@ normally ever used.   \n\
  -Ub<num>: Value to use for 'b' coefficient of utility computation. \n\
  -Uc<num>: Value to use for 'c' coefficient of utility computation. \n\
  -Ud<num>: Value to use for 'd' coefficient of utility computation. \n\
+ -G<rel>=<num>[,<rel>=<num>]...: Gain values for normalized discounted \n\
+     cumulative gain.  <rel> is a nonnegative integer relevance level, \n\
+     <num> is the gain value which may be floating-point. \n\
+     The default gain value is the value of that relevance level. \n\
  -J: Calculate all values only over the judged (either relevant or  \n\
      nonrelevant) documents.  All unjudged documents are removed from the \n\
      retrieved set before any calculations (possibly leaving an empty set). \n\

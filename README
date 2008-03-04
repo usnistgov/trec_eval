@@ -244,6 +244,7 @@ P100           	Precision after 100 docs retrieved
 P200           	Precision after 200 docs retrieved
 P500           	Precision after 500 docs retrieved
 P1000          	Precision after 1000 docs retrieved
+ndcg_trec       Normalized discounted cumulative gain after 1000 docs retrieved
 
 
 Minor measures with their relational names:

@@ -13,28 +13,21 @@ static char rcsid[] = "$Header: /home/smart/release/src/libevaluate/trvec_trec_e
 
 static int compare_iter_rank();
 static void calc_cutoff_measures(EVAL_PARAM_INFO *epi, TR_VEC *tr_vec,
-				 TREC_EVAL *eval, long num_rel,
-				 long num_nonrel);
+				 TREC_EVAL *eval, TREC_QRELS *qrels);
 static void calc_bpref_measures(EVAL_PARAM_INFO *epi, TR_VEC *tr_vec,
-				TREC_EVAL *eval, long num_rel,
-				long num_nonrel);
+				TREC_EVAL *eval, TREC_QRELS *qrels);
 static void calc_average_measures(EVAL_PARAM_INFO *epi, TR_VEC *tr_vec,
-				  TREC_EVAL *eval, long num_rel,
-				  long num_nonrel, TREC_QRELS *qrels);
+				  TREC_EVAL *eval, TREC_QRELS *qrels);
 static void calc_exact_measures(EVAL_PARAM_INFO *epi, TR_VEC *tr_vec,
-				TREC_EVAL *eval, long num_rel,
-				long num_nonrel);
+				TREC_EVAL *eval, TREC_QRELS *qrels);
 static void calc_time_measures(EVAL_PARAM_INFO *epi, TR_VEC *tr_vec,
-			       TREC_EVAL *eval, long num_rel,
-			       long num_nonrel);
+			       TREC_EVAL *eval, TREC_QRELS *qrels);
 
 int
-trvec_trec_eval (epi, tr_vec, eval, num_rel, num_nonrel, qrels)
+trvec_trec_eval (epi, tr_vec, eval, qrels)
 EVAL_PARAM_INFO *epi;
 TR_VEC *tr_vec;
 TREC_EVAL *eval;
-long num_rel;               /* Number relevant judged */
-long num_nonrel;            /* Number nonrelevant judged */
 TREC_QRELS *qrels;
 {
     long j;
@@ -43,9 +36,6 @@ TREC_QRELS *qrels;
     if (tr_vec == (TR_VEC *) NULL)
         return (UNDEF);
 
-    /* Initialize everything to 0 */
-    bzero ((char *) eval, sizeof (TREC_EVAL));
-
     eval->qid = tr_vec->qid;
     eval->num_queries = 1;
 
@@ -53,8 +43,6 @@ TREC_QRELS *qrels;
     if (tr_vec->num_tr == 0) {
         return (0);
     }
-
-    eval->num_rel = num_rel;
 
     /* Evaluate only the docs on the last iteration of new_tr_vec */
     /* Sort the tr tuples for this query by decreasing iter and 
@@ -79,20 +67,20 @@ TREC_QRELS *qrels;
 
     /* Calculate cutoff measures, and those measures dependant on them */
     /* Also includes recip_rank and rank_first_rel */
-    calc_cutoff_measures (epi, tr_vec, eval, num_rel, num_nonrel);
+    calc_cutoff_measures (epi, tr_vec, eval, qrels);
 
     /* Calculate bpref and related measures (judged docs only) */
-    calc_bpref_measures (epi, tr_vec, eval, num_rel, num_nonrel);
+    calc_bpref_measures (epi, tr_vec, eval, qrels);
 
     /* Calculate measures that average over ret or rel docs */
-    calc_average_measures (epi, tr_vec, eval, num_rel, num_nonrel, qrels);
+    calc_average_measures (epi, tr_vec, eval, qrels);
 
     /* Calculate exact measures over entire retrieved sets */
-    calc_exact_measures (epi, tr_vec, eval, num_rel, num_nonrel);
+    calc_exact_measures (epi, tr_vec, eval, qrels);
 
     /* Calculate time measures, if wanted */
     if (epi->time_flag)
-	calc_time_measures (epi, tr_vec, eval, num_rel, num_nonrel);
+	calc_time_measures (epi, tr_vec, eval, qrels);
 
 
     return (1);
@@ -123,12 +111,11 @@ static int three_pts[3] = THREE_PTS;
 
 
 static void
-calc_cutoff_measures(epi, tr_vec, eval, num_rel, num_nonrel)
+calc_cutoff_measures(epi, tr_vec, eval, qrels)
 EVAL_PARAM_INFO *epi;
 TR_VEC *tr_vec;
 TREC_EVAL *eval;
-long num_rel;               /* Number relevant judged */
-long num_nonrel;            /* Number nonrelevant judged */
+TREC_QRELS *qrels;
 {
     double recall, precis;     /* current recall, precision values */
     double rel_precis, rel_uap;/* relative precision, uap values */
@@ -293,14 +280,14 @@ long num_nonrel;            /* Number nonrelevant judged */
 }
 
 static void
-calc_bpref_measures (epi, tr_vec, eval, num_rel, num_nonrel)
+calc_bpref_measures (epi, tr_vec, eval, qrels)
 EVAL_PARAM_INFO *epi;
 TR_VEC *tr_vec;
 TREC_EVAL *eval;
-long num_rel;               /* Number relevant judged */
-long num_nonrel;            /* Number nonrelevant judged */
+TREC_QRELS *qrels;
 {
     long j;
+    long num_nonrel;
     long nonrel_ret;
     long nonrel_so_far, rel_so_far, pool_unjudged_so_far;
     long bounded_5R_nonrel_so_far, bounded_10R_nonrel_so_far;
@@ -311,6 +298,8 @@ long num_nonrel;            /* Number nonrelevant judged */
     long pref_top_10pRnonrel_num;
     long pref_top_Rnonrel_num;
     
+    num_nonrel = qrels->num_text_qrels - eval->num_rel;
+
     /* Calculate judgement based measures (dependent on only
        judged docs; no assumption of non-relevance if not judged) */
     /* Binary Preference measures; here expressed as all docs with a higher 
@@ -470,12 +459,10 @@ long num_nonrel;            /* Number nonrelevant judged */
 }
 
 static void
-calc_average_measures (epi, tr_vec, eval, num_rel, num_nonrel, qrels)
+calc_average_measures (epi, tr_vec, eval, qrels)
 EVAL_PARAM_INFO *epi;
 TR_VEC *tr_vec;
 TREC_EVAL *eval;
-long num_rel;               /* Number relevant judged */
-long num_nonrel;            /* Number nonrelevant judged */
 TREC_QRELS *qrels;
 {
     double recall, precis;     /* current recall, precision values */
@@ -528,15 +515,12 @@ TREC_QRELS *qrels;
             eval->av_recall_precis += precis;
             eval->avg_doc_prec += precis;
 
-	    if (rel > epi->max_gains)
+	    if (rel >= epi->max_gains || rel < 0)
 		gain = 0;
 	    else
 		gain = epi->gain[rel];
 	    if (gain > 0) {
-		if (j > 1)
-		    eval->norm_disc_cum_gain += gain / log2(j);
-		else
-		    eval->norm_disc_cum_gain += gain;
+		eval->norm_disc_cum_gain += gain / log2(j + 1);
 	    }
             rel_so_far--;
         }
@@ -568,12 +552,15 @@ TREC_QRELS *qrels;
     }
 
     /* Calculate ideal discounted cumulative gain for this topic */
-    cur_lvl = qrels->max_num_rel_levels;
+    /* The algorithm is to consider the ideal ordering of gains for
+       all documents, and to walk through that ordering. */
+    cur_lvl = epi->max_gains;
     lvl_count = 0;
-    for (j = 0; j < epi->max_num_docs_per_topic; j++) {
+    for (j = 1; j <= epi->max_num_docs_per_topic; j++) {
 	while (lvl_count == 0 && cur_lvl > 0) {
 	    cur_lvl--;
-	    lvl_count = qrels->rel_count[epi->gain_order[cur_lvl]];
+	    if (epi->gain_order[cur_lvl] < qrels->max_num_rel_levels)
+		lvl_count = qrels->rel_count[epi->gain_order[cur_lvl]];
 	}
 	if (cur_lvl == 0)
 	    break;
@@ -584,14 +571,8 @@ TREC_QRELS *qrels;
 	else
 	    gain = epi->gain[epi->gain_order[cur_lvl]];
 	
-	if (j == 0)
-	    ideal_dcg += gain;
-	else
-	    ideal_dcg += gain / log2(j + 1);
-	/* printf("%ld %ld %3.1f %6.4f\n", j, epi->gain_order[cur_lvl], gain, ideal_dcg); */
+	ideal_dcg += gain / log2(j + 1);
     }
-    /* printf("QID %s %6.4f %6.4f\n", qrels->qid, eval->norm_disc_cum_gain,
-       ideal_dcg); */
 
     /* Calculate all the other averages */
     if (eval->num_rel_ret > 0) {
@@ -619,12 +600,11 @@ TREC_QRELS *qrels;
 }
 
 static void
-calc_exact_measures (epi, tr_vec, eval, num_rel, num_nonrel)
+calc_exact_measures (epi, tr_vec, eval, qrels)
 EVAL_PARAM_INFO *epi;
 TR_VEC *tr_vec;
 TREC_EVAL *eval;
-long num_rel;               /* Number relevant judged */
-long num_nonrel;            /* Number nonrelevant judged */
+TREC_QRELS *qrels;
 {
 
     if (eval->num_rel) {
@@ -648,12 +628,11 @@ long num_nonrel;            /* Number nonrelevant judged */
 }
 
 static void
-calc_time_measures (epi, tr_vec, eval, num_rel, num_nonrel)
+calc_time_measures (epi, tr_vec, eval, qrels)
 EVAL_PARAM_INFO *epi;
 TR_VEC *tr_vec;
 TREC_EVAL *eval;
-long num_rel;               /* Number relevant judged */
-long num_nonrel;            /* Number nonrelevant judged */
+TREC_QRELS *qrels;
 {
     double recall, precis;     /* current recall, precision values */
     double rel_precis, rel_uap;/* relative precision, uap values */

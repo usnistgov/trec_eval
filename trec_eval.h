@@ -137,7 +137,7 @@ typedef struct {                    /* Overall relevance judgements */
 #define INIT_NUM_QUERIES 50
 #define INIT_NUM_RESULTS 1000
 #define INIT_NUM_RELS 2000
-#define INIT_NUM_REL_LEVELS 5
+#define INIT_NUM_REL_LEVELS 3
 
 /* Non standard values for tr_vec->rel field */
 #define RELVALUE_NONPOOL -1
