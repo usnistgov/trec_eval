@@ -63,23 +63,21 @@ te_calc_ndcg_cut (const EPI *epi, const REL_INFO *rel_info,
             if (++cutoff_index == tm->meas_params->num_params)
                 break;
 	    if (epi->debug_level > 0) 
-		printf("ndcg_at: cutoff %ld dcg %6.4f\n", i, sum);
+		printf("ndcg_cut: cutoff %ld dcg %6.4f\n", i, sum);
         }
 	gain = res_rels.results_rel_list[i];
 	if (gain > 0) {
-	    if (i > 0)
-		sum += gain / log2((double) (i+1));
-	    else
-		sum += gain;
+	    /* Note: i+2 since doc i has rank i+1 */
+	    sum += gain / log2((double) (i+2));
 	    if (epi->debug_level > 1) 
-		printf("ndcg_at:%ld %3.1f %6.4f\n", i, gain, sum);
+		printf("ndcg_cut:%ld %3.1f %6.4f\n", i, gain, sum);
 	}
     }
     /* calculate values for those cutoffs not achieved */
     while (cutoff_index < tm->meas_params->num_params) {
 	eval->values[tm->eval_index + cutoff_index].value = sum;
 	if (epi->debug_level > 0) 
-	    printf("ndcg_at: cutoff %ld dcg %6.4f\n",
+	    printf("ndcg_cut: cutoff %ld dcg %6.4f\n",
 		   cutoffs[cutoff_index], sum);
         cutoff_index++;
     }
@@ -91,10 +89,8 @@ te_calc_ndcg_cut (const EPI *epi, const REL_INFO *rel_info,
     ideal_dcg = 0.0;
     for (i = 0; 1; i++) {
 	lvl_count++;
-	while (lvl_count > res_rels.rel_levels[cur_lvl]) {
+	while (cur_lvl > 0 && lvl_count > res_rels.rel_levels[cur_lvl]) {
 	    cur_lvl--;
-	    if (cur_lvl == 0)
-		break;
 	    lvl_count = 1;
 	}
 	if (cur_lvl == 0)
@@ -106,17 +102,14 @@ te_calc_ndcg_cut (const EPI *epi, const REL_INFO *rel_info,
 	    if (ideal_dcg > 0.0) 
 		eval->values[tm->eval_index + cutoff_index].value /= ideal_dcg;
 	    if (epi->debug_level > 0)
-		printf("ndcg_at: cutoff %ld idcg %6.4f\n", i, ideal_dcg);
+		printf("ndcg_cut: cutoff %ld idcg %6.4f\n", i, ideal_dcg);
             if (++cutoff_index == tm->meas_params->num_params)
                 break;
         }
 	gain = cur_lvl;
-	if (i == 0)
-	    ideal_dcg += gain;
-	else
-	    ideal_dcg += gain / (double) log2((double)(i + 1));
+	ideal_dcg += gain / (double) log2((double)(i + 2));
 	if (epi->debug_level > 0) 
-	    printf("ndcg_at:%ld %ld %3.1f %6.4f\n", i, cur_lvl, gain,ideal_dcg);
+	    printf("ndcg_cut:%ld %ld %3.1f %6.4f\n",i, cur_lvl, gain,ideal_dcg);
     }
 
     /* calculate values for those cutoffs not achieved */
@@ -124,7 +117,7 @@ te_calc_ndcg_cut (const EPI *epi, const REL_INFO *rel_info,
 	if (ideal_dcg > 0.0) 
 	    eval->values[tm->eval_index + cutoff_index].value /= ideal_dcg;
 	if (epi->debug_level > 0)
-	    printf("ndcg_at: cutoff %ld idcg %6.4f\n",
+	    printf("ndcg_cut: cutoff %ld idcg %6.4f\n",
 		   cutoffs[cutoff_index], ideal_dcg);
         cutoff_index++;
     }

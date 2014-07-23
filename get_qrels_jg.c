@@ -131,8 +131,8 @@ te_get_qrels_jg (EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
     while (*ptr) {
 	if (UNDEF == parse_qrels_line (&ptr, &line_ptr->qid, &line_ptr->jg,
 				       &line_ptr->docno, &line_ptr->rel)) {
-	    fprintf (stderr, "trec_eval.get_qrels_jg: Malformed line %d\n",
-		     line_ptr - lines + 1);
+	    fprintf (stderr, "trec_eval.get_qrels_jg: Malformed line %ld\n",
+		     (long) (line_ptr - lines + 1));
 	    return (UNDEF);
 	}
 	line_ptr++;

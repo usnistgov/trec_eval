@@ -54,13 +54,14 @@ te_get_trec_results (EPI *epi, char *text_results_file,
 		     ALL_RESULTS *all_results)
 {
     int fd;
-    int size = 0;
+    char *orig_buf;
+    size_t size = 0;
     char *ptr;
     char *current_qid;
     long i;
     LINES *lines;
     LINES *line_ptr;
-    long num_lines;
+    size_t num_lines;
     long num_qid;
     char *run_id_ptr = NULL;
     /* current pointers into static pools above */
@@ -68,17 +69,33 @@ te_get_trec_results (EPI *epi, char *text_results_file,
     TEXT_RESULTS_INFO *text_info_ptr;
     TEXT_RESULTS *text_results_ptr;
     
-    /* Read entire file into memory */
+    /* mmap entire file into memory and copy it into writable memory */
     if (-1 == (fd = open (text_results_file, 0)) ||
         0 >= (size = lseek (fd, 0L, 2)) ||
-        NULL == (trec_results_buf = malloc ((unsigned) size+2)) ||
-        -1 == lseek (fd, 0L, 0) ||
-        size != read (fd, trec_results_buf, size) ||
-	-1 == close (fd)) {
-        fprintf (stderr,
+        (char *) -1 == (orig_buf = (char *) mmap ((caddr_t) 0,
+						  (size_t) size,
+						  PROT_READ,
+						  MAP_SHARED,
+						  fd,
+						  (off_t) 0))) {
+	fprintf (stderr,
 		 "trec_eval.get_results: Cannot read results file '%s'\n",
 		 text_results_file);
-        return (UNDEF);
+	return (UNDEF);
+    }
+    if (NULL == (trec_results_buf = malloc ((size_t) size+2))) {
+	fprintf (stderr,
+		 "trec_eval.get_results: Cannot copy results file '%s'\n",
+		 text_results_file);
+	return (UNDEF);
+    }
+    (void) memcpy (trec_results_buf, orig_buf, size);
+    if (-1 == munmap (orig_buf, size) ||
+	-1 == close (fd)) {
+	fprintf (stderr,
+		 "trec_eval.get_results: Cannot close results file '%s'\n",
+		 text_results_file);
+	return (UNDEF);
     }
 
     /* Append ending newline if not present, Append NULL terminator */
@@ -108,8 +125,8 @@ te_get_trec_results (EPI *epi, char *text_results_file,
 	}
 	if (UNDEF == parse_results_line (&ptr, &line_ptr->qid,&line_ptr->docno,
 					 &line_ptr->sim, &run_id_ptr)) {
-	    fprintf (stderr, "trec_eval.get_results: Malformed line %d\n",
-		     line_ptr - lines + 1);
+	    fprintf (stderr, "trec_eval.get_results: Malformed line %ld\n",
+		     (long) (line_ptr - lines + 1));
 	    return (UNDEF);
 	}
 	line_ptr++;

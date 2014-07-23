@@ -78,6 +78,14 @@ normally ever used.   \n\
  -T format: the top results_file is assumed to be in format 'format'. Current\n\
     values for 'format' include 'trec_results'. Note not all measures can be\n\
     calculated with all formats.\n\
+ --Zscore Zmean_file:\n\
+ -Z Zmean_file: Instead of printing the raw score for each measure, print\n\
+    a Z score instead. The score printed will be the deviation from the mean\n\
+    of the raw score, expressed in standard deviations, where the mean and\n\
+    standard deviation for each measure and query are found in Zmean_file.\n\
+    If mean is not in Zmeanfile for a measure and query, -1000000 is printed.\n\
+    Zmean_file format is ascii lines of form \n\
+       qid  measure_name  mean  std_dev\n\
  \n\
  \n\
 Standard evaluation procedure:\n\
@@ -101,6 +109,8 @@ it will not be detected.  Use the -c flag to avoid this behavior. \n\
 #include "common.h"
 #include "sysfunc.h"
 #include "trec_eval.h"
+#include "functions.h"
+
 #ifdef MDEBUG
 #include "mcheck.h"
 #endif /* MDEBUG */
@@ -134,17 +144,20 @@ main (argc, argv)
 int argc;
 char *argv[];
 {
+    char *trec_results_file;
     ALL_RESULTS all_results;
+    char *trec_rel_info_file;
     ALL_REL_INFO all_rel_info;
+    char *zscores_file= NULL;
+    ALL_ZSCORES all_zscores;
+
+    EPI epi;              /* Eval parameter info */
     TREC_EVAL accum_eval;
     TREC_EVAL q_eval;
     long i,j,m;
-    EPI epi;              /* Eval parameter info */
     int c;
     long help_wanted = 0;
     long measure_marked_flag = 0;
-    char *trec_rel_info_file;
-    char *trec_results_file;
 
 #ifdef MDEBUG
     /* Turn on memory debugging if environment variable MALLOC_TRACE is
@@ -167,6 +180,7 @@ char *argv[];
     epi.max_num_docs_per_topic = MAXLONG;
     epi.rel_info_format = "qrels";
     epi.results_format = "trec_results";
+    epi.zscore_flag = 0;
     if (NULL == (epi.meas_arg = Malloc (argc+1, MEAS_ARG)))
 	exit (1);
     epi.meas_arg[0].measure_name = NULL;
@@ -189,9 +203,10 @@ char *argv[];
 	    {"Rel_info_format", 1, 0, 'R'},
 	    {"Results_format", 1, 0, 'T'},
 	    {"Output_old_results_format", 1, 0, 'o'},
+	    {"Zscore", 1, 0, 'Z'},
 	    {0, 0, 0, 0},
 	};
-	c = getopt_long (argc, argv, "hvqm:cl:nD:JN:M:R:T:o", 
+	c = getopt_long (argc, argv, "hvqm:cl:nD:JN:M:R:T:oZ:", 
 			 long_options, &option_index);
 	if (c == -1)
 	    break;
@@ -243,6 +258,10 @@ char *argv[];
 	case 'o':
 	    /* Obsolete, no longer supported */
 	    epi.relation_flag = 0;
+	    break;
+	case 'Z':
+	    epi.zscore_flag++;
+	    zscores_file = optarg;
 	    break;
 	case '?':
 	default:
@@ -302,6 +321,11 @@ char *argv[];
 	exit (2);
     }
 
+    if (epi.zscore_flag) {
+	if (UNDEF == te_get_zscores (&epi, zscores_file, &all_zscores))
+	    return (UNDEF);
+    }
+
     /* Initialize all marked measures (possibly using command line info) */
     if (0 == measure_marked_flag) {
 	/* If no measures designated on command line, first mark "official" */
@@ -310,7 +334,7 @@ char *argv[];
 	    exit (1);
 	}
     }
-    accum_eval = (TREC_EVAL) {"all", 0, 0, NULL, 0, 0};
+    accum_eval = (TREC_EVAL) {"all",  0, NULL, 0, 0};
     for (m = 0; m < te_num_trec_measures; m++) {
 	if (MEASURE_MARKED(te_trec_measures[m])) {
 	    if (UNDEF == te_trec_measures[m]->init_meas (&epi,
@@ -330,7 +354,7 @@ char *argv[];
     (void) memcpy (q_eval.values, accum_eval.values,
 		   accum_eval.num_values * sizeof (TREC_EVAL_VALUE));
     q_eval.num_values = accum_eval.num_values;
-    q_eval.num_queries = q_eval.num_orig_queries = 0;
+    q_eval.num_queries  = 0;
 
     /* For each topic which has both qrels and top results information,
        calculate, possibly print (if query_flag), and accumulate
@@ -354,6 +378,7 @@ char *argv[];
 	    q_eval.values[m].value = 0;
 	q_eval.qid = all_results.results[i].qid;
 
+	/* Calculate all measure scores */
 	for (m = 0; m < te_num_trec_measures; m++) {
 	    if (MEASURE_REQUESTED(te_trec_measures[m])) {
 		if (UNDEF == te_trec_measures[m]->calc_meas (&epi,
@@ -365,6 +390,18 @@ char *argv[];
 			     te_trec_measures[m]->name);
 		    exit (4);
 		}
+	    }
+	}
+
+	/* Convert values to zscores if requested */
+	if (epi.zscore_flag) {
+	    if (UNDEF == te_convert_to_zscore (&all_zscores, &q_eval))
+		return (UNDEF);
+	}
+
+	/* Add this topics value to accumulated values, and possibly print */
+	for (m = 0; m < te_num_trec_measures; m++) {
+	    if (MEASURE_REQUESTED(te_trec_measures[m])) {
 		if (UNDEF == te_trec_measures[m]->acc_meas (&epi,
 						   te_trec_measures[m],
 						   &q_eval,
@@ -393,18 +430,14 @@ char *argv[];
 	exit (7);
     }
 
-    if (epi.average_complete_flag) {
-	/* Want to average over possibly missing queries.  Pass in actual
-	 *  number of queries in num_orig_queries */
-	accum_eval.num_orig_queries = accum_eval.num_queries;
-	accum_eval.num_queries = all_rel_info.num_q_rels;
-    }
-
     /* Calculate final averages, and print (if desired) */
+    /* Note that averages may depend on the entire rel_info data if
+       epi.average_complete_flag is set */
     for (m = 0; m < te_num_trec_measures; m++) {
 	if (MEASURE_REQUESTED(te_trec_measures[m])) {
 	    if (UNDEF == te_trec_measures[m]->calc_avg_meas
-		    (&epi, te_trec_measures[m], &accum_eval) ||
+		    (&epi, te_trec_measures[m],
+		     &all_rel_info, &accum_eval) ||
 		UNDEF == te_trec_measures[m]->print_final_and_cleanup_meas 
 		(&epi, te_trec_measures[m],  &accum_eval)) {
 		    fprintf (stderr,"trec_eval: Can't print measure '%s'\n",
@@ -576,6 +609,10 @@ cleanup (EPI *epi)
     }
     for (i = 0; i < te_num_form_inter_procs; i++) {
 	if (UNDEF == te_form_inter_procs[i].cleanup ())
+	    return (UNDEF);
+    }
+    if (epi->zscore_flag) {
+	if (UNDEF == te_get_zscores_cleanup())
 	    return (UNDEF);
     }
     return (1);

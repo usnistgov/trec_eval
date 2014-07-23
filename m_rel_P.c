@@ -48,6 +48,9 @@ te_calc_rel_P (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
     if (UNDEF == te_form_res_rels (epi, rel_info, results, &rr))
 	return (UNDEF);
 
+    if (rr.num_rel == 0)
+	return (0);
+
     for (i = 0; i < rr.num_ret; i++) {
 	if (i == cutoffs[cutoff_index]) {
 	    /* Calculate previous cutoff threshold.

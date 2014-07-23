@@ -27,6 +27,9 @@ If you wish to output only one particular measure:
 ------------------------------------------------------------------------------
 Change Log  (only recent)
 ------------------------------------------------------------------------------
+12/31/08
+       comments and documentation of Zscore file format corrected.
+       trec_eval.c get_zscores.c
 2/25/08 Version 9.0alpha.  
        Complete rewrite of entire trec_eval (needed for a long time!).  
        Complete separation of individual measure calculations -

@@ -70,15 +70,20 @@ extern TREC_MEAS te_meas_bpref;
 extern TREC_MEAS te_meas_recip_rank;
 extern TREC_MEAS te_meas_iprec_at_recall;
 extern TREC_MEAS te_meas_P;
+extern TREC_MEAS te_meas_relstring;
 extern TREC_MEAS te_meas_recall;
 extern TREC_MEAS te_meas_infAP;
 extern TREC_MEAS te_meas_gm_bpref;
 extern TREC_MEAS te_meas_Rprec_mult;
 extern TREC_MEAS te_meas_utility;
 extern TREC_MEAS te_meas_11pt_avg;
+extern TREC_MEAS te_meas_binG;
+extern TREC_MEAS te_meas_G;
 extern TREC_MEAS te_meas_ndcg;
-extern TREC_MEAS te_meas_ndcg_p;
+extern TREC_MEAS te_meas_ndcg_rel;
+extern TREC_MEAS te_meas_Rndcg;
 extern TREC_MEAS te_meas_ndcg_cut;
+extern TREC_MEAS te_meas_map_cut;
 extern TREC_MEAS te_meas_relative_P;
 extern TREC_MEAS te_meas_success;
 extern TREC_MEAS te_meas_set_P;
@@ -104,6 +109,7 @@ extern TREC_MEAS te_meas_prefs_avgjg_imp;
 extern TREC_MEAS te_meas_map_avgjg;
 extern TREC_MEAS te_meas_P_avgjg;
 extern TREC_MEAS te_meas_Rprec_mult_avgjg;
+extern TREC_MEAS te_meas_yaap;
 
 TREC_MEAS *te_trec_measures[] = {
     &te_meas_runid,
@@ -118,15 +124,20 @@ TREC_MEAS *te_trec_measures[] = {
     &te_meas_recip_rank,
     &te_meas_iprec_at_recall,
     &te_meas_P,
+    &te_meas_relstring,
     &te_meas_recall,
     &te_meas_infAP,
     &te_meas_gm_bpref,
     &te_meas_Rprec_mult,
     &te_meas_utility,
     &te_meas_11pt_avg,
+    &te_meas_binG,
+    &te_meas_G,
     &te_meas_ndcg,
-    &te_meas_ndcg_p,
+    &te_meas_ndcg_rel,
+    &te_meas_Rndcg,
     &te_meas_ndcg_cut,
+    &te_meas_map_cut,
     &te_meas_relative_P,
     &te_meas_success,
     &te_meas_set_P,
@@ -152,6 +163,7 @@ TREC_MEAS *te_trec_measures[] = {
     &te_meas_map_avgjg,
     &te_meas_P_avgjg,
     &te_meas_Rprec_mult_avgjg,
+    &te_meas_yaap,
 };
 int te_num_trec_measures = sizeof (te_trec_measures) / sizeof (te_trec_measures[0]);
 
@@ -160,10 +172,10 @@ static char *off_names[] =  {
     "Rprec", "bpref", "recip_rank", "iprec_at_recall", "P", NULL};
 static char *trec_names[] =  {
     "runid", "num_q", "num_ret", "num_rel", "num_rel_ret", "map", "gm_map",
-    "Rprec", "bpref", "recip_rank", "iprec_at_recall", "P",
+    "Rprec", "bpref", "recip_rank", "iprec_at_recall", "P", "relstring",
     "recall", "infAP","gm_bpref",
     "utility", "11pt_avg", "ndcg", "relative_P", "Rprec_mult", "success",
-    "ndcg_cut", "ndcg_p",
+    "map_cut", "ndcg_cut", "ndcg_rel", "Rndcg", "binG", "G",
     "set_P", "set_recall", "set_relative_P", "set_map", "set_F",
     "num_nonrel_judged_ret",
     NULL};

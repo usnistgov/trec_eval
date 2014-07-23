@@ -40,7 +40,8 @@ te_print_final_meas_s_float (const EPI *epi, TREC_MEAS *tm,
 			     TREC_EVAL *eval)
 {
     if (epi->summary_flag)
-	printf ("%-22s\t%s\t%6.4f\n",
+	printf ("%s%-22s\t%s\t%6.4f\n",
+		epi->zscore_flag ? "Z": "",
 		eval->values[tm->eval_index].name,
 		eval->qid,
 		eval->values[tm->eval_index].value);
@@ -52,11 +53,18 @@ int
 te_print_final_meas_s_long (const EPI *epi, TREC_MEAS *tm,
 			    TREC_EVAL *eval)
 {
-    if (epi->summary_flag)
-	printf ("%-22s\t%s\t%ld\n",
-		eval->values[tm->eval_index].name,
-		eval->qid,
-		(long) eval->values[tm->eval_index].value);
+    if (epi->summary_flag) {
+	if (epi->zscore_flag)
+	    printf ("Z%-22s\t%s\t%6.4f\n",
+		    eval->values[tm->eval_index].name,
+		    eval->qid,
+		    eval->values[tm->eval_index].value);
+	else 
+	    printf ("%-22s\t%s\t%ld\n",
+		    eval->values[tm->eval_index].name,
+		    eval->qid,
+		    (long) eval->values[tm->eval_index].value);
+    }
     return (1);
 }
 
@@ -70,7 +78,8 @@ te_print_final_meas_a_cut (const EPI *epi, TREC_MEAS *tm,
 
     for (i = 0; i < tm->meas_params->num_params; i++) {
 	if (epi->summary_flag)
-	    printf ("%-22s\t%s\t%6.4f\n",
+	    printf ("%s%-22s\t%s\t%6.4f\n",
+		    epi->zscore_flag ? "Z": "",
 		    eval->values[tm->eval_index + i].name,
 		    eval->qid,
 		    eval->values[tm->eval_index + i].value);
@@ -90,7 +99,8 @@ te_print_final_meas_s_float_p (const EPI *epi, TREC_MEAS *tm,
 			       TREC_EVAL *eval)
 {
     if (epi->summary_flag)
-	printf ("%-22s\t%s\t%6.4f\n",
+	printf ("%s%-22s\t%s\t%6.4f\n",
+		epi->zscore_flag ? "Z": "",
 		eval->values[tm->eval_index].name,
 		eval->qid,
 		eval->values[tm->eval_index].value);

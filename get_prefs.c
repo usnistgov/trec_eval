@@ -57,7 +57,10 @@ For example:
       qid1  ujg1  sub2  docno2  1.0
       qid1  ujg1  sub2  docno4  3.0
 expressses 5 preferences (1>2, 1>3, 2 > 3, 4>1, 4>2).  Note the duplicate
-1 > 2 is not counted as a separate preference
+1 > 2 is not counted as a separate preference.
+A conventional pairwise preference file with no transistivity could be converted
+into this form, with two entries per JSG, the preferred doc with a rel of 2.0 and
+the non-preferred doc with a rel of 1.0.
 
 Multiple users are indicated by different JGs.
 For example:
@@ -183,8 +186,8 @@ te_get_prefs (EPI *epi, char *text_prefs_file, ALL_REL_INFO *all_rel_info)
 	if (UNDEF == parse_prefs_line (&ptr, &line_ptr->qid, &line_ptr->jg,
 				       &line_ptr->jsg, &line_ptr->docno,
 				       &line_ptr->rel)) {
-	    fprintf (stderr, "trec_eval.get_prefs: Malformed line %d\n",
-		     line_ptr - lines + 1);
+	    fprintf (stderr, "trec_eval.get_prefs: Malformed line %ld\n",
+		     (long) (line_ptr - lines + 1));
 	    return (UNDEF);
 	}
 	line_ptr++;

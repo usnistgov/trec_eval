@@ -13,7 +13,11 @@ void * te_chk_and_malloc (void *ptr, long *current_bound,
 			  const long needed, const size_t size);
 void * te_chk_and_realloc (void *ptr, long *current_bound,
 			   const long needed, const int size);
-
+/* Functions for dealing with zscores */
+int te_get_zscores (const EPI *epi, const char *zscores_file,
+		    ALL_ZSCORES *zscores);
+int te_get_zscores_cleanup ();
+int te_convert_to_zscore (const ALL_ZSCORES *all_zscores, TREC_EVAL *q_eval);
 
 /* ------------------- Generic Routines for Measures ------------------------ */
 
@@ -51,16 +55,16 @@ int te_acc_meas_a_cut (const EPI *epi, const TREC_MEAS *tm,
 /* Code is in meas_calc_avg.c */
 /* Measure does not require final averaging */
 int te_calc_avg_meas_empty (const EPI *epi, const TREC_MEAS *tm,
-			    TREC_EVAL *eval);
+			    	const ALL_REL_INFO *all_rel_info, TREC_EVAL *eval);
 /* Measure is a single value with averaging */
 int te_calc_avg_meas_s (const EPI *epi, const TREC_MEAS *tm,
-			TREC_EVAL *accum_eval);
+				const ALL_REL_INFO *all_rel_info, TREC_EVAL *accum_eval);
 /* Measure is an array of values (one per cutoff) with averaging */
 int te_calc_avg_meas_a_cut (const EPI *epi, const TREC_MEAS *tm,
-			    TREC_EVAL *accum_eval);
+			   	const ALL_REL_INFO *all_rel_info,  TREC_EVAL *accum_eval);
 /* Measure is a single value using geometric mean */
 int te_calc_avg_meas_s_gm (const EPI *epi, const TREC_MEAS *tm,
-			   TREC_EVAL *accum_eval);
+			   	const ALL_REL_INFO *all_rel_info, TREC_EVAL *accum_eval);
 
 /* ----- Print single query for measure ---- */
 /* Code is in meas_print_single.c */

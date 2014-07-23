@@ -42,7 +42,7 @@ te_calc_set_map (const EPI *epi, const REL_INFO *rel_info,
     if (UNDEF == te_form_res_rels (epi, rel_info, results, &res_rels))
 	return (UNDEF);
 
-    if (res_rels.num_ret)
+    if (res_rels.num_ret && res_rels.num_rel)
 	eval->values[tm->eval_index].value =
 	    ((double) res_rels.num_rel_ret *
 	     (double) res_rels.num_rel_ret)      /

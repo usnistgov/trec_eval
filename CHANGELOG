@@ -1,6 +1,19 @@
 ------------------------------------------------------------------------------
 Change Log  (only recent)
 ------------------------------------------------------------------------------
+12/5/12 Version 9.0.4
+       Fixed yaap measure (Stephen Robertson).
+12/5/12 Version 9.0.3
+       Added yaap measure (Stephen Robertson).
+2/28/12 Version 9.0.2
+       Cleaned up warning messages again, Corrected -c flag implementation
+7/14/09 Version 9.0
+       Long past time to get this out there, despite my plans
+       for more features!  Minor cleanup of warning messages 
+       in 64bit and gcc 4.4 compilers
+12/31/08
+       comments and documentation of Zscore file format corrected.
+       trec_eval.c get_zscores.c
 3/3/08 Version 9.0alpha.  
        Complete rewrite of entire trec_eval (needed for a long time - 
        core code was written in the 1980's and was ugly then!). 
@@ -25,6 +38,7 @@ Change Log  (only recent)
        
        Measures added:
        	        ndcg, ndcg_cut, set_F, success, map_avgjg, P_avgjg, runid,
+		relstring, ndcg_p
 		various preference evaluation measures.
        Measures renamed:
                 set_P			was exact_prec

@@ -40,9 +40,10 @@ te_calc_set_recall (const EPI *epi, const REL_INFO *rel_info,
     if (UNDEF == te_form_res_rels (epi, rel_info, results, &res_rels))
 	return (UNDEF);
 
-    eval->values[tm->eval_index].value =
-	(double) res_rels.num_rel_ret /
-	(double) res_rels.num_rel;
+    if (res_rels.num_rel)
+	eval->values[tm->eval_index].value =
+	    (double) res_rels.num_rel_ret /
+	    (double) res_rels.num_rel;
 
     return (1);
 }

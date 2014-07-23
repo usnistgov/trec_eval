@@ -47,7 +47,7 @@ te_calc_set_F (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
     if (UNDEF == te_form_res_rels (epi, rel_info, results, &res_rels))
 	return (UNDEF);
 
-    if (res_rels.num_ret && res_rels.num_rel)  {
+    if (res_rels.num_rel_ret)  {
 	P = (double) res_rels.num_rel_ret /
 	    (double) res_rels.num_ret;
 	R = (double) res_rels.num_rel_ret /
