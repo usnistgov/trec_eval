@@ -10,6 +10,7 @@
 #include "trec_eval.h"
 #include "trec_format.h"
 #include <ctype.h>
+#include <sys/types.h>
 
 /* Read all retrieved results information from trec_results_file.
 Read text tuples from trec_results_file of the form
