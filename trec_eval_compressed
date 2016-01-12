@@ -1,0 +1,47 @@
+#!/usr/bin/perl -w
+
+# Author craig.macdonald _AT_ glasgow.ac.uk
+
+use strict;
+use File::Temp qw/ :POSIX  tempfile /;
+
+my @tmpFiles;
+my $self = $0;
+my $TREC_EVAL = $0; $TREC_EVAL =~ s/_compressed//;
+$TREC_EVAL = $ENV{TREC_EVAL} if exists $ENV{TREC_EVAL};
+
+my @newARGV;
+#for each file, decompress it to a temporary file
+while(my $filename = shift @ARGV)
+{
+	if ($filename =~ /.gz$/ or $filename =~ /.bz2$/ or $filename eq '-')
+	{
+		my @rows;
+		if ($filename =~ /.gz$/)
+		{
+			@rows = `zcat $filename`;
+		}
+		elsif ($filename =~ /.bz2$/)
+		{
+			@rows = `bzcat $filename`;
+		}
+		elsif ($filename eq '-')
+		{
+			@rows = <>;
+		}
+	    my ($TMPFILE, $TMPFILENAME) = tempfile();
+    	print $TMPFILE $_ for @rows;
+	    close $TMPFILE;
+    	$filename = $TMPFILENAME;
+		push @tmpFiles, $filename;
+		push @newARGV, $filename;
+	}
+	else
+	{
+		push @newARGV, $filename;
+	}
+}
+
+system($TREC_EVAL, @newARGV);
+unlink $_ for @tmpFiles;
+
