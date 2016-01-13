@@ -17,22 +17,29 @@ while(my $filename = shift @ARGV)
 	if ($filename =~ /.gz$/ or $filename =~ /.bz2$/ or $filename eq '-')
 	{
 		my @rows;
+		my $FILEI;
+		my $pid = undef;
 		if ($filename =~ /.gz$/)
 		{
-			@rows = `zcat $filename`;
+			$pid = open($FILEI, "gzip -dc $filename|") or die "Cannot open pipe from gzip : $!\n";
 		}
 		elsif ($filename =~ /.bz2$/)
 		{
-			@rows = `bzcat $filename`;
+			$pid = open($FILEI, "bzcat $filename|") or die "Cannot open pipe from bzcat : $!\n";
 		}
 		elsif ($filename eq '-')
 		{
-			@rows = <>;
+			$FILEI = *STDIN;
 		}
-	    my ($TMPFILE, $TMPFILENAME) = tempfile();
-    	print $TMPFILE $_ for @rows;
-	    close $TMPFILE;
-    	$filename = $TMPFILENAME;
+		my ($TMPFILE, $TMPFILENAME) = tempfile();
+		while(<$FILEI>)
+		{
+			print $TMPFILE $_;
+		}
+		close $FILEI or die "bad pipe: $?, $!\n";
+		close $TMPFILE;
+		
+		$filename = $TMPFILENAME;
 		push @tmpFiles, $filename;
 		push @newARGV, $filename;
 	}
@@ -45,3 +52,4 @@ while(my $filename = shift @ARGV)
 system($TREC_EVAL, @newARGV);
 unlink $_ for @tmpFiles;
 
+exit $?>> 8;
