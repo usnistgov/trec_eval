@@ -79,6 +79,8 @@ extern TREC_MEAS te_meas_utility;
 extern TREC_MEAS te_meas_11pt_avg;
 extern TREC_MEAS te_meas_binG;
 extern TREC_MEAS te_meas_G;
+extern TREC_MEAS te_meas_dcg;
+extern TREC_MEAS te_meas_ideal_dcg;
 extern TREC_MEAS te_meas_ndcg;
 extern TREC_MEAS te_meas_ndcg_rel;
 extern TREC_MEAS te_meas_Rndcg;
@@ -133,6 +135,8 @@ TREC_MEAS *te_trec_measures[] = {
     &te_meas_11pt_avg,
     &te_meas_binG,
     &te_meas_G,
+    &te_meas_dcg,
+    &te_meas_ideal_dcg,
     &te_meas_ndcg,
     &te_meas_ndcg_rel,
     &te_meas_Rndcg,
@@ -174,7 +178,7 @@ static char *trec_names[] =  {
     "runid", "num_q", "num_ret", "num_rel", "num_rel_ret", "map", "gm_map",
     "Rprec", "bpref", "recip_rank", "iprec_at_recall", "P", "relstring",
     "recall", "infAP","gm_bpref",
-    "utility", "11pt_avg", "ndcg", "relative_P", "Rprec_mult", "success",
+    "utility", "11pt_avg", "ideal_dcg", "dcg", "ndcg", "relative_P", "Rprec_mult", "success",
     "map_cut", "ndcg_cut", "ndcg_rel", "Rndcg", "binG", "G",
     "set_P", "set_recall", "set_relative_P", "set_map", "set_F",
     "num_nonrel_judged_ret",
