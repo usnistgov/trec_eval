@@ -1,0 +1,55 @@
+#!/usr/bin/perl -w
+
+# Author craig.macdonald _AT_ glasgow.ac.uk
+
+use strict;
+use File::Temp qw/ :POSIX  tempfile /;
+
+my @tmpFiles;
+my $self = $0;
+my $TREC_EVAL = $0; $TREC_EVAL =~ s/_compressed//;
+$TREC_EVAL = $ENV{TREC_EVAL} if exists $ENV{TREC_EVAL};
+
+my @newARGV;
+#for each file, decompress it to a temporary file
+while(my $filename = shift @ARGV)
+{
+	if ($filename =~ /.gz$/ or $filename =~ /.bz2$/ or $filename eq '-')
+	{
+		my @rows;
+		my $FILEI;
+		my $pid = undef;
+		if ($filename =~ /.gz$/)
+		{
+			$pid = open($FILEI, "gzip -dc $filename|") or die "Cannot open pipe from gzip : $!\n";
+		}
+		elsif ($filename =~ /.bz2$/)
+		{
+			$pid = open($FILEI, "bzcat $filename|") or die "Cannot open pipe from bzcat : $!\n";
+		}
+		elsif ($filename eq '-')
+		{
+			$FILEI = *STDIN;
+		}
+		my ($TMPFILE, $TMPFILENAME) = tempfile();
+		while(<$FILEI>)
+		{
+			print $TMPFILE $_;
+		}
+		close $FILEI or die "bad pipe: $?, $!\n";
+		close $TMPFILE;
+		
+		$filename = $TMPFILENAME;
+		push @tmpFiles, $filename;
+		push @newARGV, $filename;
+	}
+	else
+	{
+		push @newARGV, $filename;
+	}
+}
+
+system($TREC_EVAL, @newARGV);
+unlink $_ for @tmpFiles;
+
+exit $?>> 8;
