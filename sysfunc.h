@@ -27,6 +27,11 @@
 
 #include <getopt.h>
 
+/* see http://stackoverflow.com/questions/33058014/trec-eval-make-error-using-cygwin/34927338 */
+#ifdef __CYGWIN__
+#undef log2
+#endif
+
 /* For time being, define Berkeley constructs in terms of SVR4 constructs*/
 #define bzero(dest,len)      memset(dest,'\0',len)
 #define bcopy(source,dest,len)   memcpy(dest,source,len)
