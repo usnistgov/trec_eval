@@ -1,6 +1,6 @@
 ## Compiling
 
-To achieve a compilation of trec_eval for Windows, download the [Cygwin](https://www.cygwin.com/) platform.
+To achieve a compilation of trec_eval for Windows, download the [Cygwin](https://www.cygwin.com/) platform. Open a Cygwin instance, navigate using cd to the directory of the trec_eval source, and type make.
 
 ## Running
 
