@@ -2,7 +2,7 @@
 
 To achieve a compilation of trec_eval for Windows, you will need Cygwin installed.
 
-Download and install the [Cygwin](https://www.cygwin.com/) platform. You will need make and gcc installed by Cygwin - we would recomment selecting to install the Develop category.
+Download and install the [Cygwin](https://www.cygwin.com/) platform. You will need make and gcc installed by Cygwin - we would recommend selecting to install the Develop category.
 
 Then, to compile trec_eval, open a Cygwin instance, navigate using cd to the directory of the trec_eval source, and type make.
 
