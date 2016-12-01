@@ -112,6 +112,7 @@ extern TREC_MEAS te_meas_map_avgjg;
 extern TREC_MEAS te_meas_P_avgjg;
 extern TREC_MEAS te_meas_Rprec_mult_avgjg;
 extern TREC_MEAS te_meas_yaap;
+extern TREC_MEAS te_meas_rbp;
 
 TREC_MEAS *te_trec_measures[] = {
     &te_meas_runid,
@@ -168,6 +169,7 @@ TREC_MEAS *te_trec_measures[] = {
     &te_meas_P_avgjg,
     &te_meas_Rprec_mult_avgjg,
     &te_meas_yaap,
+    &te_meas_rbp,
 };
 int te_num_trec_measures = sizeof (te_trec_measures) / sizeof (te_trec_measures[0]);
 

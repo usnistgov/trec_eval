@@ -6,7 +6,7 @@ BIN = /usr/local/bin
 
 H   = .
 
-VERSIONID = 9.0.4
+VERSIONID = 10.0-dev
 
 # gcc
 CC       = gcc
@@ -42,7 +42,8 @@ MEAS_SRCS =  measures.c  m_map.c m_P.c m_num_q.c m_num_ret.c m_num_rel.c \
 	m_prefs_simp_ret.c m_prefs_pair_ret.c m_prefs_avgjg_ret.c\
         m_prefs_avgjg_Rnonrel_ret.c \
 	m_prefs_simp_imp.c m_prefs_pair_imp.c m_prefs_avgjg_imp.c\
-        m_map_avgjg.c m_Rprec_mult_avgjg.c m_P_avgjg.c m_yaap.c
+        m_map_avgjg.c m_Rprec_mult_avgjg.c m_P_avgjg.c m_yaap.c\
+	m_rbp.c
 
 SRCS = $(TOP_SRCS) $(FORMAT_SRCS) $(MEAS_SRCS)
 
