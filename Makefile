@@ -20,7 +20,7 @@ CFLAGS   = -g -I$H  -Wall -DVERSIONID=\"$(VERSIONID)\"
 INSTALL = /bin/mv
 
 TOP_SRCS = trec_eval.c formats.c meas_init.c meas_acc.c meas_avg.c \
-	meas_print_single.c meas_print_final.c
+	meas_print_single.c meas_print_final.c gain_init.c
 
 FORMAT_SRCS = get_qrels.c get_trec_results.c get_prefs.c get_qrels_prefs.c \
 	get_qrels_jg.c form_res_rels.c form_res_rels_jg.c \

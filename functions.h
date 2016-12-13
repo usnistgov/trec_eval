@@ -8,6 +8,8 @@
 #define FUNCTIONSH
 
 #include "trec_eval.h"
+#include "trec_format.h"
+
 /* Utility functions */
 void * te_chk_and_malloc (void *ptr, long *current_bound,
 			  const long needed, const size_t size);
@@ -18,6 +20,11 @@ int te_get_zscores (const EPI *epi, const char *zscores_file,
 		    ALL_ZSCORES *zscores);
 int te_get_zscores_cleanup ();
 int te_convert_to_zscore (const ALL_ZSCORES *all_zscores, TREC_EVAL *q_eval);
+/* Functions for dealing with gain values, defined in gain_init.c */
+int setup_gains (const TREC_MEAS *tm, const RES_RELS *res_rels,
+			GAINS *gains);
+double get_gain (const long rel_level, const GAINS *gains);
+int comp_rel_gain ();
 
 /* ------------------- Generic Routines for Measures ------------------------ */
 
