@@ -12,6 +12,32 @@
 
 /* Procedures for initializing gain values from command-line parameters */
 
+static int
+valid_int (const char *str)
+{
+   // Handle negative numbers.
+   //
+   if (*str == '-' || *str == '+')
+      ++str;
+
+   // Handle empty string or just "-" or "+".
+   //
+   if (!*str)
+      return 0;
+
+   // Check for non-digit chars in the rest of the stirng.
+   //
+   while (*str)
+   {
+      if (!isdigit(*str))
+         return 0;
+      else
+         ++str;
+   }
+
+   return 1;
+}
+
 int
 setup_gains (const TREC_MEAS *tm, const RES_RELS *res_rels, GAINS *gains)
 {
@@ -30,6 +56,8 @@ setup_gains (const TREC_MEAS *tm, const RES_RELS *res_rels, GAINS *gains)
 	return (UNDEF);
     num_gains = 0;
     for (i = 0; i < num_pairs; i++) {
+	if (!valid_int(pairs[i].name))
+	    continue;
 	gains->rel_gains[num_gains].rel_level = atol (pairs[i].name);
 	gains->rel_gains[num_gains].gain = (double) pairs[i].value;
 	gains->rel_gains[num_gains].num_at_level = 0;
