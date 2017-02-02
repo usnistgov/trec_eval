@@ -17,6 +17,28 @@ te_calc_ndcg (const EPI *epi, const REL_INFO *rel_info,
 	      const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval);
 static PARAMS default_ndcg_gains = { NULL, 0, NULL};
 
+TREC_MEAS te_meas_dcg =
+    {"dcg",
+     "    Discounted Cumulative Gain",
+     te_init_meas_s_float_p_pair,
+     te_calc_ndcg,
+     te_acc_meas_s,
+     te_calc_avg_meas_s,
+     te_print_single_meas_s_float,
+     te_print_final_meas_s_float_p,
+     &default_ndcg_gains, -1};
+
+TREC_MEAS te_meas_ideal_dcg =
+    {"ideal_dcg",
+     "    Ideal Discounted Cumulative Gain",
+     te_init_meas_s_float_p_pair,
+     te_calc_ndcg,
+     te_acc_meas_s,
+     te_calc_avg_meas_s,
+     te_print_single_meas_s_float,
+     te_print_final_meas_s_float_p,
+     &default_ndcg_gains, -1};
+
 /* See trec_eval.h for definition of TREC_MEAS */
 TREC_MEAS te_meas_ndcg =
     {"ndcg",
@@ -131,9 +153,19 @@ te_calc_ndcg (const EPI *epi, const REL_INFO *rel_info,
 	i++;
     }
 
-    /* Compare sum to ideal NDCG */
-    if (ideal_dcg > 0.0) {
-        eval->values[tm->eval_index].value = results_dcg / ideal_dcg;
+    if (strcmp(tm->name, "ndcg") == 0) {
+        /* Compare sum to ideal NDCG */
+        if (ideal_dcg > 0.0) {
+            eval->values[tm->eval_index].value = results_dcg / ideal_dcg;
+        }
+    } else if (strcmp(tm->name, "dcg") == 0) {
+        eval->values[tm->eval_index].value = results_dcg;
+    } else if (strcmp(tm->name, "ideal_dcg") == 0) {
+        eval->values[tm->eval_index].value = ideal_dcg;
+    } else {
+        fprintf (stderr, "trec_eval: Cannot initialize measure '%s'\n",
+             tm->name);
+        exit (2);
     }
 
     Free (gains.rel_gains);
