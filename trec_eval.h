@@ -238,4 +238,18 @@ typedef struct {
 #define MIN_GEO_MEAN .00001
 #define INFAP_EPSILON .00001
 
+/* Gain values for ndcg and friends */
+typedef struct {
+    long rel_level;
+    long num_at_level;
+    double gain;
+} REL_GAIN;
+
+typedef struct {
+    REL_GAIN *rel_gains;
+    long num_gains;
+    long total_num_at_levels;
+} GAINS;
+
+
 #endif /* TRECEVALH */
