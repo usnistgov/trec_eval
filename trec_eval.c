@@ -122,15 +122,15 @@ static char *usage = "Usage: trec_eval [-h] [-q] {-m measure}* trec_rel_file tre
    -m: calculate and print measures indicated by 'measure'\n\
        ('-m all_qrels' prints all qrels measures, '-m official' is default)\n";
 
-extern long te_num_trec_measures;
+extern int te_num_trec_measures;
 extern TREC_MEAS *te_trec_measures[];
-extern long te_num_trec_measure_nicknames;
+extern int te_num_trec_measure_nicknames;
 extern TREC_MEASURE_NICKNAMES te_trec_measure_nicknames[];
-extern long te_num_rel_info_format;
+extern int te_num_rel_info_format;
 extern REL_INFO_FILE_FORMAT te_rel_info_format[];
-extern long te_num_results_format;
+extern int te_num_results_format;
 extern RESULTS_FILE_FORMAT te_results_format[];
-extern long te_num_form_inter_procs;
+extern int te_num_form_inter_procs;
 extern RESULTS_FILE_FORMAT te_form_inter_procs[];
 
 static int mark_measure (EPI *epi, char *optarg);
