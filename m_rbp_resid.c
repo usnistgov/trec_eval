@@ -12,33 +12,32 @@
 static int
 te_calc_rbp_resid (const EPI *epi, const REL_INFO *rel_info,
 		   const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval);
+static PARAMS default_rbp_params = {NULL, 0, NULL};
 
 /* See trec_eval.h for definition of TREC_MEAS */
 TREC_MEAS te_meas_rbp_resid =  {"rbp_resid",
      "    Rank-Biased Precision residual\n\
-    This description needs updating (it's the text for AP)\n\
-    Precision measured after each relevant doc is retrieved, then averaged\n\
-    for the topic, and then averaged over topics (if more than one).\n\
-    This is the main single-valued number used to compare the entire rankings\n\
-    of two or more retrieval methods.  It has proven in practice to be useful\n\
-    and robust.\n\
-    The name of the measure is unfortunately inaccurate since it is \n\
-    calculated for a single topic (and thus don't want both 'mean' and\n\
-    'average') but was dictated by common usage and the need to distiguish\n\
-    map from Precision averaged over topics (I had to give up my attempts to\n\
-    call it something else!)\n\
-    History: Developed by Chris Buckley after TREC 1.\n\
+    RBP measures the rate at which utility is gained by a user \n\
+    working at a given degree of persistence.  By default the \n\
+    persistence parameter p = 0.9, causing RBP to model something \n\
+    close to P_10.  Setting p = 0.95 or 0.98 gets closer to average \n\
+    precision.  Lower p values cause the metric to resemble precision \n\
+    at high cutoff.\n\
+    rbp_resid, the residual of RBP, captures the uncertainty in the RBP\n\
+    metric that arises from unjudged documents in the ranked list.\n\
+    rbp_resid computes the maximum upward score shift in the event that\n\
+    all retrieved unjudged documents had maximum gain.\n\
     Cite: Moffat, Alistair and Justin Zobel, \"Rank-Biased Precision for \n\
     Measurement of Retrieval Effectiveness.\"  ACM Transactions on\n\
     Information Systems, vol. 27, no. 1, article 2, publication date\n\
     December, 2008.  http://doi.acm.org/10.1145/1416950.1416952\n",
-     te_init_meas_s_float,
+     te_init_meas_s_float_p_pair,
      te_calc_rbp_resid,
      te_acc_meas_s,
      te_calc_avg_meas_s,
      te_print_single_meas_s_float,
-     te_print_final_meas_s_float,
-     NULL, -1};
+     te_print_final_meas_s_float_p,
+     &default_rbp_params, -1};
 
 static int 
 te_calc_rbp_resid (const EPI *epi, const REL_INFO *rel_info,
@@ -46,13 +45,24 @@ te_calc_rbp_resid (const EPI *epi, const REL_INFO *rel_info,
 {
     RES_RELS res_rels;
     double sum;
-    double p = 0.9; /* setting constant p for development */
+    double p = 0.9; /* default value, settable with param */
     double cur_p;
     long unj_so_far;
     long i;
+    FLOAT_PARAM_PAIR *pairs;
+    int num_pairs;
 
     if (UNDEF == te_form_res_rels (epi, rel_info, results, &res_rels))
 	return (UNDEF);
+
+    if (tm->meas_params) {
+	pairs = (FLOAT_PARAM_PAIR *) tm->meas_params->param_values;
+	num_pairs = tm->meas_params->num_params;
+	for (i = 0; i < num_pairs; i++) {
+	    if (0 == strcmp(pairs[i].name, "p"))
+		p = (double) pairs[i].value;
+	}
+    }
 
     unj_so_far = 0;
     sum = 0.0;
