@@ -153,7 +153,6 @@ TREC_MEAS *te_trec_measures[] = {
     &te_meas_set_map,
     &te_meas_set_F,
     &te_meas_num_nonrel_judged_ret,
-	&te_meas_num_nonjudged_ret,
     &te_meas_prefs_num_prefs_poss,
     &te_meas_prefs_num_prefs_ful,
     &te_meas_prefs_num_prefs_ful_ret,
@@ -187,7 +186,7 @@ static char *trec_names[] =  {
     "utility", "11pt_avg", "ndcg", "relative_P", "Rprec_mult", "success",
     "map_cut", "ndcg_cut", "ndcg_rel", "Rndcg", "binG", "G",
     "set_P", "set_recall", "set_relative_P", "set_map", "set_F",
-    "num_nonrel_judged_ret", "num_nonjudged_ret",
+    "num_nonrel_judged_ret",
     NULL};
 static char *set_names[] =  {
     "runid", "num_q", "num_ret", "num_rel", "num_rel_ret", "utility", "set_P",
