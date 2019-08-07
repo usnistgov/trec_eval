@@ -33,8 +33,6 @@
 #endif
 
 /* For time being, define Berkeley constructs in terms of SVR4 constructs*/
-#define bzero(dest,len)      memset(dest,'\0',len)
-#define bcopy(source,dest,len)   memcpy(dest,source,len)
 #define srandom(seed)        srand(seed)
 #define random()             rand()
 
