@@ -58,7 +58,7 @@ install: $(BIN)/trec_eval
 
 quicktest: trec_eval
 	./trec_eval test/qrels.test test/results.test | diff - test/out.test
-	./trec_eval test/qrels.comment.test test/results.test | diff - test/out.test
+	./trec_eval test/qrels.comment.test test/results.comment.test | diff - test/out.test
 	./trec_eval -m all_trec test/qrels.test test/results.test | diff - test/out.test.a
 	./trec_eval -m all_trec -q test/qrels.test test/results.test | diff - test/out.test.aq
 	./trec_eval -m all_trec -q -c test/qrels.test test/results.trunc | diff - test/out.test.aqc
@@ -74,7 +74,7 @@ quicktest: trec_eval
 longtest: trec_eval
 	/bin/rm -rf test.long; mkdir test.long
 	./trec_eval test/qrels.test test/results.test > test.long/out.test
-	./trec_eval test/qrels.comment.test test/results.test | diff - test/out.test
+	./trec_eval test/qrels.comment.test test/results.comment.test | diff - test/out.test
 	./trec_eval -m all_trec test/qrels.test test/results.test > test.long/out.test.a
 	./trec_eval -m all_trec -q test/qrels.test test/results.test > test.long/out.test.aq
 	./trec_eval -m all_trec -q -c test/qrels.test test/results.trunc > test.long/out.test.aqc

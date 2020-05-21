@@ -107,9 +107,19 @@ te_get_trec_results (EPI *epi, char *text_results_file,
     trec_results_buf[size] = '\0';
 
     /* Count number of lines in file */
+    /* Count number of non-comment lines in file */
     num_lines = 0;
-    for (ptr = trec_results_buf; *ptr; ptr = index(ptr,'\n')+1)
-	num_lines++;
+	ptr = trec_results_buf;
+	do {
+		if (*ptr == '\n')
+			num_lines++;
+		else if (*ptr == '#') {
+			/* skip to end of line */
+			ptr = index(ptr, '\n');
+		}
+		if (*ptr != '\0')
+			ptr++;
+	} while (*ptr != '\0');
 
     /* Get all lines */
     if (NULL == (lines = Malloc (num_lines, LINES)))
@@ -117,20 +127,23 @@ te_get_trec_results (EPI *epi, char *text_results_file,
     line_ptr = lines;
     ptr = trec_results_buf;
     while (*ptr) {
-	/* Get current line */
-	/* Ignore blank lines (people seem to insist on them!) */
-	while (*ptr && *ptr != '\n' && isspace (*ptr)) ptr++;
-	if (*ptr == '\n') {
-	    ptr++;
-	    continue;
-	}
-	if (UNDEF == parse_results_line (&ptr, &line_ptr->qid,&line_ptr->docno,
-					 &line_ptr->sim, &run_id_ptr)) {
-	    fprintf (stderr, "trec_eval.get_results: Malformed line %ld\n",
-		     (long) (line_ptr - lines + 1));
-	    return (UNDEF);
-	}
-	line_ptr++;
+		/* Get current line */
+		/* Ignore blank lines (people seem to insist on them!) */
+		while (*ptr && *ptr != '\n' && isspace (*ptr)) ptr++;
+		if (*ptr == '\n') {
+			ptr++;
+			continue;
+		} else if (*ptr == '#') {
+			ptr = index(ptr, '\n');
+			continue;
+		}
+		if (UNDEF == parse_results_line (&ptr, &line_ptr->qid,&line_ptr->docno,
+										 &line_ptr->sim, &run_id_ptr)) {
+			fprintf (stderr, "trec_eval.get_results: Malformed line %ld\n",
+					 (long) (line_ptr - lines + 1));
+			return (UNDEF);
+		}
+		line_ptr++;
     }
     num_lines = line_ptr-lines;
 
