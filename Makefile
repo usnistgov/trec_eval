@@ -35,7 +35,7 @@ MEAS_SRCS =  measures.c  m_map.c m_P.c m_num_q.c m_num_ret.c m_num_rel.c \
         m_rel_P.c m_success.c m_infap.c m_map_cut.c \
 	m_gm_bpref.c m_runid.c m_relstring.c \
         m_set_P.c m_set_recall.c m_set_rel_P.c m_set_map.c m_set_F.c \
-        m_num_nonrel_judged_ret.c m_num_nonjudged_ret.c\
+        m_num_nonrel_judged_ret.c \
 	m_prefs_num_prefs_poss.c m_prefs_num_prefs_ful.c \
         m_prefs_num_prefs_ful_ret.c\
 	m_prefs_simp.c m_prefs_pair.c m_prefs_avgjg.c m_prefs_avgjg_Rnonrel.c \
