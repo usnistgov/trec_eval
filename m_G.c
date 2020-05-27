@@ -12,15 +12,14 @@
 #include "trec_format.h"
 double log2(double x);
 
-static int 
-te_calc_G (const EPI *epi, const REL_INFO *rel_info,
-	      const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval);
-static PARAMS default_G_gains = { NULL, 0, NULL};
+static int
+te_calc_G(const EPI * epi, const REL_INFO * rel_info,
+          const RESULTS * results, const TREC_MEAS * tm, TREC_EVAL * eval);
+static PARAMS default_G_gains = { NULL, 0, NULL };
 
 /* See trec_eval.h for definition of TREC_MEAS */
-TREC_MEAS te_meas_G =
-    {"G",
-     "    Normalized Gain\n\
+TREC_MEAS te_meas_G = { "G",
+    "    Normalized Gain\n\
     Experimental measure 4/10/2008\n\
     G is a gain related measure that combines qualities of MAP and NDCG.\n\
     Contribution of doc doc retrieved at rank i is \n\
@@ -40,17 +39,18 @@ TREC_MEAS te_meas_G =
     should not be independent of the docs before. If most docs before have\n\
     higher gain, then the retrieval of this doc at i is nearly as good as \n\
     possible, and should be rewarded appropriately\n",
-     te_init_meas_s_float_p_pair,
-     te_calc_G,
-     te_acc_meas_s,
-     te_calc_avg_meas_s,
-     te_print_single_meas_s_float,
-     te_print_final_meas_s_float_p,
-     &default_G_gains, -1};
+    te_init_meas_s_float_p_pair,
+    te_calc_G,
+    te_acc_meas_s,
+    te_calc_avg_meas_s,
+    te_print_single_meas_s_float,
+    te_print_final_meas_s_float_p,
+    &default_G_gains, -1
+};
 
-static int 
-te_calc_G (const EPI *epi, const REL_INFO *rel_info,
-	      const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval)
+static int
+te_calc_G(const EPI * epi, const REL_INFO * rel_info,
+          const RESULTS * results, const TREC_MEAS * tm, TREC_EVAL * eval)
 {
     RES_RELS res_rels;
     double results_gain, sum_results;
@@ -60,12 +60,12 @@ te_calc_G (const EPI *epi, const REL_INFO *rel_info,
     long cur_level, num_at_level;
     long i;
     GAINS gains;
-   
-    if (UNDEF == te_form_res_rels (epi, rel_info, results, &res_rels))
-	return (UNDEF);
 
-    if (UNDEF == setup_gains (tm, &res_rels, &gains))
-	return (UNDEF);
+    if (UNDEF == te_form_res_rels(epi, rel_info, results, &res_rels))
+        return (UNDEF);
+
+    if (UNDEF == setup_gains(tm, &res_rels, &gains))
+        return (UNDEF);
 
     results_g = 0.0;
     sum_results = 0.0;
@@ -77,64 +77,65 @@ te_calc_G (const EPI *epi, const REL_INFO *rel_info,
     min_cost = 1.0;
 
     for (i = 0; i < res_rels.num_ret && ideal_gain > 0.0; i++) {
-	/* Calculate change in actual results */
-	results_gain = get_gain (res_rels.results_rel_list[i], &gains);
-	sum_results += results_gain;
-	/* Calculate change in ideal results */
-	num_at_level++;
-	while (cur_level >= 0 &&
-	       num_at_level > gains.rel_gains[cur_level].num_at_level) {
-	    num_at_level = 1;
-	    cur_level--;
-	    ideal_gain = (cur_level >= 0) ? gains.rel_gains[cur_level].gain:0.0;
-	}
-	if (ideal_gain > 0.0)
-	    sum_ideal += ideal_gain;
-	if (ideal_gain >= min_cost)
-	    sum_cost += ideal_gain;
-	else
-	    sum_cost += min_cost;
+        /* Calculate change in actual results */
+        results_gain = get_gain(res_rels.results_rel_list[i], &gains);
+        sum_results += results_gain;
+        /* Calculate change in ideal results */
+        num_at_level++;
+        while (cur_level >= 0 &&
+               num_at_level > gains.rel_gains[cur_level].num_at_level) {
+            num_at_level = 1;
+            cur_level--;
+            ideal_gain =
+                (cur_level >= 0) ? gains.rel_gains[cur_level].gain : 0.0;
+        }
+        if (ideal_gain > 0.0)
+            sum_ideal += ideal_gain;
+        if (ideal_gain >= min_cost)
+            sum_cost += ideal_gain;
+        else
+            sum_cost += min_cost;
 
-	/* Calculate G */
-	if (results_gain != 0)
-	    results_g += results_gain /
-		log2((double) (2 + sum_cost - sum_results));
+        /* Calculate G */
+        if (results_gain != 0)
+            results_g += results_gain /
+                log2((double) (2 + sum_cost - sum_results));
 
-	if (epi->debug_level > 0) 
-	    printf("G: %ld %ld %3.1f %6.4f %3.1f %6.4f %6.4f %6.4f\n",
-		   i, cur_level, results_gain, sum_results,
-		   ideal_gain, sum_ideal, sum_cost, results_g);
+        if (epi->debug_level > 0)
+            printf("G: %ld %ld %3.1f %6.4f %3.1f %6.4f %6.4f %6.4f\n",
+                   i, cur_level, results_gain, sum_results,
+                   ideal_gain, sum_ideal, sum_cost, results_g);
     }
     while (i < res_rels.num_ret) {
-	/* Calculate change in results gain */
-	results_gain = get_gain (res_rels.results_rel_list[i], &gains);
-	sum_results += results_gain;
-	sum_cost += min_cost;
-	if (results_gain != 0)
-	    results_g += results_gain /
-		log2((double) (2 + sum_cost - sum_results));
-	if (epi->debug_level > 0) 
-	    printf("G: %ld %ld %3.1f %6.4f %3.1f %6.4f %6.4f\n",
-		   i, cur_level, results_gain, sum_results, 0.0,
-		   sum_ideal, results_g);
-	i++;
+        /* Calculate change in results gain */
+        results_gain = get_gain(res_rels.results_rel_list[i], &gains);
+        sum_results += results_gain;
+        sum_cost += min_cost;
+        if (results_gain != 0)
+            results_g += results_gain /
+                log2((double) (2 + sum_cost - sum_results));
+        if (epi->debug_level > 0)
+            printf("G: %ld %ld %3.1f %6.4f %3.1f %6.4f %6.4f\n",
+                   i, cur_level, results_gain, sum_results, 0.0,
+                   sum_ideal, results_g);
+        i++;
     }
     while (ideal_gain > 0.0) {
-	/* Calculate change in ideal results gain*/
-	num_at_level++;
-	while (cur_level >= 0 &&
-	       num_at_level > gains.rel_gains[cur_level].num_at_level) {
-	    num_at_level = 1;
-	    cur_level--;
-	    ideal_gain = (cur_level >= 0) ? gains.rel_gains[cur_level].gain:0.0;
-	}
-	if (ideal_gain > 0.0)
-	    sum_ideal += ideal_gain;
-	if (epi->debug_level > 0) 
-	    printf("G: %ld %ld %3.1f %6.4f %3.1f %6.4f\n",
-		   i, cur_level, 0.0, sum_results,
-		   ideal_gain, sum_ideal);
-	i++;
+        /* Calculate change in ideal results gain */
+        num_at_level++;
+        while (cur_level >= 0 &&
+               num_at_level > gains.rel_gains[cur_level].num_at_level) {
+            num_at_level = 1;
+            cur_level--;
+            ideal_gain =
+                (cur_level >= 0) ? gains.rel_gains[cur_level].gain : 0.0;
+        }
+        if (ideal_gain > 0.0)
+            sum_ideal += ideal_gain;
+        if (epi->debug_level > 0)
+            printf("G: %ld %ld %3.1f %6.4f %3.1f %6.4f\n",
+                   i, cur_level, 0.0, sum_results, ideal_gain, sum_ideal);
+        i++;
     }
 
     /* Compare sum to ideal G */
@@ -142,7 +143,6 @@ te_calc_G (const EPI *epi, const REL_INFO *rel_info,
         eval->values[tm->eval_index].value = results_g / sum_ideal;
     }
 
-    Free (gains.rel_gains);
+    Free(gains.rel_gains);
     return (1);
 }
-

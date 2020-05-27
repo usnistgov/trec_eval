@@ -27,67 +27,61 @@
 /* ---------------- print single measure generic procedures -------------- */
 
 /* Measure does not require printing */
-int 
-te_print_single_meas_empty (const EPI *epi, const TREC_MEAS *tm,
-			    const TREC_EVAL *eval)
+int
+te_print_single_meas_empty(const EPI * epi, const TREC_MEAS * tm,
+                           const TREC_EVAL * eval)
 {
     return (1);
 }
 
 
 /* Measure is a single float measure with no parameters, */
-int 
-te_print_single_meas_s_float (const EPI *epi, const TREC_MEAS *tm,
-			      const TREC_EVAL *eval)
+int
+te_print_single_meas_s_float(const EPI * epi, const TREC_MEAS * tm,
+                             const TREC_EVAL * eval)
 {
     if (epi->zscore_flag)
-	printf ("Z%-22s\t%s\t%6.4f\n",
-		eval->values[tm->eval_index].name,
-		eval->qid,
-		eval->values[tm->eval_index].value);
-    else 
-	printf ("%-22s\t%s\t%6.4f\n",
-		eval->values[tm->eval_index].name,
-		eval->qid,
-		eval->values[tm->eval_index].value);
+        printf("Z%-22s\t%s\t%6.4f\n",
+               eval->values[tm->eval_index].name,
+               eval->qid, eval->values[tm->eval_index].value);
+    else
+        printf("%-22s\t%s\t%6.4f\n",
+               eval->values[tm->eval_index].name,
+               eval->qid, eval->values[tm->eval_index].value);
     return (1);
 }
 
 /* Measure is a single long measure with no parameters. */
-int 
-te_print_single_meas_s_long (const EPI *epi, const TREC_MEAS *tm,
-			     const TREC_EVAL *eval)
+int
+te_print_single_meas_s_long(const EPI * epi, const TREC_MEAS * tm,
+                            const TREC_EVAL * eval)
 {
     if (epi->zscore_flag)
-	printf ("Z%-22s\t%s\t%6.4f\n",
-		eval->values[tm->eval_index].name,
-		eval->qid,
-		eval->values[tm->eval_index].value);
-    else 
-	printf ("%-22s\t%s\t%ld\n",
-		eval->values[tm->eval_index].name,
-		eval->qid,
-		(long) eval->values[tm->eval_index].value);
+        printf("Z%-22s\t%s\t%6.4f\n",
+               eval->values[tm->eval_index].name,
+               eval->qid, eval->values[tm->eval_index].value);
+    else
+        printf("%-22s\t%s\t%ld\n",
+               eval->values[tm->eval_index].name,
+               eval->qid, (long) eval->values[tm->eval_index].value);
     return (1);
 }
 
 /* Measure is a float array with cutoffs */
-int 
-te_print_single_meas_a_cut (const EPI *epi, const TREC_MEAS *tm,
-			    const TREC_EVAL *eval)
+int
+te_print_single_meas_a_cut(const EPI * epi, const TREC_MEAS * tm,
+                           const TREC_EVAL * eval)
 {
     long i;
     for (i = 0; i < tm->meas_params->num_params; i++) {
-	if (epi->zscore_flag)
-	    printf ("Z%-22s\t%s\t%6.4f\n",
-		    eval->values[tm->eval_index+i].name,
-		    eval->qid,
-		    eval->values[tm->eval_index+i].value);
-	else 
-	    printf ("%-22s\t%s\t%6.4f\n",
-		    eval->values[tm->eval_index+i].name,
-		    eval->qid,
-		    eval->values[tm->eval_index+i].value);
+        if (epi->zscore_flag)
+            printf("Z%-22s\t%s\t%6.4f\n",
+                   eval->values[tm->eval_index + i].name,
+                   eval->qid, eval->values[tm->eval_index + i].value);
+        else
+            printf("%-22s\t%s\t%6.4f\n",
+                   eval->values[tm->eval_index + i].name,
+                   eval->qid, eval->values[tm->eval_index + i].value);
     }
     return (1);
 }

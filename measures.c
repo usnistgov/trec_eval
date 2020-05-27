@@ -174,49 +174,63 @@ TREC_MEAS *te_trec_measures[] = {
     &te_meas_rbp,
     &te_meas_rbp_resid,
 };
-int te_num_trec_measures = sizeof (te_trec_measures) / sizeof (te_trec_measures[0]);
 
-static char *off_names[] =  {
-    "runid", "num_q", "num_ret", "num_rel", "num_rel_ret", "map", "gm_map", 
-    "Rprec", "bpref", "recip_rank", "iprec_at_recall", "P", NULL};
-static char *trec_names[] =  {
+int te_num_trec_measures =
+    sizeof(te_trec_measures) / sizeof(te_trec_measures[0]);
+
+static char *off_names[] = {
+    "runid", "num_q", "num_ret", "num_rel", "num_rel_ret", "map", "gm_map",
+    "Rprec", "bpref", "recip_rank", "iprec_at_recall", "P", NULL
+};
+
+static char *trec_names[] = {
     "runid", "num_q", "num_ret", "num_rel", "num_rel_ret", "map", "gm_map",
     "Rprec", "bpref", "recip_rank", "iprec_at_recall", "P", "relstring",
-    "recall", "infAP","gm_bpref",
+    "recall", "infAP", "gm_bpref",
     "utility", "11pt_avg", "ndcg", "relative_P", "Rprec_mult", "success",
     "map_cut", "ndcg_cut", "ndcg_rel", "Rndcg", "binG", "G",
     "set_P", "set_recall", "set_relative_P", "set_map", "set_F",
     "num_nonrel_judged_ret",
-    NULL};
-static char *set_names[] =  {
+    NULL
+};
+
+static char *set_names[] = {
     "runid", "num_q", "num_ret", "num_rel", "num_rel_ret", "utility", "set_P",
     "set_recall", "set_relative_P", "set_map", "set_F",
-    NULL};
-static char *prefs_names[] =  {
-    "runid", "num_q","prefs_num_prefs_poss", "prefs_num_prefs_ful",
+    NULL
+};
+
+static char *prefs_names[] = {
+    "runid", "num_q", "prefs_num_prefs_poss", "prefs_num_prefs_ful",
     "prefs_num_prefs_ful_ret",
     "prefs_simp", "prefs_pair", "prefs_avgjg", "prefs_avgjg_Rnonrel",
     "prefs_simp_ret", "prefs_pair_ret", "prefs_avgjg_ret",
     "prefs_avgjg_Rnonrel_ret",
     "prefs_simp_imp", "prefs_pair_imp", "prefs_avgjg_imp",
-    NULL};
-static char *prefs_off_name[] =  {
+    NULL
+};
+
+static char *prefs_off_name[] = {
     "runid", "num_q",
     "prefs_num_prefs_poss", "prefs_num_prefs_ful", "prefs_num_prefs_ful_ret",
     "prefs_simp", "prefs_pair", "prefs_avgjg",
-    NULL};
+    NULL
+};
+
 static char *qrels_jg_names[] = {
     "runid", "num_q",
     "map_avgjg", "P_avgjg", "Rprec_mult_avgjg",
-    NULL};
+    NULL
+};
 
 TREC_MEASURE_NICKNAMES te_trec_measure_nicknames[] = {
-    {"official", off_names},
-    {"set", set_names},
-    {"all_trec", trec_names},
-    {"all_prefs", prefs_names},
-    {"prefs", prefs_off_name},
-    {"qrels_jg", qrels_jg_names},
+    { "official", off_names },
+    { "set", set_names },
+    { "all_trec", trec_names },
+    { "all_prefs", prefs_names },
+    { "prefs", prefs_off_name },
+    { "qrels_jg", qrels_jg_names },
 };
+
 int te_num_trec_measure_nicknames =
-    sizeof (te_trec_measure_nicknames) / sizeof (te_trec_measure_nicknames[0]);
+    sizeof(te_trec_measure_nicknames) / sizeof(te_trec_measure_nicknames[0]);

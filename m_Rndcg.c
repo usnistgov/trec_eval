@@ -12,15 +12,14 @@
 #include "trec_format.h"
 double log2(double x);
 
-static int 
-te_calc_Rndcg (const EPI *epi, const REL_INFO *rel_info,
-		const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval);
-static PARAMS default_ndcg_gains = { NULL, 0, NULL};
+static int
+te_calc_Rndcg(const EPI * epi, const REL_INFO * rel_info,
+              const RESULTS * results, const TREC_MEAS * tm, TREC_EVAL * eval);
+static PARAMS default_ndcg_gains = { NULL, 0, NULL };
 
 /* See trec_eval.h for definition of TREC_MEAS */
-TREC_MEAS te_meas_Rndcg =
-    {"Rndcg",
-     "    Normalized Discounted Cumulative Gain at R levels\n\
+TREC_MEAS te_meas_Rndcg = { "Rndcg",
+    "    Normalized Discounted Cumulative Gain at R levels\n\
     Experimental measure\n\
     Compute a traditional nDCG measure according to Jarvelin and\n\
     Kekalainen (ACM ToIS v. 20, pp. 422-446, 2002), averaged at the various\n\
@@ -48,17 +47,18 @@ TREC_MEAS te_meas_Rndcg =
     respectively (level 3 remains at the default).\n\
     Gains are allowed to be 0 or negative, and relevance level 0\n\
     can be given a gain.\n",
-     te_init_meas_s_float_p_pair,
-     te_calc_Rndcg,
-     te_acc_meas_s,
-     te_calc_avg_meas_s,
-     te_print_single_meas_s_float,
-     te_print_final_meas_s_float_p,
-     &default_ndcg_gains, -1};
+    te_init_meas_s_float_p_pair,
+    te_calc_Rndcg,
+    te_acc_meas_s,
+    te_calc_avg_meas_s,
+    te_print_single_meas_s_float,
+    te_print_final_meas_s_float_p,
+    &default_ndcg_gains, -1
+};
 
-static int 
-te_calc_Rndcg (const EPI *epi, const REL_INFO *rel_info,
-	       const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval)
+static int
+te_calc_Rndcg(const EPI * epi, const REL_INFO * rel_info,
+              const RESULTS * results, const TREC_MEAS * tm, TREC_EVAL * eval)
 {
     RES_RELS res_rels;
     double results_gain, results_dcg;
@@ -68,15 +68,15 @@ te_calc_Rndcg (const EPI *epi, const REL_INFO *rel_info,
     long cur_level, num_at_level;
     long i;
     GAINS gains;
-   
-    if (UNDEF == te_form_res_rels (epi, rel_info, results, &res_rels))
-	return (UNDEF);
 
-    if (UNDEF == setup_gains (tm, &res_rels, &gains))
-	return (UNDEF);
+    if (UNDEF == te_form_res_rels(epi, rel_info, results, &res_rels))
+        return (UNDEF);
+
+    if (UNDEF == setup_gains(tm, &res_rels, &gains))
+        return (UNDEF);
 
     if (res_rels.num_rel == 0)
-	return (0);
+        return (0);
 
     results_dcg = 0.0;
     ideal_dcg = 0.0;
@@ -85,83 +85,83 @@ te_calc_Rndcg (const EPI *epi, const REL_INFO *rel_info,
     old_ideal_gain = ideal_gain;
     num_changed_ideal_gain = 0;
     num_at_level = 0;
-    
+
     for (i = 0; i < res_rels.num_ret && ideal_gain > 0.0; i++) {
-	/* Calculate change in results dcg */
-	results_gain = get_gain (res_rels.results_rel_list[i], &gains);
-	/* Calculate change in ideal dcg */
-	num_at_level++;
-	while (cur_level >= 0 &&
-	       num_at_level > gains.rel_gains[cur_level].num_at_level) {
-	    num_at_level = 1;
-	    cur_level--;
-	    ideal_gain = (cur_level >= 0) ? gains.rel_gains[cur_level].gain:0.0;
-	}
-	/* See if at boundary for changed ideal gain - if so, calc ndcg at
-	   this point for later averaging */
-	if (old_ideal_gain != ideal_gain) {
-	    if (ideal_dcg > 0.0) {
-		sum += results_dcg / ideal_dcg;
-		num_changed_ideal_gain++;
-	    }
-	    old_ideal_gain = ideal_gain;
-	}
-	if (results_gain != 0)
-	    /* Note: i+2 since doc i has rank i+1 */
-	    results_dcg += results_gain / log2((double) (i+2));
-	if (ideal_gain > 0.0)
-	    ideal_dcg += ideal_gain / log2((double)(i + 2));
-	if (epi->debug_level > 0) 
-	    printf("Rndcg: %ld %ld %3.1f %6.4f %3.1f %6.4f %6.4f\n",
-		   i, cur_level, results_gain, results_dcg,
-		   ideal_gain, ideal_dcg, sum);
+        /* Calculate change in results dcg */
+        results_gain = get_gain(res_rels.results_rel_list[i], &gains);
+        /* Calculate change in ideal dcg */
+        num_at_level++;
+        while (cur_level >= 0 &&
+               num_at_level > gains.rel_gains[cur_level].num_at_level) {
+            num_at_level = 1;
+            cur_level--;
+            ideal_gain =
+                (cur_level >= 0) ? gains.rel_gains[cur_level].gain : 0.0;
+        }
+        /* See if at boundary for changed ideal gain - if so, calc ndcg at
+           this point for later averaging */
+        if (old_ideal_gain != ideal_gain) {
+            if (ideal_dcg > 0.0) {
+                sum += results_dcg / ideal_dcg;
+                num_changed_ideal_gain++;
+            }
+            old_ideal_gain = ideal_gain;
+        }
+        if (results_gain != 0)
+            /* Note: i+2 since doc i has rank i+1 */
+            results_dcg += results_gain / log2((double) (i + 2));
+        if (ideal_gain > 0.0)
+            ideal_dcg += ideal_gain / log2((double) (i + 2));
+        if (epi->debug_level > 0)
+            printf("Rndcg: %ld %ld %3.1f %6.4f %3.1f %6.4f %6.4f\n",
+                   i, cur_level, results_gain, results_dcg,
+                   ideal_gain, ideal_dcg, sum);
     }
     if (i < res_rels.num_ret) {
-	while (i < res_rels.num_ret) {
-	    /* Calculate change in results dcg */
-	    results_gain = get_gain (res_rels.results_rel_list[i], &gains);
-	    if (results_gain != 0)
-		results_dcg += results_gain / log2((double) (i+2));
-	    if (epi->debug_level > 0) 
-		printf("Rndcg: %ld %ld %3.1f %6.4f %3.1f %6.4f\n",
-		       i, cur_level, results_gain, results_dcg, 0.0, ideal_dcg);
-	    i++;
-	}
-	if (ideal_dcg > 0.0) {
-	    sum += results_dcg / ideal_dcg;
-	    num_changed_ideal_gain++;
-	}
+        while (i < res_rels.num_ret) {
+            /* Calculate change in results dcg */
+            results_gain = get_gain(res_rels.results_rel_list[i], &gains);
+            if (results_gain != 0)
+                results_dcg += results_gain / log2((double) (i + 2));
+            if (epi->debug_level > 0)
+                printf("Rndcg: %ld %ld %3.1f %6.4f %3.1f %6.4f\n",
+                       i, cur_level, results_gain, results_dcg, 0.0, ideal_dcg);
+            i++;
+        }
+        if (ideal_dcg > 0.0) {
+            sum += results_dcg / ideal_dcg;
+            num_changed_ideal_gain++;
+        }
     }
     while (ideal_gain > 0.0) {
-	/* Calculate change in ideal dcg */
-	num_at_level++;
-	while (cur_level >= 0 &&
-	       num_at_level > gains.rel_gains[cur_level].num_at_level) {
-	    num_at_level = 1;
-	    cur_level--;
-	    ideal_gain = (cur_level >= 0) ? gains.rel_gains[cur_level].gain:0.0;
-	}
-	/* See if at boundary for changed ideal gain - if so, calc ndcg at
-	   this point for later averaging */
-	if (old_ideal_gain != ideal_gain) {
-	    if (ideal_dcg > 0.0) {
-		sum += results_dcg / ideal_dcg;
-		num_changed_ideal_gain++;
-	    }
-	    old_ideal_gain = ideal_gain;
-	}
-	if (ideal_gain > 0.0)
-	    ideal_dcg += ideal_gain / log2((double)(i + 2));
-	if (epi->debug_level > 0) 
-	    printf("Rndcg: %ld %ld %3.1f %6.4f %3.1f %6.4f\n",
-		   i, cur_level, 0.0, results_dcg,
-		   ideal_gain, ideal_dcg);
-	i++;
+        /* Calculate change in ideal dcg */
+        num_at_level++;
+        while (cur_level >= 0 &&
+               num_at_level > gains.rel_gains[cur_level].num_at_level) {
+            num_at_level = 1;
+            cur_level--;
+            ideal_gain =
+                (cur_level >= 0) ? gains.rel_gains[cur_level].gain : 0.0;
+        }
+        /* See if at boundary for changed ideal gain - if so, calc ndcg at
+           this point for later averaging */
+        if (old_ideal_gain != ideal_gain) {
+            if (ideal_dcg > 0.0) {
+                sum += results_dcg / ideal_dcg;
+                num_changed_ideal_gain++;
+            }
+            old_ideal_gain = ideal_gain;
+        }
+        if (ideal_gain > 0.0)
+            ideal_dcg += ideal_gain / log2((double) (i + 2));
+        if (epi->debug_level > 0)
+            printf("Rndcg: %ld %ld %3.1f %6.4f %3.1f %6.4f\n",
+                   i, cur_level, 0.0, results_dcg, ideal_gain, ideal_dcg);
+        i++;
     }
 
     eval->values[tm->eval_index].value = sum / num_changed_ideal_gain;
 
-    Free (gains.rel_gains);
+    Free(gains.rel_gains);
     return (1);
 }
-

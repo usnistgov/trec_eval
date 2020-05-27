@@ -11,14 +11,13 @@
 #include "functions.h"
 #include "trec_format.h"
 
-static int 
-te_calc_bpref (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
-	       const TREC_MEAS *tm, TREC_EVAL *eval);
+static int
+te_calc_bpref(const EPI * epi, const REL_INFO * rel_info,
+              const RESULTS * results, const TREC_MEAS * tm, TREC_EVAL * eval);
 
 /* See trec_eval.h for definition of TREC_MEAS */
-TREC_MEAS te_meas_bpref =
-     {"bpref",
-     "    Main binary preference measure.\n\
+TREC_MEAS te_meas_bpref = { "bpref",
+    "    Main binary preference measure.\n\
     Fraction of the top R nonrelevant docs that are retrieved after each\n\
     relevant doc. Put another way: when looking at the R relevant docs, and\n\
     the top R nonrelevant docs, if all relevant docs are to be preferred to\n\
@@ -26,17 +25,18 @@ TREC_MEAS te_meas_bpref =
     ranking preserves.\n\
     Cite: 'Retrieval Evaluation with Incomplete Information', Chris Buckley\n\
     and Ellen Voorhees. In Proceedings of 27th SIGIR, 2004.\n",
-     te_init_meas_s_float,
-     te_calc_bpref,
-     te_acc_meas_s,
-     te_calc_avg_meas_s,
-     te_print_single_meas_s_float,
-     te_print_final_meas_s_float,
-      NULL, -1};
+    te_init_meas_s_float,
+    te_calc_bpref,
+    te_acc_meas_s,
+    te_calc_avg_meas_s,
+    te_print_single_meas_s_float,
+    te_print_final_meas_s_float,
+    NULL, -1
+};
 
-static int 
-te_calc_bpref (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
-	       const TREC_MEAS *tm, TREC_EVAL *eval)
+static int
+te_calc_bpref(const EPI * epi, const REL_INFO * rel_info,
+              const RESULTS * results, const TREC_MEAS * tm, TREC_EVAL * eval)
 {
     RES_RELS res_rels;
     long j;
@@ -44,11 +44,11 @@ te_calc_bpref (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
     long num_nonrel = 0;
     double bpref = 0.0;
 
-    if (UNDEF == te_form_res_rels (epi, rel_info, results, &res_rels))
-	return (UNDEF);
+    if (UNDEF == te_form_res_rels(epi, rel_info, results, &res_rels))
+        return (UNDEF);
 
     for (j = 0; j < epi->relevance_level; j++)
-	num_nonrel += res_rels.rel_levels[j];
+        num_nonrel += res_rels.rel_levels[j];
 
     /* Calculate judgement based measures (dependent on only
        judged docs; no assumption of non-relevance if not judged) */
@@ -59,34 +59,33 @@ te_calc_bpref (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
     rel_so_far = 0;
     pool_unjudged_so_far = 0;
     for (j = 0; j < res_rels.num_ret; j++) {
-	if (res_rels.results_rel_list[j] == RELVALUE_NONPOOL)
-	    /* document not in pool. Skip */
-	    continue;
-	if (res_rels.results_rel_list[j] == RELVALUE_UNJUDGED) {
-	    /* document in pool but unjudged. */
-	    pool_unjudged_so_far++;
-	    continue;
-	}
+        if (res_rels.results_rel_list[j] == RELVALUE_NONPOOL)
+            /* document not in pool. Skip */
+            continue;
+        if (res_rels.results_rel_list[j] == RELVALUE_UNJUDGED) {
+            /* document in pool but unjudged. */
+            pool_unjudged_so_far++;
+            continue;
+        }
 
-	if (res_rels.results_rel_list[j] >= 0 &&
-	    res_rels.results_rel_list[j] < epi->relevance_level)
-	    nonrel_so_far++;
-	else {
-	    /* Judged Rel doc */
-	    rel_so_far++;
-	    /* Add fraction of correct preferences. */
-	    /* Special case nonrel_so_far == 0 to avoid division by 0 */
-	    if (nonrel_so_far > 0) {
-		bpref += 1.0 - 
-		    (((double) MIN (nonrel_so_far, res_rels.num_rel)) /
-		     (double) MIN (num_nonrel, res_rels.num_rel));
-	    }
-	    else
-		bpref += 1.0;
-	}
+        if (res_rels.results_rel_list[j] >= 0 &&
+            res_rels.results_rel_list[j] < epi->relevance_level)
+            nonrel_so_far++;
+        else {
+            /* Judged Rel doc */
+            rel_so_far++;
+            /* Add fraction of correct preferences. */
+            /* Special case nonrel_so_far == 0 to avoid division by 0 */
+            if (nonrel_so_far > 0) {
+                bpref += 1.0 -
+                    (((double) MIN(nonrel_so_far, res_rels.num_rel)) /
+                     (double) MIN(num_nonrel, res_rels.num_rel));
+            } else
+                bpref += 1.0;
+        }
     }
     if (res_rels.num_rel)
-	bpref /= res_rels.num_rel;
+        bpref /= res_rels.num_rel;
 
     eval->values[tm->eval_index].value = bpref;
     return (1);

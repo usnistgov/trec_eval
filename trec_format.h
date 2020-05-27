@@ -10,54 +10,54 @@
 /* ---------------------------------------------------------------------- */
 /* Format specific definitions for file input for results and rel_info */
 /* trec_results - pointed to by results->q_results */
-typedef struct {                    /* For each retrieved document result */
-    char *docno;                       /* document id */
-    float sim;                         /* score */
+typedef struct {                /* For each retrieved document result */
+    char *docno;                /* document id */
+    float sim;                  /* score */
 } TEXT_RESULTS;
 
-typedef struct {                    /* For each query in retrieved results */
-    long num_text_results;           /* number results for query*/
-    long max_num_text_results;       /* number results space reserved for */
-    TEXT_RESULTS *text_results;     /* Array of TEXT_RESULTS results */
+typedef struct {                /* For each query in retrieved results */
+    long num_text_results;      /* number results for query */
+    long max_num_text_results;  /* number results space reserved for */
+    TEXT_RESULTS *text_results; /* Array of TEXT_RESULTS results */
 } TEXT_RESULTS_INFO;
 
 /* qrels pointed to by rel_info->q_rel_info */
-typedef struct {                    /* For each relevance judgement */
-    char *docno;                       /* document id */
-    long rel;                          /* document judgement */
+typedef struct {                /* For each relevance judgement */
+    char *docno;                /* document id */
+    long rel;                   /* document judgement */
 } TEXT_QRELS;
 
-typedef struct {                    /* For each query in rel judgments */
-    long num_text_qrels;               /* number of judged documents */
-    long max_num_text_qrels;           /* Num docs space reserved for 
-					  Private, unused */
-    TEXT_QRELS *text_qrels;            /* Array of judged TEXT_QRELS.
-					  Kept sorted by docno */
+typedef struct {                /* For each query in rel judgments */
+    long num_text_qrels;        /* number of judged documents */
+    long max_num_text_qrels;    /* Num docs space reserved for 
+                                   Private, unused */
+    TEXT_QRELS *text_qrels;     /* Array of judged TEXT_QRELS.
+                                   Kept sorted by docno */
 } TEXT_QRELS_INFO;
 
-typedef struct {                    /* For each jg in query */
-    long num_text_qrels;               /* number of judged documents */
-    TEXT_QRELS *text_qrels;            /* Array of judged TEXT_QRELS.
-					  Kept sorted by docno */
+typedef struct {                /* For each jg in query */
+    long num_text_qrels;        /* number of judged documents */
+    TEXT_QRELS *text_qrels;     /* Array of judged TEXT_QRELS.
+                                   Kept sorted by docno */
 } TEXT_QRELS_JG;
 
-typedef struct {                    /* For each query in rel judgments */
-    long num_text_qrels_jg;            /* number of judgment groups */
-    TEXT_QRELS_JG *text_qrels_jg;      /* Array of judged TEXT_QRELS_JG */
+typedef struct {                /* For each query in rel judgments */
+    long num_text_qrels_jg;     /* number of judgment groups */
+    TEXT_QRELS_JG *text_qrels_jg;       /* Array of judged TEXT_QRELS_JG */
 } TEXT_QRELS_JG_INFO;
 
 /* prefs pointed to by rel_info->q_rel_info */
-typedef struct {                 /* For each line in rel prefs judgments */
-    char *jg;                       /* Judgment group id */          
-    char *jsg;                      /* Judgment subgroup id */          
-    float rel_level;                /* Relevance level of this docno */
-    char *docno;                    /* docno */
+typedef struct {                /* For each line in rel prefs judgments */
+    char *jg;                   /* Judgment group id */
+    char *jsg;                  /* Judgment subgroup id */
+    float rel_level;            /* Relevance level of this docno */
+    char *docno;                /* docno */
 } TEXT_PREFS;
 
-typedef struct {                    /* For each query in rel judgements */
-    long num_text_prefs;               /* number of preference lines */
-    long max_num_text_prefs;           /* Num pref lines space reserved for */
-    TEXT_PREFS *text_prefs;            /* Array of judged TEXT_PREFS */
+typedef struct {                /* For each query in rel judgements */
+    long num_text_prefs;        /* number of preference lines */
+    long max_num_text_prefs;    /* Num pref lines space reserved for */
+    TEXT_PREFS *text_prefs;     /* Array of judged TEXT_PREFS */
 } TEXT_PREFS_INFO;
 
 
@@ -68,28 +68,28 @@ typedef struct {                    /* For each query in rel judgements */
 /* Original trec_results and qrels  */
 typedef struct {
     /* Counts among retrieved docs (possibly different after -M)  */
-    long num_rel_ret;      /* Relevant retrieved docs - 
-			      Number of retrieved docs in results_rel_list
-			      with value >= epi->relevance_level */
-    long num_ret;          /* Retrieved docs -
-			      Number of docs in results_rel_list */
-    long num_nonpool;      /* Number of docs in results_rel_list not in pool -
-			      Number with value = RELVALUE_NONPOOL */
-    long num_unjudged_in_pool; /* Number of docs in results_rel_list in pool
-			      but not judged  -
-			      Number with value = RELVALUE_UNJUDGED */
+    long num_rel_ret;           /* Relevant retrieved docs - 
+                                   Number of retrieved docs in results_rel_list
+                                   with value >= epi->relevance_level */
+    long num_ret;               /* Retrieved docs -
+                                   Number of docs in results_rel_list */
+    long num_nonpool;           /* Number of docs in results_rel_list not in pool -
+                                   Number with value = RELVALUE_NONPOOL */
+    long num_unjudged_in_pool;  /* Number of docs in results_rel_list in pool
+                                   but not judged  -
+                                   Number with value = RELVALUE_UNJUDGED */
 
     /* Counts among total relevance judgments (independent of retrieval) */
     long num_rel;
-    long num_rel_levels;   /* Number of judged rel_levels */
-    long *rel_levels;      /* Number of docs in each judged rel_level 
-			      (0 through num_rel_levels-1), whether
-			      ranked or not */
+    long num_rel_levels;        /* Number of judged rel_levels */
+    long *rel_levels;           /* Number of docs in each judged rel_level 
+                                   (0 through num_rel_levels-1), whether
+                                   ranked or not */
 
-    long *results_rel_list; /* Ordered list of relevance judgements
-			      Eg, results_rel_list[2] gives relevance of the
-			      third retrieved doc in rank order.
-			      length of list is rank_rel->num_ret */
+    long *results_rel_list;     /* Ordered list of relevance judgements
+                                   Eg, results_rel_list[2] gives relevance of the
+                                   third retrieved doc in rank order.
+                                   length of list is rank_rel->num_ret */
 } RES_RELS;
 
 /* If Judgments group info is included (qrels_jg), then return multiple jgs */
@@ -109,12 +109,12 @@ typedef struct {
    docs,if retrieved, and then by docno if not retrieved. 
    Docid_rank for a docno is the index of docno within that ordered list */
 typedef struct {
-    float rel_level;                /* rel_level of this EC in this JG */
-    long num_in_ec;                 /* number in rel_info file in this ec
-				       (indpendent of results) */
-    long *docid_ranks;             /* List of docids in ec.
-				       After construction, sorted by increasing
-				       docid_rank numbers. */
+    float rel_level;            /* rel_level of this EC in this JG */
+    long num_in_ec;             /* number in rel_info file in this ec
+                                   (indpendent of results) */
+    long *docid_ranks;          /* List of docids in ec.
+                                   After construction, sorted by increasing
+                                   docid_rank numbers. */
 } EC;
 
 /* Preference array.  A square array, num_judgments * num_judgments, where
@@ -164,49 +164,49 @@ typedef struct {
    preference array. See the head comment in form_prefs_counts.c for further
    details and implications of the representations */
 typedef struct {
-    EC *ecs;                /* Equivalence classes, ordered by decreasing
-			       rel_level of class.  Thus JG.ecs[num_ecs-1]
-			       is the only possible EC of nonrelevant docnos
-			       (those with rel_level = 0.0). */
-    long num_ecs;           /* num_ecs == 0 means prefs_array being used for
-			       preference info rather than EC */
+    EC *ecs;                    /* Equivalence classes, ordered by decreasing
+                                   rel_level of class.  Thus JG.ecs[num_ecs-1]
+                                   is the only possible EC of nonrelevant docnos
+                                   (those with rel_level = 0.0). */
+    long num_ecs;               /* num_ecs == 0 means prefs_array being used for
+                                   preference info rather than EC */
 
-    PREFS_ARRAY prefs_array;/* prefs_array[i][j] is 1 iff doc with docid_rank i
-			       is preferred to doc with docid_rank j.
-			       Size num_judged * num_judged where
-                               num_judged is the same for all JGs and is the
-			       total number of distinct docnos involved
-			       with preferences for this topic */
-    float *rel_array;       /* Size num_judged. A rel_level value for each
-			       doc in the judgements.  There may be multiple
-                               different values for a given docno, only the
-			       last encountered is used.  The restriction
-			       that values for a docno must be either all
-			       non-zero, or all zero, is enforced */
+    PREFS_ARRAY prefs_array;    /* prefs_array[i][j] is 1 iff doc with docid_rank i
+                                   is preferred to doc with docid_rank j.
+                                   Size num_judged * num_judged where
+                                   num_judged is the same for all JGs and is the
+                                   total number of distinct docnos involved
+                                   with preferences for this topic */
+    float *rel_array;           /* Size num_judged. A rel_level value for each
+                                   doc in the judgements.  There may be multiple
+                                   different values for a given docno, only the
+                                   last encountered is used.  The restriction
+                                   that values for a docno must be either all
+                                   non-zero, or all zero, is enforced */
 
     /* Prefs between doc A and doc B, fulfilled by results and possible */
-    long num_prefs_fulfilled_ret;    /* Num prefs in this jg satisfied by
-					results where A and B both in results */
-    long num_prefs_possible_ret;     /* Num possible prefs in this jg satisfied
-					by results, A and B in results */
-    long num_prefs_fulfilled_imp;    /* Implied num prefs in this jg satisfied
-					by results where exactly one of A and B 
-					in results */
-    long num_prefs_possible_imp;     /* Implied num possible prefs in this jg 
-					satisfied by results where exactly one
-                                        of A and B in results */
-    long num_prefs_possible_notoccur;/* Implied num possible prefs in this jg 
-					not satisfied by results where neither
-                                        A nor B is in results */
+    long num_prefs_fulfilled_ret;       /* Num prefs in this jg satisfied by
+                                           results where A and B both in results */
+    long num_prefs_possible_ret;        /* Num possible prefs in this jg satisfied
+                                           by results, A and B in results */
+    long num_prefs_fulfilled_imp;       /* Implied num prefs in this jg satisfied
+                                           by results where exactly one of A and B 
+                                           in results */
+    long num_prefs_possible_imp;        /* Implied num possible prefs in this jg 
+                                           satisfied by results where exactly one
+                                           of A and B in results */
+    long num_prefs_possible_notoccur;   /* Implied num possible prefs in this jg 
+                                           not satisfied by results where neither
+                                           A nor B is in results */
 
-    long num_nonrel;                 /* Number of docs in judgments with
-					rel_level of 0.0 in this JG */
-    long num_nonrel_ret;             /* Number of docs retrieved with rel_level
-					of 0.0 in this JG */
-    long num_rel;                    /* Number of docs in judgments with
-					rel_level greater than 0.0 in this JG */
-    long num_rel_ret;                /* Number of docs retrieved with rel_level
-					greater than 0.0 in this JG */
+    long num_nonrel;            /* Number of docs in judgments with
+                                   rel_level of 0.0 in this JG */
+    long num_nonrel_ret;        /* Number of docs retrieved with rel_level
+                                   of 0.0 in this JG */
+    long num_rel;               /* Number of docs in judgments with
+                                   rel_level greater than 0.0 in this JG */
+    long num_rel_ret;           /* Number of docs retrieved with rel_level
+                                   greater than 0.0 in this JG */
 } JG;
 
 /* RESULTS_PREFS contains two structures representing prefs - most measures
@@ -227,13 +227,13 @@ typedef struct {
 typedef struct {
     long num_jgs;
     JG *jgs;
-    long num_judged;                    /* Num docs mentioned in trec_prefs */
-    long num_judged_ret;                /* number of those docs retrieved */
-    COUNTS_ARRAY pref_counts;           /* Array size num_judged**2  where
-					   counts_array[i][j] gives num of
-					   JG with doc i preferred to doc j
-					   (i and j are internal ids, sorted
-					   by retrieval rank then docno) */
+    long num_judged;            /* Num docs mentioned in trec_prefs */
+    long num_judged_ret;        /* number of those docs retrieved */
+    COUNTS_ARRAY pref_counts;   /* Array size num_judged**2  where
+                                   counts_array[i][j] gives num of
+                                   JG with doc i preferred to doc j
+                                   (i and j are internal ids, sorted
+                                   by retrieval rank then docno) */
 } RESULTS_PREFS;
 
 
@@ -243,17 +243,17 @@ typedef struct {
    input formats that can be more directly used by several measures */
 
 /* trec_results and qrels to RES_RELS */
-int te_form_res_rels (const EPI *epi, const REL_INFO *rel_info,
-                      const RESULTS *results, RES_RELS *res_rels);
+int te_form_res_rels(const EPI * epi, const REL_INFO * rel_info,
+                     const RESULTS * results, RES_RELS * res_rels);
 
 /* trec_results and qrels to RES_RELS */
-int te_form_res_rels_jg (const EPI *epi, const REL_INFO *rel_info,
-			 const RESULTS *results, RES_RELS_JG *res_rels);
+int te_form_res_rels_jg(const EPI * epi, const REL_INFO * rel_info,
+                        const RESULTS * results, RES_RELS_JG * res_rels);
 
 /* trec_results and prefs (or qrels_prefs) to RESULT_PREFS */
-int form_prefs_counts (const EPI *epi, const REL_INFO *rel_info,
-                       const RESULTS *results, RESULTS_PREFS *results_prefs);
+int form_prefs_counts(const EPI * epi, const REL_INFO * rel_info,
+                      const RESULTS * results, RESULTS_PREFS * results_prefs);
 
 
 
-#endif /* TRECFORMATH */
+#endif                          /* TRECFORMATH */

@@ -22,7 +22,7 @@
 #define MIN(A,B)  ((A) > (B) ? (B) : (A))
 
 #ifndef MAXLONG
-#define MAXLONG 2147483647L             /* largest long int. no. */
+#define MAXLONG 2147483647L     /* largest long int. no. */
 #endif
 
 /*
@@ -34,4 +34,4 @@
                                               (unsigned) ((n)*sizeof(type)))
 #define Free(loc) (void) free( (char *)(loc) )
 
-#endif /* COMMONH */
+#endif                          /* COMMONH */

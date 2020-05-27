@@ -26,32 +26,32 @@
 
 /* Measure does not require accumulation */
 int
-te_acc_meas_empty (const EPI *epi, const TREC_MEAS *tm,
-		   const TREC_EVAL *q_eval, TREC_EVAL *accum_eval)
+te_acc_meas_empty(const EPI * epi, const TREC_MEAS * tm,
+                  const TREC_EVAL * q_eval, TREC_EVAL * accum_eval)
 {
     return (1);
 }
 
 /* Measure is a single float/long that should now be summed */
 int
-te_acc_meas_s (const EPI *epi, const TREC_MEAS *tm,
-	       const TREC_EVAL *q_eval, TREC_EVAL *accum_eval)
+te_acc_meas_s(const EPI * epi, const TREC_MEAS * tm,
+              const TREC_EVAL * q_eval, TREC_EVAL * accum_eval)
 {
     accum_eval->values[tm->eval_index].value +=
-	q_eval->values[tm->eval_index].value;
+        q_eval->values[tm->eval_index].value;
     return (1);
 }
 
 /* Measure is an array with cutoffs */
 int
-te_acc_meas_a_cut (const EPI *epi, const TREC_MEAS *tm,
-			const TREC_EVAL *q_eval, TREC_EVAL *accum_eval)
+te_acc_meas_a_cut(const EPI * epi, const TREC_MEAS * tm,
+                  const TREC_EVAL * q_eval, TREC_EVAL * accum_eval)
 {
     long i;
-    
+
     for (i = 0; i < tm->meas_params->num_params; i++) {
-	accum_eval->values[tm->eval_index + i].value +=
-	    q_eval->values[tm->eval_index + i].value;
+        accum_eval->values[tm->eval_index + i].value +=
+            q_eval->values[tm->eval_index + i].value;
     }
     return (1);
 }

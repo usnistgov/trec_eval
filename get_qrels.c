@@ -59,10 +59,10 @@ typedef struct {
     char *rel;
 } LINES;
 
-static int parse_qrels_line (char **start_ptr, char **qid_ptr,
-			     char **docno_ptr, char **rel_ptr);
+static int parse_qrels_line(char **start_ptr, char **qid_ptr,
+                            char **docno_ptr, char **rel_ptr);
 
-static int comp_lines_qid_docno ();
+static int comp_lines_qid_docno();
 
 
 /* static pools of memory, allocated here and never changed.  
@@ -72,8 +72,7 @@ static TEXT_QRELS_INFO *text_info_pool = NULL;
 static TEXT_QRELS *text_qrels_pool = NULL;
 static REL_INFO *rel_info_pool = NULL;
 
-int
-te_get_qrels (EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
+int te_get_qrels(EPI * epi, char *text_qrels_file, ALL_REL_INFO * all_rel_info)
 {
     int fd;
     int size = 0;
@@ -88,103 +87,99 @@ te_get_qrels (EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
     REL_INFO *rel_info_ptr;
     TEXT_QRELS_INFO *text_info_ptr;
     TEXT_QRELS *text_qrels_ptr;
-    
+
     /* Read entire file into memory */
-    if (-1 == (fd = open (text_qrels_file, 0)) ||
-        0 >= (size = lseek (fd, 0L, 2)) ||
-        NULL == (trec_qrels_buf = malloc ((unsigned) size+2)) ||
-        -1 == lseek (fd, 0L, 0) ||
-        size != read (fd, trec_qrels_buf, size) ||
-	-1 == close (fd)) {
-        fprintf (stderr,
-		 "trec_eval.get_qrels: Cannot read qrels file '%s'\n",
-		 text_qrels_file);
+    if (-1 == (fd = open(text_qrels_file, 0)) ||
+        0 >= (size = lseek(fd, 0L, 2)) ||
+        NULL == (trec_qrels_buf = malloc((unsigned) size + 2)) ||
+        -1 == lseek(fd, 0L, 0) ||
+        size != read(fd, trec_qrels_buf, size) || -1 == close(fd)) {
+        fprintf(stderr,
+                "trec_eval.get_qrels: Cannot read qrels file '%s'\n",
+                text_qrels_file);
         return (UNDEF);
     }
 
     /* Append ending newline if not present, Append NULL terminator */
-    if (trec_qrels_buf[size-1] != '\n') {
-	trec_qrels_buf[size] = '\n';
-	size++;
+    if (trec_qrels_buf[size - 1] != '\n') {
+        trec_qrels_buf[size] = '\n';
+        size++;
     }
     trec_qrels_buf[size] = '\0';
 
     /* Count number of non-comment lines in file */
     num_lines = 0;
-	ptr = trec_qrels_buf;
-	do {
-		if (*ptr == '\n')
-			num_lines++;
-		else if (*ptr == '#') {
-			/* skip to end of line */
-			ptr = index(ptr, '\n');
-		}
-		if (*ptr != '\0')
-			ptr++;
-	} while (*ptr != '\0');
+    ptr = trec_qrels_buf;
+    do {
+        if (*ptr == '\n')
+            num_lines++;
+        else if (*ptr == '#') {
+            /* skip to end of line */
+            ptr = index(ptr, '\n');
+        }
+        if (*ptr != '\0')
+            ptr++;
+    } while (*ptr != '\0');
 
     /* Get all lines */
-    if (NULL == (lines = Malloc (num_lines, LINES)))
-	return (UNDEF);
+    if (NULL == (lines = Malloc(num_lines, LINES)))
+        return (UNDEF);
     line_ptr = lines;
     ptr = trec_qrels_buf;
     while (*ptr) {
-		if (*ptr == '#') {
-			ptr = index(ptr, '\n') + 1;
-		}
-		if (UNDEF == parse_qrels_line (&ptr, &line_ptr->qid,
-									   &line_ptr->docno, &line_ptr->rel)) {
-			fprintf (stderr, "trec_eval.get_qrels: Malformed line %ld\n",
-					 (long) (line_ptr - lines + 1));
-			return (UNDEF);
-		}
-		line_ptr++;
+        if (*ptr == '#') {
+            ptr = index(ptr, '\n') + 1;
+        }
+        if (UNDEF == parse_qrels_line(&ptr, &line_ptr->qid,
+                                      &line_ptr->docno, &line_ptr->rel)) {
+            fprintf(stderr, "trec_eval.get_qrels: Malformed line %ld\n",
+                    (long) (line_ptr - lines + 1));
+            return (UNDEF);
+        }
+        line_ptr++;
     }
-    num_lines = line_ptr-lines;
+    num_lines = line_ptr - lines;
 
     /* Sort all lines by qid, then docno */
-    qsort ((char *) lines,
-	   (int) num_lines,
-	   sizeof (LINES),
-	   comp_lines_qid_docno);
+    qsort((char *) lines, (int) num_lines, sizeof(LINES), comp_lines_qid_docno);
 
     /* Go through lines and count number of qid */
     num_qid = 1;
     for (i = 1; i < num_lines; i++) {
-	if (strcmp (lines[i-1].qid, lines[i].qid))
-	    /* New query */
-	    num_qid++;
+        if (strcmp(lines[i - 1].qid, lines[i].qid))
+            /* New query */
+            num_qid++;
     }
 
     /* Allocate space for queries */
-    if (NULL == (rel_info_pool = Malloc (num_qid, REL_INFO)) ||
-	NULL == (text_info_pool = Malloc (num_qid, TEXT_QRELS_INFO)) ||
-	NULL == (text_qrels_pool = Malloc (num_lines, TEXT_QRELS)))
-	return (UNDEF);
+    if (NULL == (rel_info_pool = Malloc(num_qid, REL_INFO)) ||
+        NULL == (text_info_pool = Malloc(num_qid, TEXT_QRELS_INFO)) ||
+        NULL == (text_qrels_pool = Malloc(num_lines, TEXT_QRELS)))
+        return (UNDEF);
 
     rel_info_ptr = rel_info_pool;
     text_info_ptr = text_info_pool;
     text_qrels_ptr = text_qrels_pool;
-    
+
     /* Go through lines and store all info */
     current_qid = "";
     for (i = 0; i < num_lines; i++) {
-	if (strcmp (current_qid, lines[i].qid)) {
-	    /* New query.  End old query and start new one */
-	    if (i != 0) {
-		text_info_ptr->num_text_qrels =
-		    text_qrels_ptr - text_info_ptr->text_qrels;
-		text_info_ptr++;
-		rel_info_ptr++;
-	    }
-	    current_qid = lines[i].qid;
-	    text_info_ptr->text_qrels = text_qrels_ptr;
-	    *rel_info_ptr =
-		(REL_INFO) {current_qid, "qrels", text_info_ptr};
-	}
-	text_qrels_ptr->docno = lines[i].docno;
-	text_qrels_ptr->rel = atol (lines[i].rel);
-	text_qrels_ptr++;
+        if (strcmp(current_qid, lines[i].qid)) {
+            /* New query.  End old query and start new one */
+            if (i != 0) {
+                text_info_ptr->num_text_qrels =
+                    text_qrels_ptr - text_info_ptr->text_qrels;
+                text_info_ptr++;
+                rel_info_ptr++;
+            }
+            current_qid = lines[i].qid;
+            text_info_ptr->text_qrels = text_qrels_ptr;
+            *rel_info_ptr = (REL_INFO) {
+            current_qid, "qrels", text_info_ptr};
+        }
+        text_qrels_ptr->docno = lines[i].docno;
+        text_qrels_ptr->rel = atol(lines[i].rel);
+        text_qrels_ptr++;
     }
     /* End last qid */
     text_info_ptr->num_text_qrels = text_qrels_ptr - text_info_ptr->text_qrels;
@@ -192,49 +187,64 @@ te_get_qrels (EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
     all_rel_info->num_q_rels = num_qid;
     all_rel_info->rel_info = rel_info_pool;
 
-    Free (lines);
+    Free(lines);
     return (1);
 }
 
-static int comp_lines_qid_docno (LINES *ptr1, LINES *ptr2)
+static int comp_lines_qid_docno(LINES * ptr1, LINES * ptr2)
 {
-    int cmp = strcmp (ptr1->qid, ptr2->qid);
-    if (cmp) return (cmp);
-    return (strcmp (ptr1->docno, ptr2->docno));
+    int cmp = strcmp(ptr1->qid, ptr2->qid);
+    if (cmp)
+        return (cmp);
+    return (strcmp(ptr1->docno, ptr2->docno));
 }
 
 static int
-parse_qrels_line (char **start_ptr, char **qid_ptr,
-		  char **docno_ptr, char **rel_ptr)
+parse_qrels_line(char **start_ptr, char **qid_ptr,
+                 char **docno_ptr, char **rel_ptr)
 {
     char *ptr = *start_ptr;
 
     /* Get qid */
-    while (*ptr != '\n' && isspace (*ptr)) ptr++;
+    while (*ptr != '\n' && isspace(*ptr))
+        ptr++;
     *qid_ptr = ptr;
-    while (! isspace (*ptr)) ptr++;
-    if (*ptr == '\n')  return (UNDEF);
+    while (!isspace(*ptr))
+        ptr++;
+    if (*ptr == '\n')
+        return (UNDEF);
     *ptr++ = '\0';
     /* Get iter, ignore */
-    while (*ptr != '\n' && isspace (*ptr)) ptr++;
-    while (! isspace (*ptr)) ptr++;
-    if (*ptr == '\n') return (UNDEF);
+    while (*ptr != '\n' && isspace(*ptr))
+        ptr++;
+    while (!isspace(*ptr))
+        ptr++;
+    if (*ptr == '\n')
+        return (UNDEF);
     ptr++;
     /* Get docno */
-    while (*ptr != '\n' && isspace (*ptr)) ptr++;
+    while (*ptr != '\n' && isspace(*ptr))
+        ptr++;
     *docno_ptr = ptr;
-    while (! isspace (*ptr)) ptr++;
-    if (*ptr == '\n') return (UNDEF);
+    while (!isspace(*ptr))
+        ptr++;
+    if (*ptr == '\n')
+        return (UNDEF);
     *ptr++ = '\0';
     /* Get relevance */
-    while (*ptr != '\n' && isspace (*ptr)) ptr++;
-    if (*ptr == '\n') return (UNDEF);
+    while (*ptr != '\n' && isspace(*ptr))
+        ptr++;
+    if (*ptr == '\n')
+        return (UNDEF);
     *rel_ptr = ptr;
-    while (! isspace (*ptr)) ptr++;
+    while (!isspace(*ptr))
+        ptr++;
     if (*ptr != '\n') {
-	*ptr++ = '\0';
-	while (*ptr != '\n' && isspace (*ptr)) ptr++;
-	if (*ptr != '\n') return (UNDEF);
+        *ptr++ = '\0';
+        while (*ptr != '\n' && isspace(*ptr))
+            ptr++;
+        if (*ptr != '\n')
+            return (UNDEF);
     }
     *ptr++ = '\0';
     *start_ptr = ptr;
@@ -242,24 +252,23 @@ parse_qrels_line (char **start_ptr, char **qid_ptr,
 }
 
 
-int 
-te_get_qrels_cleanup ()
+int te_get_qrels_cleanup()
 {
     if (trec_qrels_buf != NULL) {
-	Free (trec_qrels_buf);
-	trec_qrels_buf = NULL;
+        Free(trec_qrels_buf);
+        trec_qrels_buf = NULL;
     }
     if (text_info_pool != NULL) {
-	Free (text_info_pool);
-	text_info_pool = NULL;
+        Free(text_info_pool);
+        text_info_pool = NULL;
     }
     if (text_qrels_pool != NULL) {
-	Free (text_qrels_pool);
-	text_qrels_pool = NULL;
+        Free(text_qrels_pool);
+        text_qrels_pool = NULL;
     }
     if (rel_info_pool != NULL) {
-	Free (rel_info_pool);
-	rel_info_pool = NULL;
+        Free(rel_info_pool);
+        rel_info_pool = NULL;
     }
     return (1);
 }

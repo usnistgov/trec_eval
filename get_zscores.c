@@ -52,10 +52,10 @@ typedef struct {
     char *stddev;
 } LINES;
 
-static int parse_zscore_line (char **start_ptr, char **qid_ptr, char **meas_ptr,
-			      char **mean_ptr, char **stddev_ptr);
+static int parse_zscore_line(char **start_ptr, char **qid_ptr, char **meas_ptr,
+                             char **mean_ptr, char **stddev_ptr);
 
-static int comp_lines_qid_meas ();
+static int comp_lines_qid_meas();
 
 
 /* static pools of memory, allocated here and never changed.  */
@@ -64,8 +64,8 @@ static ZSCORE_QID *text_zscores_pool = NULL;
 static ZSCORES *zscores_pool = NULL;
 
 int
-te_get_zscores (const EPI *epi, const char *zscores_file,
-		ALL_ZSCORES *all_zscores)
+te_get_zscores(const EPI * epi, const char *zscores_file,
+               ALL_ZSCORES * all_zscores)
 {
     int fd;
     int size = 0;
@@ -81,86 +81,82 @@ te_get_zscores (const EPI *epi, const char *zscores_file,
     ZSCORES *zscores_ptr;
 
     /* Read entire file into memory */
-    if (-1 == (fd = open (zscores_file, 0)) ||
-        0 >= (size = lseek (fd, 0L, 2)) ||
-        NULL == (trec_zscores_buf = malloc ((unsigned) size+2)) ||
-        -1 == lseek (fd, 0L, 0) ||
-        size != read (fd, trec_zscores_buf, size) ||
-	-1 == close (fd)) {
-        fprintf (stderr,
-		 "trec_eval.get_zscores: Cannot read zscores file '%s'\n",
-		 zscores_file);
+    if (-1 == (fd = open(zscores_file, 0)) ||
+        0 >= (size = lseek(fd, 0L, 2)) ||
+        NULL == (trec_zscores_buf = malloc((unsigned) size + 2)) ||
+        -1 == lseek(fd, 0L, 0) ||
+        size != read(fd, trec_zscores_buf, size) || -1 == close(fd)) {
+        fprintf(stderr,
+                "trec_eval.get_zscores: Cannot read zscores file '%s'\n",
+                zscores_file);
         return (UNDEF);
     }
 
     /* Append ending newline if not present, Append NULL terminator */
-    if (trec_zscores_buf[size-1] != '\n') {
-	trec_zscores_buf[size] = '\n';
-	size++;
+    if (trec_zscores_buf[size - 1] != '\n') {
+        trec_zscores_buf[size] = '\n';
+        size++;
     }
     trec_zscores_buf[size] = '\0';
 
     /* Count number of lines in file */
     num_lines = 0;
-    for (ptr = trec_zscores_buf; *ptr; ptr = index(ptr,'\n')+1)
-	num_lines++;
+    for (ptr = trec_zscores_buf; *ptr; ptr = index(ptr, '\n') + 1)
+        num_lines++;
 
     /* Get all lines */
-    if (NULL == (lines = Malloc (num_lines, LINES)))
-	return (UNDEF);
+    if (NULL == (lines = Malloc(num_lines, LINES)))
+        return (UNDEF);
     line_ptr = lines;
     ptr = trec_zscores_buf;
     while (*ptr) {
-	if (UNDEF == parse_zscore_line (&ptr, &line_ptr->qid, &line_ptr->meas,
-					&line_ptr->mean, &line_ptr->stddev)) {
-	    fprintf (stderr, "trec_eval.get_zscores: Malformed line %ld\n",
-		     (long) (line_ptr - lines + 1));
-	    return (UNDEF);
-	}
-	line_ptr++;
+        if (UNDEF == parse_zscore_line(&ptr, &line_ptr->qid, &line_ptr->meas,
+                                       &line_ptr->mean, &line_ptr->stddev)) {
+            fprintf(stderr, "trec_eval.get_zscores: Malformed line %ld\n",
+                    (long) (line_ptr - lines + 1));
+            return (UNDEF);
+        }
+        line_ptr++;
     }
-    num_lines = line_ptr-lines;
+    num_lines = line_ptr - lines;
 
     /* Sort all lines by qid, then meas */
-    qsort ((char *) lines,
-	   (int) num_lines,
-	   sizeof (LINES),
-	   comp_lines_qid_meas);
+    qsort((char *) lines, (int) num_lines, sizeof(LINES), comp_lines_qid_meas);
 
     /* Go through lines and count number of qid */
     num_qid = 1;
     for (i = 1; i < num_lines; i++) {
-	if (strcmp (lines[i-1].qid, lines[i].qid))
-	    /* New query */
-	    num_qid++;
+        if (strcmp(lines[i - 1].qid, lines[i].qid))
+            /* New query */
+            num_qid++;
     }
 
     /* Allocate space for queries */
-    if (NULL == (zscores_pool = Malloc (num_qid, ZSCORES)) ||
-	NULL == (text_zscores_pool = Malloc (num_lines, ZSCORE_QID)))
-	return (UNDEF);
+    if (NULL == (zscores_pool = Malloc(num_qid, ZSCORES)) ||
+        NULL == (text_zscores_pool = Malloc(num_lines, ZSCORE_QID)))
+        return (UNDEF);
 
     zscores_ptr = zscores_pool;
     text_zscores_ptr = text_zscores_pool;
-    
+
     /* Go through lines and store all info */
     current_qid = "";
     for (i = 0; i < num_lines; i++) {
-	if (strcmp (current_qid, lines[i].qid)) {
-	    /* New query.  End old query and start new one */
-	    if (i != 0) {
-		zscores_ptr->num_zscores =
-		    text_zscores_ptr - zscores_ptr->zscores;
-		zscores_ptr++;
-	    }
-	    current_qid = lines[i].qid;
-	    zscores_ptr->qid = current_qid;
-	    zscores_ptr->zscores = text_zscores_ptr;
-	}
-	text_zscores_ptr->meas = lines[i].meas;
-	text_zscores_ptr->mean = atof (lines[i].mean);
-	text_zscores_ptr->stddev = atof (lines[i].stddev);
-	text_zscores_ptr++;
+        if (strcmp(current_qid, lines[i].qid)) {
+            /* New query.  End old query and start new one */
+            if (i != 0) {
+                zscores_ptr->num_zscores =
+                    text_zscores_ptr - zscores_ptr->zscores;
+                zscores_ptr++;
+            }
+            current_qid = lines[i].qid;
+            zscores_ptr->qid = current_qid;
+            zscores_ptr->zscores = text_zscores_ptr;
+        }
+        text_zscores_ptr->meas = lines[i].meas;
+        text_zscores_ptr->mean = atof(lines[i].mean);
+        text_zscores_ptr->stddev = atof(lines[i].stddev);
+        text_zscores_ptr++;
     }
     /* End last qid */
     zscores_ptr->num_zscores = text_zscores_ptr - zscores_ptr->zscores;
@@ -168,50 +164,65 @@ te_get_zscores (const EPI *epi, const char *zscores_file,
     all_zscores->num_q_zscores = num_qid;
     all_zscores->q_zscores = zscores_pool;
 
-    Free (lines);
+    Free(lines);
     return (1);
 }
 
-static int comp_lines_qid_meas (LINES *ptr1, LINES *ptr2)
+static int comp_lines_qid_meas(LINES * ptr1, LINES * ptr2)
 {
-    int cmp = strcmp (ptr1->qid, ptr2->qid);
-    if (cmp) return (cmp);
-    return (strcmp (ptr1->meas, ptr2->meas));
+    int cmp = strcmp(ptr1->qid, ptr2->qid);
+    if (cmp)
+        return (cmp);
+    return (strcmp(ptr1->meas, ptr2->meas));
 }
 
 static int
-parse_zscore_line (char **start_ptr, char **qid_ptr, char **meas_ptr,
-		   char **mean_ptr, char **stddev_ptr)
+parse_zscore_line(char **start_ptr, char **qid_ptr, char **meas_ptr,
+                  char **mean_ptr, char **stddev_ptr)
 {
     char *ptr = *start_ptr;
 
     /* Get qid */
-    while (*ptr != '\n' && isspace (*ptr)) ptr++;
+    while (*ptr != '\n' && isspace(*ptr))
+        ptr++;
     *qid_ptr = ptr;
-    while (! isspace (*ptr)) ptr++;
-    if (*ptr == '\n')  return (UNDEF);
+    while (!isspace(*ptr))
+        ptr++;
+    if (*ptr == '\n')
+        return (UNDEF);
     *ptr++ = '\0';
     /* Get meas */
-    while (*ptr != '\n' && isspace (*ptr)) ptr++;
+    while (*ptr != '\n' && isspace(*ptr))
+        ptr++;
     *meas_ptr = ptr;
-    while (! isspace (*ptr)) ptr++;
-    if (*ptr == '\n') return (UNDEF);
+    while (!isspace(*ptr))
+        ptr++;
+    if (*ptr == '\n')
+        return (UNDEF);
     *ptr++ = '\0';
     /* Get mean */
-    while (*ptr != '\n' && isspace (*ptr)) ptr++;
+    while (*ptr != '\n' && isspace(*ptr))
+        ptr++;
     *mean_ptr = ptr;
-    while (! isspace (*ptr)) ptr++;
-    if (*ptr == '\n') return (UNDEF);
+    while (!isspace(*ptr))
+        ptr++;
+    if (*ptr == '\n')
+        return (UNDEF);
     *ptr++ = '\0';
     /* Get stddev */
-    while (*ptr != '\n' && isspace (*ptr)) ptr++;
-    if (*ptr == '\n') return (UNDEF);
+    while (*ptr != '\n' && isspace(*ptr))
+        ptr++;
+    if (*ptr == '\n')
+        return (UNDEF);
     *stddev_ptr = ptr;
-    while (! isspace (*ptr)) ptr++;
+    while (!isspace(*ptr))
+        ptr++;
     if (*ptr != '\n') {
-	*ptr++ = '\0';
-	while (*ptr != '\n' && isspace (*ptr)) ptr++;
-	if (*ptr != '\n') return (UNDEF);
+        *ptr++ = '\0';
+        while (*ptr != '\n' && isspace(*ptr))
+            ptr++;
+        if (*ptr != '\n')
+            return (UNDEF);
     }
     *ptr++ = '\0';
     *start_ptr = ptr;
@@ -219,20 +230,19 @@ parse_zscore_line (char **start_ptr, char **qid_ptr, char **meas_ptr,
 }
 
 
-int 
-te_get_zscores_cleanup ()
+int te_get_zscores_cleanup()
 {
     if (trec_zscores_buf != NULL) {
-	Free (trec_zscores_buf);
-	trec_zscores_buf = NULL;
+        Free(trec_zscores_buf);
+        trec_zscores_buf = NULL;
     }
     if (text_zscores_pool != NULL) {
-	Free (text_zscores_pool);
-	text_zscores_pool = NULL;
+        Free(text_zscores_pool);
+        text_zscores_pool = NULL;
     }
     if (zscores_pool != NULL) {
-	Free (zscores_pool);
-	zscores_pool = NULL;
+        Free(zscores_pool);
+        zscores_pool = NULL;
     }
     return (1);
 }
