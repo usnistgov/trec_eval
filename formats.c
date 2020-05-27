@@ -34,6 +34,7 @@ consists of text tuples of the form \n\
 giving TREC document numbers (docno, a string) and their relevance (rel,  \n\
 a non-negative integer less than 128, or -1 (unjudged)) \n\
 to query qid (a string).  iter string field is ignored.   \n\
+Lines starting with '#' are ignored. \n\
 Fields are separated by whitespace, string fields can contain no whitespace. \n\
 File may contain no NULL characters. \n\
 ",
@@ -247,6 +248,7 @@ broken deterministicly (using docno). \n\
 Sim is assumed to be higher for the docs to be retrieved first. \n\
 File may contain no NULL characters. \n\
 Lines may contain fields after the run_id; they are ignored. \n\
+Lines starting with '#' are ignored. \n\
 ",
      te_get_trec_results, te_get_trec_results_cleanup},
 };
