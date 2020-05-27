@@ -6,8 +6,8 @@
 */
 static char *VersionID = VERSIONID;
 
-static char *help_message = 
-"trec_eval [-h] [-q] [-m measure[.params] [-c] [-n] [-l <num>]\n\
+static char *help_message =
+    "trec_eval [-h] [-q] [-m measure[.params] [-c] [-n] [-l <num>]\n\
    [-D debug_level] [-N <num>] [-M <num>] [-R rel_format] [-T results_format]\n\
    rel_info_file  results_file \n\
  \n\
@@ -113,10 +113,11 @@ it will not be detected.  Use the -c flag to avoid this behavior. \n\
 
 #ifdef MDEBUG
 #include "mcheck.h"
-#endif /* MDEBUG */
+#endif                          /* MDEBUG */
 
 
-static char *usage = "Usage: trec_eval [-h] [-q] {-m measure}* trec_rel_file trec_top_file\n\
+static char *usage =
+    "Usage: trec_eval [-h] [-q] {-m measure}* trec_rel_file trec_top_file\n\
    -h: Give full help information, including other options\n\
    -q: In addition to summary evaluation, give evaluation for each query\n\
    -m: calculate and print measures indicated by 'measure'\n\
@@ -133,14 +134,13 @@ extern RESULTS_FILE_FORMAT te_results_format[];
 extern long te_num_form_inter_procs;
 extern RESULTS_FILE_FORMAT te_form_inter_procs[];
 
-static int mark_measure (EPI *epi, char *optarg);
-static int trec_eval_help(EPI *epi);
-static void get_debug_level_query (EPI *epi, char *optarg);
-static int cleanup (EPI *epi);
+static int mark_measure(EPI * epi, char *optarg);
+static int trec_eval_help(EPI * epi);
+static void get_debug_level_query(EPI * epi, char *optarg);
+static int cleanup(EPI * epi);
 
 
-int
-main (argc, argv)
+int main(argc, argv)
 int argc;
 char *argv[];
 {
@@ -148,13 +148,13 @@ char *argv[];
     ALL_RESULTS all_results;
     char *trec_rel_info_file;
     ALL_REL_INFO all_rel_info;
-    char *zscores_file= NULL;
+    char *zscores_file = NULL;
     ALL_ZSCORES all_zscores;
 
-    EPI epi;              /* Eval parameter info */
+    EPI epi;                    /* Eval parameter info */
     TREC_EVAL accum_eval;
     TREC_EVAL q_eval;
-    long i,j,m;
+    long i, j, m;
     int c;
     long help_wanted = 0;
     long measure_marked_flag = 0;
@@ -165,7 +165,7 @@ char *argv[];
        mcheck_check_all() will dynamically check */
     mcheck(NULL);
     mtrace();
-#endif /* MDEBUG */
+#endif                          /* MDEBUG */
 
     /* Initialize static info before getting program optional args */
     epi.query_flag = 0;
@@ -181,104 +181,105 @@ char *argv[];
     epi.rel_info_format = "qrels";
     epi.results_format = "trec_results";
     epi.zscore_flag = 0;
-    if (NULL == (epi.meas_arg = Malloc (argc+1, MEAS_ARG)))
-	exit (1);
+    if (NULL == (epi.meas_arg = Malloc(argc + 1, MEAS_ARG)))
+        exit(1);
     epi.meas_arg[0].measure_name = NULL;
-    
+
     /* Get command line options */
     while (1) {
-	int option_index = 0;
-	static struct option long_options[] = {
-	    {"help", 0, 0, 'h'},
-	    {"version", 0, 0, 'v'},
-	    {"query_eval_wanted", 0, 0, 'q'},
-	    {"measure", 1, 0, 'm'},
-	    {"complete_rel_info_wanted", 0, 0, 'c'},
-	    {"level_for_rel", 1, 0, 'l'},
-	    {"nosummary", 0,0,'n'},
-	    {"Debug_level", 1, 0, 'D'},
-	    {"Judged_docs_only", 0, 0, 'J'},
-	    {"Number_docs_in_coll", 1, 0, 'N'},
-	    {"Max_retrieved_per_topic", 1, 0, 'M'},
-	    {"Rel_info_format", 1, 0, 'R'},
-	    {"Results_format", 1, 0, 'T'},
-	    {"Output_old_results_format", 1, 0, 'o'},
-	    {"Zscore", 1, 0, 'Z'},
-	    {0, 0, 0, 0},
-	};
-	c = getopt_long (argc, argv, "hvqm:cl:nD:JN:M:R:T:oZ:", 
-			 long_options, &option_index);
-	if (c == -1)
-	    break;
-	switch (c) {
-	case 'h':
-	    help_wanted++;
-	    break;
-	case 'v':
-	    fprintf (stderr, "trec_eval version %s\n", VersionID);
-	    exit (0);
-	case 'q':
-	    epi.query_flag++;
-	    break;
-	case 'm':
-	    /* Mark measure(s) indicated by optarg to be done */
-	    if (UNDEF == mark_measure (&epi, optarg)) {
-		fprintf (stderr, "trec_eval: illegal measure '%s'\n", optarg);
-		exit (1);
-	    }
-	    measure_marked_flag++;
-	    break;
-	case 'c':		
-	    epi.average_complete_flag++;
-	    break;
-	case 'l':
-	    epi.relevance_level = atol (optarg);
-	    break;
-	case 'n':
-	    epi.summary_flag = 0;
-	    break;
-	case 'D':
-	    get_debug_level_query (&epi, optarg);
-	    break;
-	case 'J':
-	    epi.judged_docs_only_flag++;
-	    break;
-	case 'N':
-            epi.num_docs_in_coll = atol (optarg);
-	    break;
-	case 'M':
-            epi.max_num_docs_per_topic = atol (optarg);
-	    break;
-	case 'R':
-            epi.rel_info_format = optarg;
-	    break;
-	case 'T':
-            epi.results_format = optarg;
-	    break;
-	case 'o':
-	    /* Obsolete, no longer supported */
-	    epi.relation_flag = 0;
-	    break;
-	case 'Z':
-	    epi.zscore_flag++;
-	    zscores_file = optarg;
-	    break;
-	case '?':
-	default:
-		(void) fputs (usage,stderr);
-		exit (1);
-	}
+        int option_index = 0;
+        static struct option long_options[] = {
+            { "help", 0, 0, 'h' },
+            { "version", 0, 0, 'v' },
+            { "query_eval_wanted", 0, 0, 'q' },
+            { "measure", 1, 0, 'm' },
+            { "complete_rel_info_wanted", 0, 0, 'c' },
+            { "level_for_rel", 1, 0, 'l' },
+            { "nosummary", 0, 0, 'n' },
+            { "Debug_level", 1, 0, 'D' },
+            { "Judged_docs_only", 0, 0, 'J' },
+            { "Number_docs_in_coll", 1, 0, 'N' },
+            { "Max_retrieved_per_topic", 1, 0, 'M' },
+            { "Rel_info_format", 1, 0, 'R' },
+            { "Results_format", 1, 0, 'T' },
+            { "Output_old_results_format", 1, 0, 'o' },
+            { "Zscore", 1, 0, 'Z' },
+            { 0, 0, 0, 0 },
+        };
+        c = getopt_long(argc, argv, "hvqm:cl:nD:JN:M:R:T:oZ:",
+                        long_options, &option_index);
+        if (c == -1)
+            break;
+        switch (c) {
+            case 'h':
+                help_wanted++;
+                break;
+            case 'v':
+                fprintf(stderr, "trec_eval version %s\n", VersionID);
+                exit(0);
+            case 'q':
+                epi.query_flag++;
+                break;
+            case 'm':
+                /* Mark measure(s) indicated by optarg to be done */
+                if (UNDEF == mark_measure(&epi, optarg)) {
+                    fprintf(stderr, "trec_eval: illegal measure '%s'\n",
+                            optarg);
+                    exit(1);
+                }
+                measure_marked_flag++;
+                break;
+            case 'c':
+                epi.average_complete_flag++;
+                break;
+            case 'l':
+                epi.relevance_level = atol(optarg);
+                break;
+            case 'n':
+                epi.summary_flag = 0;
+                break;
+            case 'D':
+                get_debug_level_query(&epi, optarg);
+                break;
+            case 'J':
+                epi.judged_docs_only_flag++;
+                break;
+            case 'N':
+                epi.num_docs_in_coll = atol(optarg);
+                break;
+            case 'M':
+                epi.max_num_docs_per_topic = atol(optarg);
+                break;
+            case 'R':
+                epi.rel_info_format = optarg;
+                break;
+            case 'T':
+                epi.results_format = optarg;
+                break;
+            case 'o':
+                /* Obsolete, no longer supported */
+                epi.relation_flag = 0;
+                break;
+            case 'Z':
+                epi.zscore_flag++;
+                zscores_file = optarg;
+                break;
+            case '?':
+            default:
+                (void) fputs(usage, stderr);
+                exit(1);
+        }
     }
 
     if (help_wanted) {
-	if (UNDEF == trec_eval_help(&epi))
-	    return (UNDEF);
-	exit (0);
+        if (UNDEF == trec_eval_help(&epi))
+            return (UNDEF);
+        exit(0);
     }
 
-    if (optind + 2 != argc ) {
-        (void) fputs (usage,stderr);
-        exit (1);
+    if (optind + 2 != argc) {
+        (void) fputs(usage, stderr);
+        exit(1);
     }
 
     trec_rel_info_file = argv[optind++];
@@ -287,179 +288,183 @@ char *argv[];
     /* Find and get qrels and ranked results information for all queries from
        the input text files */
     for (i = 0; i < te_num_rel_info_format; i++) {
-	if (0 == strcmp (epi.rel_info_format, te_rel_info_format[i].name)) {
-	    if (UNDEF == te_rel_info_format[i].get_file (&epi,
-							 trec_rel_info_file,
-							 &all_rel_info)) {
-		fprintf (stderr, "trec_eval: Quit in file '%s'\n",
-			 trec_rel_info_file);
-		exit (2);
-	    }
-	    break;
-	}
+        if (0 == strcmp(epi.rel_info_format, te_rel_info_format[i].name)) {
+            if (UNDEF == te_rel_info_format[i].get_file(&epi,
+                                                        trec_rel_info_file,
+                                                        &all_rel_info)) {
+                fprintf(stderr, "trec_eval: Quit in file '%s'\n",
+                        trec_rel_info_file);
+                exit(2);
+            }
+            break;
+        }
     }
     if (i >= te_num_rel_info_format) {
-	fprintf (stderr, "trec_eval: Illegal rel_format '%s'\n",
-		 epi.rel_info_format);
-	exit (2);
+        fprintf(stderr, "trec_eval: Illegal rel_format '%s'\n",
+                epi.rel_info_format);
+        exit(2);
     }
     for (i = 0; i < te_num_results_format; i++) {
-	if (0 == strcmp (epi.results_format, te_results_format[i].name)) {
-	    if (UNDEF == te_results_format[i].get_file (&epi,
-							trec_results_file,
-							&all_results)) {
-		fprintf (stderr, "trec_eval: Quit in file '%s'\n",
-			 trec_results_file);
-		exit (2);
-	    }
-	    break;
-	}
+        if (0 == strcmp(epi.results_format, te_results_format[i].name)) {
+            if (UNDEF == te_results_format[i].get_file(&epi,
+                                                       trec_results_file,
+                                                       &all_results)) {
+                fprintf(stderr, "trec_eval: Quit in file '%s'\n",
+                        trec_results_file);
+                exit(2);
+            }
+            break;
+        }
     }
     if (i >= te_num_results_format) {
-	fprintf (stderr, "trec_eval: Illegal retrieval results format '%s'\n",
-		 epi.results_format);
-	exit (2);
+        fprintf(stderr, "trec_eval: Illegal retrieval results format '%s'\n",
+                epi.results_format);
+        exit(2);
     }
 
     if (epi.zscore_flag) {
-	if (UNDEF == te_get_zscores (&epi, zscores_file, &all_zscores))
-	    return (UNDEF);
+        if (UNDEF == te_get_zscores(&epi, zscores_file, &all_zscores))
+            return (UNDEF);
     }
 
     /* Initialize all marked measures (possibly using command line info) */
     if (0 == measure_marked_flag) {
-	/* If no measures designated on command line, first mark "official" */
-	if (UNDEF == mark_measure (&epi, "official")) {
-	    fprintf (stderr, "trec_eval: illegal measure 'official'\n");
-	    exit (1);
-	}
+        /* If no measures designated on command line, first mark "official" */
+        if (UNDEF == mark_measure(&epi, "official")) {
+            fprintf(stderr, "trec_eval: illegal measure 'official'\n");
+            exit(1);
+        }
     }
-    accum_eval = (TREC_EVAL) {"all",  0, NULL, 0, 0};
+    accum_eval = (TREC_EVAL) {
+    "all", 0, NULL, 0, 0};
     for (m = 0; m < te_num_trec_measures; m++) {
-	if (MEASURE_MARKED(te_trec_measures[m])) {
-	    if (UNDEF == te_trec_measures[m]->init_meas (&epi,
-							te_trec_measures[m],
-							&accum_eval)) {
-		fprintf (stderr, "trec_eval: Cannot initialize measure '%s'\n",
-			 te_trec_measures[m]->name);
-		exit (2);
-	    }
-	}
+        if (MEASURE_MARKED(te_trec_measures[m])) {
+            if (UNDEF == te_trec_measures[m]->init_meas(&epi,
+                                                        te_trec_measures[m],
+                                                        &accum_eval)) {
+                fprintf(stderr, "trec_eval: Cannot initialize measure '%s'\n",
+                        te_trec_measures[m]->name);
+                exit(2);
+            }
+        }
     }
 
     /* Reserve space and initialize q_eval to be copy of accum_eval */
-    if (NULL == (q_eval.values = Malloc (accum_eval.num_values,
-					 TREC_EVAL_VALUE)))
-	exit (3);
-    (void) memcpy (q_eval.values, accum_eval.values,
-		   accum_eval.num_values * sizeof (TREC_EVAL_VALUE));
+    if (NULL == (q_eval.values = Malloc(accum_eval.num_values,
+                                        TREC_EVAL_VALUE)))
+        exit(3);
+    (void) memcpy(q_eval.values, accum_eval.values,
+                  accum_eval.num_values * sizeof(TREC_EVAL_VALUE));
     q_eval.num_values = accum_eval.num_values;
-    q_eval.num_queries  = 0;
+    q_eval.num_queries = 0;
 
     /* For each topic which has both qrels and top results information,
        calculate, possibly print (if query_flag), and accumulate
        evaluation measures. */
     for (i = 0; i < all_results.num_q_results; i++) {
-	/* If debugging a particular query, then skip all others */
-	if (epi.debug_query &&
-	    strcmp (epi.debug_query, all_results.results[i].qid))
-	    continue;
-	/* Find rel info for this query (skip if no rel info) */
-	for (j = 0; j < all_rel_info.num_q_rels; j++) {
-	    if (0 == strcmp (all_results.results[i].qid,
-			     all_rel_info.rel_info[j].qid))
-		break;
-	}
-	if (j >= all_rel_info.num_q_rels)
-	    continue;
+        /* If debugging a particular query, then skip all others */
+        if (epi.debug_query &&
+            strcmp(epi.debug_query, all_results.results[i].qid))
+            continue;
+        /* Find rel info for this query (skip if no rel info) */
+        for (j = 0; j < all_rel_info.num_q_rels; j++) {
+            if (0 == strcmp(all_results.results[i].qid,
+                            all_rel_info.rel_info[j].qid))
+                break;
+        }
+        if (j >= all_rel_info.num_q_rels)
+            continue;
 
-	/* zero out all measures for new query */
-	for (m = 0; m < q_eval.num_values; m++)
-	    q_eval.values[m].value = 0;
-	q_eval.qid = all_results.results[i].qid;
+        /* zero out all measures for new query */
+        for (m = 0; m < q_eval.num_values; m++)
+            q_eval.values[m].value = 0;
+        q_eval.qid = all_results.results[i].qid;
 
-	/* Calculate all measure scores */
-	for (m = 0; m < te_num_trec_measures; m++) {
-	    if (MEASURE_REQUESTED(te_trec_measures[m])) {
-		if (UNDEF == te_trec_measures[m]->calc_meas (&epi,
-						    &all_rel_info.rel_info[j],
-						    &all_results.results[i],
-						    te_trec_measures[m],
-						    &q_eval)) {
-		    fprintf (stderr,"trec_eval: Can't calculate measure '%s'\n",
-			     te_trec_measures[m]->name);
-		    exit (4);
-		}
-	    }
-	}
+        /* Calculate all measure scores */
+        for (m = 0; m < te_num_trec_measures; m++) {
+            if (MEASURE_REQUESTED(te_trec_measures[m])) {
+                if (UNDEF == te_trec_measures[m]->calc_meas(&epi,
+                                                            &all_rel_info.rel_info
+                                                            [j],
+                                                            &all_results.results
+                                                            [i],
+                                                            te_trec_measures[m],
+                                                            &q_eval)) {
+                    fprintf(stderr, "trec_eval: Can't calculate measure '%s'\n",
+                            te_trec_measures[m]->name);
+                    exit(4);
+                }
+            }
+        }
 
-	/* Convert values to zscores if requested */
-	if (epi.zscore_flag) {
-	    if (UNDEF == te_convert_to_zscore (&all_zscores, &q_eval))
-		return (UNDEF);
-	}
+        /* Convert values to zscores if requested */
+        if (epi.zscore_flag) {
+            if (UNDEF == te_convert_to_zscore(&all_zscores, &q_eval))
+                return (UNDEF);
+        }
 
-	/* Add this topics value to accumulated values, and possibly print */
-	for (m = 0; m < te_num_trec_measures; m++) {
-	    if (MEASURE_REQUESTED(te_trec_measures[m])) {
-		if (UNDEF == te_trec_measures[m]->acc_meas (&epi,
-						   te_trec_measures[m],
-						   &q_eval,
-						   &accum_eval)) {
-		    fprintf(stderr,"trec_eval: Can't accumulate measure '%s'\n",
-			    te_trec_measures[m]->name);
-		    exit (5);
-		}
-		if (epi.query_flag &&
-		    UNDEF == te_trec_measures[m]->print_single_meas (&epi,
-						   te_trec_measures[m],
-						   &q_eval)) {
-		    fprintf(stderr,
-			    "trec_eval: Can't print query measure '%s'\n",
-			    te_trec_measures[m]->name);
-		    exit (6);
-		}
-	    }
-	}
-	accum_eval.num_queries++;
+        /* Add this topics value to accumulated values, and possibly print */
+        for (m = 0; m < te_num_trec_measures; m++) {
+            if (MEASURE_REQUESTED(te_trec_measures[m])) {
+                if (UNDEF == te_trec_measures[m]->acc_meas(&epi,
+                                                           te_trec_measures[m],
+                                                           &q_eval,
+                                                           &accum_eval)) {
+                    fprintf(stderr,
+                            "trec_eval: Can't accumulate measure '%s'\n",
+                            te_trec_measures[m]->name);
+                    exit(5);
+                }
+                if (epi.query_flag &&
+                    UNDEF == te_trec_measures[m]->print_single_meas(&epi,
+                                                                    te_trec_measures
+                                                                    [m],
+                                                                    &q_eval)) {
+                    fprintf(stderr,
+                            "trec_eval: Can't print query measure '%s'\n",
+                            te_trec_measures[m]->name);
+                    exit(6);
+                }
+            }
+        }
+        accum_eval.num_queries++;
     }
 
     if (accum_eval.num_queries == 0) {
-	fprintf (stderr,
-		"trec_eval: No queries with both results and relevance info\n");
-	exit (7);
+        fprintf(stderr,
+                "trec_eval: No queries with both results and relevance info\n");
+        exit(7);
     }
 
     /* Calculate final averages, and print (if desired) */
     /* Note that averages may depend on the entire rel_info data if
        epi.average_complete_flag is set */
     for (m = 0; m < te_num_trec_measures; m++) {
-	if (MEASURE_REQUESTED(te_trec_measures[m])) {
-	    if (UNDEF == te_trec_measures[m]->calc_avg_meas
-		    (&epi, te_trec_measures[m],
-		     &all_rel_info, &accum_eval) ||
-		UNDEF == te_trec_measures[m]->print_final_and_cleanup_meas 
-		(&epi, te_trec_measures[m],  &accum_eval)) {
-		    fprintf (stderr,"trec_eval: Can't print measure '%s'\n",
-			     te_trec_measures[m]->name);
-		    exit (8);
-		}
-	}
+        if (MEASURE_REQUESTED(te_trec_measures[m])) {
+            if (UNDEF == te_trec_measures[m]->calc_avg_meas
+                (&epi, te_trec_measures[m],
+                 &all_rel_info, &accum_eval) ||
+                UNDEF == te_trec_measures[m]->print_final_and_cleanup_meas
+                (&epi, te_trec_measures[m], &accum_eval)) {
+                fprintf(stderr, "trec_eval: Can't print measure '%s'\n",
+                        te_trec_measures[m]->name);
+                exit(8);
+            }
+        }
     }
 
-    if (UNDEF == cleanup (&epi)) {
-	fprintf (stderr,"trec_eval: cleanup failed\n");
-	exit (10);
+    if (UNDEF == cleanup(&epi)) {
+        fprintf(stderr, "trec_eval: cleanup failed\n");
+        exit(10);
     }
-    Free (q_eval.values);
-    Free (accum_eval.values);
-    Free (epi.meas_arg);
+    Free(q_eval.values);
+    Free(accum_eval.values);
+    Free(epi.meas_arg);
 
-    exit (0);
+    exit(0);
 }
 
-static int 
-add_meas_arg_info (EPI *epi, char *meas, char *param)
+static int add_meas_arg_info(EPI * epi, char *meas, char *param)
 {
     long i;
 
@@ -468,152 +473,147 @@ add_meas_arg_info (EPI *epi, char *meas, char *param)
 
     /* Find non-NULL entry */
     i = 0;
-    while (epi->meas_arg[i].measure_name) i++;
-    
+    while (epi->meas_arg[i].measure_name)
+        i++;
+
     epi->meas_arg[i].measure_name = meas;
     epi->meas_arg[i].parameters = param;
 
     /* Ensure measure_name exists, has non_NULL parameter and mark it 
        to be calculated */
     if (*param == '\0') {
-	fprintf (stderr, "trec_eval: improper measure in parameter '%s'\n",
-		 epi->meas_arg[i].measure_name);
-	return (UNDEF);
+        fprintf(stderr, "trec_eval: improper measure in parameter '%s'\n",
+                epi->meas_arg[i].measure_name);
+        return (UNDEF);
     }
 
-    epi->meas_arg[i+1].measure_name = NULL;
+    epi->meas_arg[i + 1].measure_name = NULL;
     return (1);
 }
 
-static int
-mark_single_measure (char *optarg)
+static int mark_single_measure(char *optarg)
 {
     long i;
 
     for (i = 0; i < te_num_trec_measures; i++) {
-	if (0 == strcmp (optarg, te_trec_measures[i]->name)) {
-	    te_trec_measures[i]->eval_index = -2;
-	    break;
-	}
+        if (0 == strcmp(optarg, te_trec_measures[i]->name)) {
+            te_trec_measures[i]->eval_index = -2;
+            break;
+        }
     }
     if (i >= te_num_trec_measures)
-	return (UNDEF);
+        return (UNDEF);
     return (1);
 }
 
-static int
-mark_measure (EPI *epi, char *optarg)
+static int mark_measure(EPI * epi, char *optarg)
 {
     long i;
     char *ptr;
-    
+
     ptr = optarg;
-    while (*ptr && *ptr != '.') ptr++;
+    while (*ptr && *ptr != '.')
+        ptr++;
     if (*ptr == '.') {
-	*ptr++ = '\0';
-	if (UNDEF == add_meas_arg_info (epi, optarg, ptr))
-	    return (UNDEF);
+        *ptr++ = '\0';
+        if (UNDEF == add_meas_arg_info(epi, optarg, ptr))
+            return (UNDEF);
     }
 
     for (i = 0; i < te_num_trec_measure_nicknames; i++) {
-	if (0 == strcmp (optarg, te_trec_measure_nicknames[i].name)) {
-	    /* Have found nickname.  Mark all real names it refers to */
-	    char **name = te_trec_measure_nicknames[i].name_list;
-	    while (*name) {
-		if (UNDEF == mark_single_measure (*name))
-		    return (UNDEF);
-		name++;
-	    }
-	    return (1);
-	}
+        if (0 == strcmp(optarg, te_trec_measure_nicknames[i].name)) {
+            /* Have found nickname.  Mark all real names it refers to */
+            char **name = te_trec_measure_nicknames[i].name_list;
+            while (*name) {
+                if (UNDEF == mark_single_measure(*name))
+                    return (UNDEF);
+                name++;
+            }
+            return (1);
+        }
     }
 
     /* optarg did not match any nickname, mark measure directly */
-    return (mark_single_measure (optarg));
+    return (mark_single_measure(optarg));
 }
 
-static int
-trec_eval_help(EPI *epi)
+static int trec_eval_help(EPI * epi)
 {
     long m, f;
     long m_marked = 0;
 
-    printf ("%s\n-----------------------\n", help_message);
+    printf("%s\n-----------------------\n", help_message);
 
     for (f = 0; f < te_num_results_format; f++) {
-	if (0 == strcmp (te_results_format[f].name, epi->results_format))
-	    break;
+        if (0 == strcmp(te_results_format[f].name, epi->results_format))
+            break;
     }
     if (f < te_num_results_format)
-	printf ("%s\n-----------------------\n",
-
-		te_results_format[f].explanation);
+        printf("%s\n-----------------------\n",
+               te_results_format[f].explanation);
 
     for (f = 0; f < te_num_rel_info_format; f++) {
-	if (0 == strcmp (te_rel_info_format[f].name, epi->rel_info_format))
-	    break;
+        if (0 == strcmp(te_rel_info_format[f].name, epi->rel_info_format))
+            break;
     }
     if (f < te_num_rel_info_format)
-	printf ("%s\n-----------------------\n",
-		te_rel_info_format[f].explanation);
+        printf("%s\n-----------------------\n",
+               te_rel_info_format[f].explanation);
 
-    printf ("Individual measure documentation for requested measures\n");
+    printf("Individual measure documentation for requested measures\n");
 
     for (m = 0; m < te_num_trec_measures; m++) {
-	if (MEASURE_MARKED(te_trec_measures[m])) {
-	    m_marked = 1;
-	    printf ("%s\n%s",
-		    te_trec_measures[m]->name,
-		    te_trec_measures[m]->explanation);
-	}
+        if (MEASURE_MARKED(te_trec_measures[m])) {
+            m_marked = 1;
+            printf("%s\n%s",
+                   te_trec_measures[m]->name, te_trec_measures[m]->explanation);
+        }
     }
 
-    if (! m_marked)
-	printf ("-- No measures indicated.\n   Request measure documentation using <-m measure> on command line\n");
+    if (!m_marked)
+        printf
+            ("-- No measures indicated.\n   Request measure documentation using <-m measure> on command line\n");
 
     return (1);
 }
 
-static void
-get_debug_level_query ( EPI *epi, char *optarg)
+static void get_debug_level_query(EPI * epi, char *optarg)
 {
     char *ptr;
 
-    for (ptr = optarg; *ptr && *ptr != '.'; ptr++) 
-	;
+    for (ptr = optarg; *ptr && *ptr != '.'; ptr++);
     if (*ptr) {
-	*ptr++ = '\0';
-	epi->debug_query = ptr;
+        *ptr++ = '\0';
+        epi->debug_query = ptr;
     }
-    epi->debug_level = atol (optarg);
+    epi->debug_level = atol(optarg);
 }
 
-static int
-cleanup (EPI *epi)
+static int cleanup(EPI * epi)
 {
     long i;
 
     for (i = 0; i < te_num_rel_info_format; i++) {
-	if (0 == strcmp (epi->rel_info_format, te_rel_info_format[i].name)) {
-	    if (UNDEF == te_rel_info_format[i].cleanup())
-		return (UNDEF);
-	    break;
-	}
+        if (0 == strcmp(epi->rel_info_format, te_rel_info_format[i].name)) {
+            if (UNDEF == te_rel_info_format[i].cleanup())
+                return (UNDEF);
+            break;
+        }
     }
     for (i = 0; i < te_num_results_format; i++) {
-	if (0 == strcmp (epi->results_format, te_results_format[i].name)) {
-	    if (UNDEF == te_results_format[i].cleanup ())
-		return (UNDEF);
-	    break;
-	}
+        if (0 == strcmp(epi->results_format, te_results_format[i].name)) {
+            if (UNDEF == te_results_format[i].cleanup())
+                return (UNDEF);
+            break;
+        }
     }
     for (i = 0; i < te_num_form_inter_procs; i++) {
-	if (UNDEF == te_form_inter_procs[i].cleanup ())
-	    return (UNDEF);
+        if (UNDEF == te_form_inter_procs[i].cleanup())
+            return (UNDEF);
     }
     if (epi->zscore_flag) {
-	if (UNDEF == te_get_zscores_cleanup())
-	    return (UNDEF);
+        if (UNDEF == te_get_zscores_cleanup())
+            return (UNDEF);
     }
     return (1);
 }

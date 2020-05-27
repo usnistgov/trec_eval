@@ -10,13 +10,13 @@
 #include "trec_format.h"
 
 static int
-te_calc_rbp (const EPI *epi, const REL_INFO *rel_info,
-	     const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval);
-static PARAMS default_rbp_params = {NULL, 0, NULL};
+te_calc_rbp(const EPI * epi, const REL_INFO * rel_info,
+            const RESULTS * results, const TREC_MEAS * tm, TREC_EVAL * eval);
+static PARAMS default_rbp_params = { NULL, 0, NULL };
 
 /* See trec_eval.h for definition of TREC_MEAS */
-TREC_MEAS te_meas_rbp =  {"rbp",
-     "    Rank-Biased Precision\n\
+TREC_MEAS te_meas_rbp = { "rbp",
+    "    Rank-Biased Precision\n\
     RBP measures the rate at which utility is gained by a user \n\
     working at a given degree of persistence.  By default the \n\
     persistence parameter p = 0.9, causing RBP to model something \n\
@@ -27,21 +27,22 @@ TREC_MEAS te_meas_rbp =  {"rbp",
     Measurement of Retrieval Effectiveness.\"  ACM Transactions on\n\
     Information Systems, vol. 27, no. 1, article 2, publication date\n\
     December, 2008.  http://doi.acm.org/10.1145/1416950.1416952\n",
-     te_init_meas_s_float_p_pair,
-     te_calc_rbp,
-     te_acc_meas_s,
-     te_calc_avg_meas_s,
-     te_print_single_meas_s_float,
-     te_print_final_meas_s_float_p,
-     &default_rbp_params, -1};
+    te_init_meas_s_float_p_pair,
+    te_calc_rbp,
+    te_acc_meas_s,
+    te_calc_avg_meas_s,
+    te_print_single_meas_s_float,
+    te_print_final_meas_s_float_p,
+    &default_rbp_params, -1
+};
 
-static int 
-te_calc_rbp (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
-	     const TREC_MEAS *tm, TREC_EVAL *eval)
+static int
+te_calc_rbp(const EPI * epi, const REL_INFO * rel_info, const RESULTS * results,
+            const TREC_MEAS * tm, TREC_EVAL * eval)
 {
     RES_RELS res_rels;
     double sum, min, max;
-    double p = 0.9; /* default value, settable with param */
+    double p = 0.9;             /* default value, settable with param */
     double cur_p;
     double gain;
     long i;
@@ -49,46 +50,47 @@ te_calc_rbp (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
     GAINS gains;
     int num_pairs;
 
-    if (UNDEF == te_form_res_rels (epi, rel_info, results, &res_rels))
-	return (UNDEF);
+    if (UNDEF == te_form_res_rels(epi, rel_info, results, &res_rels))
+        return (UNDEF);
 
     if (tm->meas_params) {
-	pairs = (FLOAT_PARAM_PAIR *) tm->meas_params->param_values;
-	num_pairs = tm->meas_params->num_params;
-	for (i = 0; i < num_pairs; i++) {
-	    if (0 == strcmp(pairs[i].name, "p"))
-		p = (double) pairs[i].value;
-	}
+        pairs = (FLOAT_PARAM_PAIR *) tm->meas_params->param_values;
+        num_pairs = tm->meas_params->num_params;
+        for (i = 0; i < num_pairs; i++) {
+            if (0 == strcmp(pairs[i].name, "p"))
+                p = (double) pairs[i].value;
+        }
     }
 
-    if (UNDEF == setup_gains (tm, &res_rels, &gains))
-	return UNDEF;
+    if (UNDEF == setup_gains(tm, &res_rels, &gains))
+        return UNDEF;
 
     /* normalize gains to [0,1], per email conversation with Alistair Moffat */
     /* Note we don't care whether there is a relevance value with gain 1, only
        that the gains all lie between 0 and 1 inclusive. */
     for (i = 0; i < gains.num_gains; i++) {
-	if (gains.rel_gains[i].gain < min)
-	    min = gains.rel_gains[i].gain;
-	if (gains.rel_gains[i].gain > max)
-	    max = gains.rel_gains[i].gain;
+        if (gains.rel_gains[i].gain < min)
+            min = gains.rel_gains[i].gain;
+        if (gains.rel_gains[i].gain > max)
+            max = gains.rel_gains[i].gain;
     }
     if (min < 0 || max > 1) {
-	for (i = 0; i < gains.num_gains; i++) {
-	    gains.rel_gains[i].gain = (gains.rel_gains[i].gain - min) / (max - min);
-	}
+        for (i = 0; i < gains.num_gains; i++) {
+            gains.rel_gains[i].gain =
+                (gains.rel_gains[i].gain - min) / (max - min);
+        }
     }
-    
-    sum = 0.0;
-    cur_p = 1.0;  /* p^0 */
-    for (i = 0; i < res_rels.num_ret; i++) {
-	gain = get_gain(res_rels.results_rel_list[i], &gains);
-	if (gain != 0) {
-	    sum += (double) gain * cur_p;
-	    if (epi->debug_level > 0) 
-		printf("rbp:%ld %3.1f %6.4f\n", i, gain, sum);
 
-	}
+    sum = 0.0;
+    cur_p = 1.0;                /* p^0 */
+    for (i = 0; i < res_rels.num_ret; i++) {
+        gain = get_gain(res_rels.results_rel_list[i], &gains);
+        if (gain != 0) {
+            sum += (double) gain *cur_p;
+            if (epi->debug_level > 0)
+                printf("rbp:%ld %3.1f %6.4f\n", i, gain, sum);
+
+        }
         cur_p = cur_p * p;
     }
 

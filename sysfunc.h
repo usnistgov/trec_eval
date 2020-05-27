@@ -36,7 +36,7 @@
 /* ANSI should give us an offsetof suitable for the implementation;
  * otherwise, try a non-portable but commonly supported definition
  */
-#ifdef __STDC__	
+#ifdef __STDC__
 #include <stddef.h>
 #endif
 #ifndef offsetof
@@ -44,4 +44,4 @@
 	((char *)&((type*)0)->member - (char *)(type *)0))
 #endif
 
-#endif /* SYSFUNCH */
+#endif                          /* SYSFUNCH */

@@ -11,23 +11,23 @@
 #include "trec_eval.h"
 #include "trec_format.h"
 
-int te_get_qrels (EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info);
-int te_get_qrels_jg (EPI *epi, char *text_qrels_file,
-		     ALL_REL_INFO *all_rel_info);
-int te_get_prefs (EPI *epi, char *text_prefs_file, ALL_REL_INFO *all_rel_info);
-int te_get_qrels_prefs (EPI *epi, char *text_prefs_file,
-			ALL_REL_INFO *all_rel_info);
-int te_get_trec_results (EPI *epi, char *trec_results_file,
-			 ALL_RESULTS *all_results);
-int te_get_qrels_cleanup ();
-int te_get_qrels_jg_cleanup ();
-int te_get_prefs_cleanup ();
-int te_get_qrels_prefs_cleanup ();
-int te_get_trec_results_cleanup ();
+int te_get_qrels(EPI * epi, char *text_qrels_file, ALL_REL_INFO * all_rel_info);
+int te_get_qrels_jg(EPI * epi, char *text_qrels_file,
+                    ALL_REL_INFO * all_rel_info);
+int te_get_prefs(EPI * epi, char *text_prefs_file, ALL_REL_INFO * all_rel_info);
+int te_get_qrels_prefs(EPI * epi, char *text_prefs_file,
+                       ALL_REL_INFO * all_rel_info);
+int te_get_trec_results(EPI * epi, char *trec_results_file,
+                        ALL_RESULTS * all_results);
+int te_get_qrels_cleanup();
+int te_get_qrels_jg_cleanup();
+int te_get_prefs_cleanup();
+int te_get_qrels_prefs_cleanup();
+int te_get_trec_results_cleanup();
 
 REL_INFO_FILE_FORMAT te_rel_info_format[] = {
-    {"qrels",
-"Rel_info_file format: Standard 'qrels'\n\
+    { "qrels",
+     "Rel_info_file format: Standard 'qrels'\n\
 Relevance for each docno to qid is determined from rel_info_file, which \n\
 consists of text tuples of the form \n\
    qid  iter  docno  rel \n\
@@ -38,11 +38,11 @@ Lines starting with '#' are ignored. \n\
 Fields are separated by whitespace, string fields can contain no whitespace. \n\
 File may contain no NULL characters. \n\
 ",
-     te_get_qrels, te_get_qrels_cleanup},
+     te_get_qrels, te_get_qrels_cleanup },
 
 
-    {"qrels_jg",
-"Rel_info_file format: Standard 'qrels'\n\
+    { "qrels_jg",
+     "Rel_info_file format: Standard 'qrels'\n\
 Relevance for each docno to qid is determined from rel_info_file, which \n\
 consists of text tuples of the form \n\
    qid  ujg  docno  rel \n\
@@ -54,11 +54,11 @@ across multiple users, whoc may differ in their judgments. \n\
 Fields are separated by whitespace, string fields can contain no whitespace. \n\
 File may contain no NULL characters. \n\
 ",
-     te_get_qrels_jg, te_get_qrels_jg_cleanup},
+     te_get_qrels_jg, te_get_qrels_jg_cleanup },
 
 
-    {"prefs", 
-"Rel_info_file format: Non-standard 'prefs'\n\
+    { "prefs",
+     "Rel_info_file format: Non-standard 'prefs'\n\
 Preferences of user(s) for docs for a given qid is determined from\n\
 text_prefs_file, which consists of text tuples of the form\n\
    qid  ujg  ujsubg  docno  rel_level\n\
@@ -155,10 +155,10 @@ topic (even given identical retrieval on the added nonrel docs).  How\n\
 to handle this correctly for preference evaluation will be an\n\
 important future research problem.\n\
 ",
-     te_get_prefs, te_get_prefs_cleanup},
+     te_get_prefs, te_get_prefs_cleanup },
 
-{"qrels_prefs", 
-"Rel_info_file format: Non-standard 'qrels_prefs'\n\
+    { "qrels_prefs",
+     "Rel_info_file format: Non-standard 'qrels_prefs'\n\
 The file format is exactly the same as rel_info_file format 'qrels',\n\
 however it is interpreted as a restricted 'prefs' rel_info_file.\n\
 It cannot represent some user preferences (in particular, if a single user\n\
@@ -227,15 +227,16 @@ and even change whether system A scores better than system B on a\n\
 topic (even given identical retrieval on the added nonrel docs).  How\n\
 to handle this correctly for preference evaluation will be an\n\
 important future research problem.\n\
-", 
- te_get_qrels_prefs, te_get_qrels_prefs_cleanup},
+",
+     te_get_qrels_prefs, te_get_qrels_prefs_cleanup },
 };
+
 int te_num_rel_info_format =
-    sizeof (te_rel_info_format)/sizeof (te_rel_info_format[0]);
+    sizeof(te_rel_info_format) / sizeof(te_rel_info_format[0]);
 
 RESULTS_FILE_FORMAT te_results_format[] = {
-    {"trec_results", 
-"Results_file format: Standard 'trec_results'\n\
+    { "trec_results",
+     "Results_file format: Standard 'trec_results'\n\
 Lines of results_file are of the form \n\
      030  Q0  ZF08-175-870  0   4238   prise1 \n\
      qid iter   docno      rank  sim   run_id \n\
@@ -250,28 +251,29 @@ File may contain no NULL characters. \n\
 Lines may contain fields after the run_id; they are ignored. \n\
 Lines starting with '#' are ignored. \n\
 ",
-     te_get_trec_results, te_get_trec_results_cleanup},
+     te_get_trec_results, te_get_trec_results_cleanup },
 };
-int te_num_results_format =
-    sizeof (te_results_format)/sizeof (te_results_format[0]);
 
-int te_form_res_rels_cleanup (), te_form_res_rels_jg_cleanup (),
-    te_form_pref_counts_cleanup (), te_form_pref_counts_cleanup ();
+int te_num_results_format =
+    sizeof(te_results_format) / sizeof(te_results_format[0]);
+
+int te_form_res_rels_cleanup(), te_form_res_rels_jg_cleanup(),
+te_form_pref_counts_cleanup(), te_form_pref_counts_cleanup();
 
 FORM_INTER_PROCS te_form_inter_procs[] = {
-    {"qrels", "trec_results",
+    { "qrels", "trec_results",
      "Process for evaluating qrels and trec_results",
      /* te_form_res_rels, */
-     te_form_res_rels_cleanup},
-    {"qrels_jg", "trec_results",
+     te_form_res_rels_cleanup },
+    { "qrels_jg", "trec_results",
      "Process for evaluating qrels_jg and trec_results",
      /* te_form_res_rels_jg, */
-     te_form_res_rels_jg_cleanup},
-    {"prefs", "trec_results",
+     te_form_res_rels_jg_cleanup },
+    { "prefs", "trec_results",
      "Process for evaluating prefs and trec_results",
      /* te_form_prefs_counts, */
-     te_form_pref_counts_cleanup},
-    {"qrels_prefs", "trec_results",
+     te_form_pref_counts_cleanup },
+    { "qrels_prefs", "trec_results",
      "   Copyright (c) 2008 - Chris Buckley. \n\
 \n\
    Permission is granted for use and modification of this file for\n\
@@ -279,10 +281,8 @@ FORM_INTER_PROCS te_form_inter_procs[] = {
 \n\
    Process for evaluating qrels_prefs and trec_results",
      /* te_form_prefs_counts, */
-     te_form_pref_counts_cleanup},
+     te_form_pref_counts_cleanup },
 };
 
 int te_num_form_inter_procs =
-    sizeof (te_form_inter_procs)/sizeof (te_form_inter_procs[0]);
-
-
+    sizeof(te_form_inter_procs) / sizeof(te_form_inter_procs[0]);
