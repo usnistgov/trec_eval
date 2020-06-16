@@ -24,8 +24,8 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: cmd
       run: |
-        "%VS140COMNTOOLS%../../VC/vcvarsall.bat"
-        .\build.bat
+        "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat"
+        build.bat
 
     - name: build-unix
       if: matrix.os == 'ubuntu-latest' || matrix.os == 'macOs-latest'
@@ -40,7 +40,7 @@ jobs:
     - name: run-windows
       if: matrix.os == 'windows-latest'
       run: |
-        trec_eval -h
+        ./trec_eval -h
     
     - name: test-unix
       if: matrix.os == 'ubuntu-latest' || matrix.os == 'macOs-latest'
