@@ -25,10 +25,10 @@ jobs:
       shell: cmd
       run: |
         echo on
-        echo "%VS140COMNTOOLS%"
-        dir "%VS140COMNTOOLS%"
-        "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat"
+        set
+        "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat" x86_amd64
         build.bat
+        dir trec_eval.exe
 
     - name: build-unix
       if: matrix.os == 'ubuntu-latest' || matrix.os == 'macOs-latest'
