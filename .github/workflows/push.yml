@@ -30,9 +30,19 @@ jobs:
       if: matrix.os == 'ubuntu-latest' || matrix.os == 'macOs-latest'
       run: |
         make
+
+    - name: run-unix
+      if: matrix.os == 'ubuntu-latest' || matrix.os == 'macOs-latest'
+      run: |
+        ./trec_eval
+
+    - name: run-windows
+      if: matrix.os == 'windows-latest'
+      run: |
+        trec_eval
+    
+    - name: test-unix
         make quicktest
         make longtest
 
-    - name: run
-      run: |
-        trec_eval
+    
