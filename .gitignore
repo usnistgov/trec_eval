@@ -1,0 +1,4 @@
+trec_eval.*/
+*.obj
+*.tar
+.DS_Store
