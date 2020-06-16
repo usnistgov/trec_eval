@@ -24,7 +24,7 @@ jobs:
       if: matrix.os == 'windows-latest'
       run: |
         "%VS140COMNTOOLS%../../VC/vcvarsall.bat"
-        build.bat
+        .\build.bat
 
     - name: build-unix
       if: matrix.os == 'ubuntu-latest' || matrix.os == 'macOs-latest'
