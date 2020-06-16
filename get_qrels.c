@@ -176,7 +176,6 @@ te_get_qrels (EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
 	if (strcmp (lines[i-1].qid, lines[i].qid))
 	    /* New query */
 	    num_qid++;
-        fprintf(stderr, "%s", lines[i].qid);
     }
 
     /* Allocate space for queries */
