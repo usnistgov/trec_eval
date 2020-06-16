@@ -15,6 +15,9 @@
 #ifndef _UNISTD_H
 #define _UNISTD_H    1
 
+
+#define index(a,b) strchr(a,b)
+
 /* This is intended as a drop-in replacement for unistd.h on Windows.
  * Please add functionality as neeeded.
  * https://stackoverflow.com/a/826027/1202830
