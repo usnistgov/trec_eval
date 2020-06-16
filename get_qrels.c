@@ -94,7 +94,7 @@ te_get_qrels (EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
     TEXT_QRELS *text_qrels_ptr;
     
     /* Read entire file into memory */
-    if (! (fd = fopen (text_qrels_file, "r")) ) {
+    if (! (fd = fopen (text_qrels_file, "rb")) ) {
         errnum = errno;
         fprintf (stderr,
 		 "trec_eval.get_qrels: Cannot open qrels file '%s' : %s\n",
