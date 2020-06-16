@@ -77,7 +77,7 @@ static REL_INFO *rel_info_pool = NULL;
 int
 te_get_qrels (EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
 {
-    int fd;
+    FILE *fd;
     int size = 0;
     int errnum=0;
     int readsize=0;
@@ -94,14 +94,14 @@ te_get_qrels (EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
     TEXT_QRELS *text_qrels_ptr;
     
     /* Read entire file into memory */
-    if (-1 == (fd = open (text_qrels_file, 0)) ) {
+    if (! (fd = fopen (text_qrels_file, "rb")) ) {
         errnum = errno;
         fprintf (stderr,
 		 "trec_eval.get_qrels: Cannot open qrels file '%s' : %s\n",
 		 text_qrels_file, strerror( errnum ));
         return (UNDEF);
     }
-    if (0 >= (size = lseek (fd, 0L, SEEK_END)) ) {
+    if (0 >= (size = fseek (fd, 0L, SEEK_END)) ) {
         errnum = errno;
         printf (stderr,
 		 "trec_eval.get_qrels: Cannot determine size of qrels file '%s' : %s\n",
@@ -115,21 +115,21 @@ te_get_qrels (EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
 		 text_qrels_file, strerror( errnum ));
         return (UNDEF);
     }
-    if ( -1 == lseek (fd, 0L, SEEK_SET) ) {
+    if ( -1 == fseek (fd, 0L, SEEK_SET) ) {
         errnum = errno;
         fprintf (stderr,
 		 "trec_eval.get_qrels: Cannot seek to start of qrels file '%s' : %s\n",
 		 text_qrels_file, strerror( errnum ));
         return (UNDEF);
     }
-    if ( size != (readsize = read (fd, trec_qrels_buf, size)) ) {
+    if ( size != (readsize = fread (trec_qrels_buf, 1, size, fd)) ) {
         fprintf (stderr,
 		 "trec_eval.get_qrels: Cannot read qrels file '%s' size %d read %d \n",
 		 text_qrels_file, size, readsize);
         return (UNDEF);
     }
     
-    if( -1 == close (fd)) {
+    if( -1 == fclose (fd)) {
         errnum = errno;
         fprintf (stderr,
 		 "trec_eval.get_qrels: Cannot close qrels file '%s' : %s\n",
