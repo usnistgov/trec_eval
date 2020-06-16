@@ -15,7 +15,7 @@ trec_eval -m all_prefs -q -R prefs test/prefs.test test/prefs.results.test > out
 if %errorlevel% neq 0 exit /b %errorlevel%
 trec_eval -m all_prefs -q -R qrels_prefs test/qrels.test test/results.test > out.test.qrels_prefs && fc out.test.qrels_prefs test/out.test.qrels_prefs
 if %errorlevel% neq 0 exit /b %errorlevel%
-trec_eval -m qrels_jg -q -R qrels_jg  test/qrels.123 test/results.test > out.test.qrels_jg &&  out.test.qrels_jgfc test/out.test.qrels_jg
+trec_eval -m qrels_jg -q -R qrels_jg  test/qrels.123 test/results.test > out.test.qrels_jg && fc out.test.qrels_jg test/out.test.qrels_jg
 if %errorlevel% neq 0 exit /b %errorlevel%
 trec_eval -q -miprec_at_recall..10,.20,.25,.75,.50 -m P.5,7,3 -m recall.20,2000 -m Rprec_mult.5.0,0.2,0.35 -mutility.2,-1,0,0 -m 11pt_avg..25,.5,.75 -mndcg.1=3,2=9,4=4.5 -mndcg_cut.10,20,23.4 -msuccess.2,5,20 test/qrels.test test/results.test > out.test.meas_params && fc out.test.meas_params test/out.test.meas_params
 if %errorlevel% neq 0 exit /b %errorlevel%
