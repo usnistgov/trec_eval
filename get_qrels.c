@@ -11,7 +11,7 @@
 #include "trec_eval.h"
 #include "trec_format.h"
 #include <ctype.h>
-
+#include <errno.h>
 
 /* Read all relevance information from text_qrels_file.
 Relevance for each docno to qid is determined from text_qrels_file, which
@@ -64,6 +64,8 @@ static int parse_qrels_line (char **start_ptr, char **qid_ptr,
 
 static int comp_lines_qid_docno ();
 
+extern int errno ;
+
 
 /* static pools of memory, allocated here and never changed.  
    Declared static so one day I can write a cleanup procedure to free them */
@@ -97,8 +99,8 @@ te_get_qrels (EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
         size != read (fd, trec_qrels_buf, size) ||
 	-1 == close (fd)) {
         fprintf (stderr,
-		 "trec_eval.get_qrels: Cannot read qrels file '%s'\n",
-		 text_qrels_file);
+		 "trec_eval.get_qrels: Cannot read qrels file '%s : %s'\n",
+		 text_qrels_file, strerror( errno ));
         return (UNDEF);
     }
 
