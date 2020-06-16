@@ -94,23 +94,23 @@ te_get_qrels (EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
     TEXT_QRELS *text_qrels_ptr;
     
     /* Read entire file into memory */
-    if (! (fd = fopen (text_qrels_file, "rb")) ) {
+    if (! (fd = fopen (text_qrels_file, "r")) ) {
         errnum = errno;
         fprintf (stderr,
 		 "trec_eval.get_qrels: Cannot open qrels file '%s' : %s\n",
 		 text_qrels_file, strerror( errnum ));
         return (UNDEF);
     }
-    if (0 >= (size = fseek (fd, 0L, SEEK_END)) ) {
+    if (fseek (fd, 0L, SEEK_END) != 0 || 0 >= (size = ftell(fd)) ) {
         errnum = errno;
-        printf (stderr,
+        fprintf (stderr,
 		 "trec_eval.get_qrels: Cannot determine size of qrels file '%s' : %s\n",
 		 text_qrels_file, strerror( errnum ));
         return (UNDEF);
     }
     if (NULL == (trec_qrels_buf = malloc ((unsigned) size+2)) ) {
         errnum = errno;
-        printf (stderr,
+        fprintf (stderr,
 		 "trec_eval.get_qrels: Cannot malloc to size of qrels file '%s' : %s\n",
 		 text_qrels_file, strerror( errnum ));
         return (UNDEF);
@@ -128,8 +128,7 @@ te_get_qrels (EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
 		 text_qrels_file, size, readsize);
         return (UNDEF);
     }
-    
-    if( -1 == fclose (fd)) {
+    if( 0 != fclose (fd)) {
         errnum = errno;
         fprintf (stderr,
 		 "trec_eval.get_qrels: Cannot close qrels file '%s' : %s\n",
@@ -177,6 +176,7 @@ te_get_qrels (EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
 	if (strcmp (lines[i-1].qid, lines[i].qid))
 	    /* New query */
 	    num_qid++;
+        fprintf(stderr, "%s", lines[i].qid);
     }
 
     /* Allocate space for queries */
