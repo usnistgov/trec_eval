@@ -24,10 +24,7 @@ jobs:
       if: matrix.os == 'windows-latest'
       shell: cmd
       run: |
-        echo on
-        dir "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat"
         call "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat" x86_amd64
-        set
         build.bat
         dir trec_eval.exe
 
@@ -53,5 +50,11 @@ jobs:
         make quicktest
         # longtest doesnt pass at present
         #make longtest
+    
+    - name: test-windows
+      if: matrix.os == 'windows-latest'
+      shell: cmd
+      run: |
+        quicktest.bat
 
     
