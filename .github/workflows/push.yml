@@ -25,6 +25,7 @@ jobs:
       shell: cmd
       run: |
         echo on
+        dir "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat"
         "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat" x86_amd64
         set
         build.bat
