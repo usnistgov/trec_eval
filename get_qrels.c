@@ -79,7 +79,8 @@ te_get_qrels (EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
 {
     int fd;
     int size = 0;
-    int errnum;
+    int errnum=0;
+    int readsize=0;
     char *ptr;
     char *current_qid;
     long i;
@@ -121,10 +122,17 @@ te_get_qrels (EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
 		 text_qrels_file, strerror( errnum ));
         return (UNDEF);
     }
-    if ( size != read (fd, trec_qrels_buf, size) || -1 == close (fd)) {
+    if ( size != (readsize = read (fd, trec_qrels_buf, size)) ) {
+        fprintf (stderr,
+		 "trec_eval.get_qrels: Cannot read qrels file '%s' size %d read %d \n",
+		 text_qrels_file, size, readsize);
+        return (UNDEF);
+    }
+    
+    if( -1 == close (fd)) {
         errnum = errno;
         fprintf (stderr,
-		 "trec_eval.get_qrels: Cannot read and close qrels file '%s' : %s\n",
+		 "trec_eval.get_qrels: Cannot close qrels file '%s' : %s\n",
 		 text_qrels_file, strerror( errnum ));
         return (UNDEF);
     }
