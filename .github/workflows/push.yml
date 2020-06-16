@@ -12,7 +12,7 @@ jobs:
     
     strategy:
       matrix:
-        os: ['ubuntu-latest', 'windows-latest', 'macOs-latest']
+        os: ['windows-latest'] #['ubuntu-latest', 'windows-latest', 'macOs-latest']
         architecture: ['x64']
 
     runs-on: ${{ matrix.os }}
@@ -26,7 +26,7 @@ jobs:
       run: |
         echo on
         dir "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat"
-        "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat" x86_amd64
+        call "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat" x86_amd64
         set
         build.bat
         dir trec_eval.exe
