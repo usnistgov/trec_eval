@@ -18,6 +18,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
 
+    - uses: actions/checkout@v2
+
     - name: build-windows
       if: matrix.os == 'windows-latest'
       run: |
