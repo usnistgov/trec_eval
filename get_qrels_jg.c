@@ -106,7 +106,7 @@ te_get_qrels_jg (EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
         size != fread (trec_qrels_buf, 1, size, fd) ||
         -1 == fclose (fd)) {
         fprintf (stderr,
-		 "trec_eval.get_prefs: Cannot read qrels file '%s'\n",
+		 "trec_eval.get_qrels_jg: Cannot read qrels file '%s'\n",
 		 text_qrels_file);
         return (UNDEF);
     }

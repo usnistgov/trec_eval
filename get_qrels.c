@@ -11,7 +11,6 @@
 #include "trec_eval.h"
 #include "trec_format.h"
 #include <ctype.h>
-#include <errno.h>
 
 /* Read all relevance information from text_qrels_file.
 Relevance for each docno to qid is determined from text_qrels_file, which
@@ -79,8 +78,6 @@ te_get_qrels (EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
 {
     FILE *fd;
     int size = 0;
-    int errnum=0;
-    int readsize=0;
     char *ptr;
     char *current_qid;
     long i;
@@ -94,45 +91,15 @@ te_get_qrels (EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
     TEXT_QRELS *text_qrels_ptr;
     
     /* Read entire file into memory */
-    if (! (fd = fopen (text_qrels_file, "rb")) ) {
-        errnum = errno;
+    if (!(fd = fopen (text_qrels_file, "rb")) ||
+        fseek (fd, 0L, SEEK_END) != 0 || 0 >= (size = ftell(fd)) ||
+        NULL == (trec_qrels_buf = malloc ((unsigned) size+2)) ||
+        -1 == fseek (fd, 0L, SEEK_SET) ||
+        size != fread (trec_qrels_buf, 1, size, fd) ||
+        -1 == fclose (fd)) {
         fprintf (stderr,
-		 "trec_eval.get_qrels: Cannot open qrels file '%s' : %s\n",
-		 text_qrels_file, strerror( errnum ));
-        return (UNDEF);
-    }
-    if (fseek (fd, 0L, SEEK_END) != 0 || 0 >= (size = ftell(fd)) ) {
-        errnum = errno;
-        fprintf (stderr,
-		 "trec_eval.get_qrels: Cannot determine size of qrels file '%s' : %s\n",
-		 text_qrels_file, strerror( errnum ));
-        return (UNDEF);
-    }
-    if (NULL == (trec_qrels_buf = malloc ((unsigned) size+2)) ) {
-        errnum = errno;
-        fprintf (stderr,
-		 "trec_eval.get_qrels: Cannot malloc to size of qrels file '%s' : %s\n",
-		 text_qrels_file, strerror( errnum ));
-        return (UNDEF);
-    }
-    if ( -1 == fseek (fd, 0L, SEEK_SET) ) {
-        errnum = errno;
-        fprintf (stderr,
-		 "trec_eval.get_qrels: Cannot seek to start of qrels file '%s' : %s\n",
-		 text_qrels_file, strerror( errnum ));
-        return (UNDEF);
-    }
-    if ( size != (readsize = fread (trec_qrels_buf, 1, size, fd)) ) {
-        fprintf (stderr,
-		 "trec_eval.get_qrels: Cannot read qrels file '%s' size %d read %d \n",
-		 text_qrels_file, size, readsize);
-        return (UNDEF);
-    }
-    if( 0 != fclose (fd)) {
-        errnum = errno;
-        fprintf (stderr,
-		 "trec_eval.get_qrels: Cannot close qrels file '%s' : %s\n",
-		 text_qrels_file, strerror( errnum ));
+		 "trec_eval.get_qrels: Cannot read qrels file '%s'\n",
+		 text_qrels_file);
         return (UNDEF);
     }
 
