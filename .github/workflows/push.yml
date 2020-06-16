@@ -34,12 +34,12 @@ jobs:
     - name: run-unix
       if: matrix.os == 'ubuntu-latest' || matrix.os == 'macOs-latest'
       run: |
-        ./trec_eval
+        ./trec_eval -h
 
     - name: run-windows
       if: matrix.os == 'windows-latest'
       run: |
-        trec_eval
+        trec_eval -h
     
     - name: test-unix
       if: matrix.os == 'ubuntu-latest' || matrix.os == 'macOs-latest'
