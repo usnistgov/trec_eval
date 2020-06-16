@@ -25,7 +25,6 @@
 
 #include <stdlib.h>
 #include <io.h>
-#include <getopt.h> /* getopt at: https://gist.github.com/ashelly/7776712 */
 #include <process.h> /* for getpid() and the exec..() family */
 #include <direct.h> /* for _getcwd() and _chdir() */
 
@@ -85,10 +84,11 @@ typedef unsigned __int64  uint64_t;
 #include <sys/stat.h>
 #if defined(_WIN32) || defined(_WIN64)
 #include "mman.h"
+#include "ya_getopt.h"
 #else
 #include <sys/mman.h>
-#endif
 #include <getopt.h>
+#endif
 
 /* see http://stackoverflow.com/questions/33058014/trec-eval-make-error-using-cygwin/34927338 */
 #ifdef __CYGWIN__
