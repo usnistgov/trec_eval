@@ -22,6 +22,7 @@ jobs:
 
     - name: build-windows
       if: matrix.os == 'windows-latest'
+      shell: cmd
       run: |
         "%VS140COMNTOOLS%../../VC/vcvarsall.bat"
         .\build.bat
