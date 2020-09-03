@@ -71,16 +71,18 @@ te_get_trec_results(EPI * epi, char *text_results_file,
     TEXT_RESULTS *text_results_ptr;
 
     /* mmap entire file into memory and copy it into writable memory */
-    if (-1 == (fd = open(text_results_file, 0)) ||
-        0 >= (size = lseek(fd, 0L, 2)) ||
-        (char *) -1 == (orig_buf = (char *) mmap((caddr_t) 0,
-                                                 (size_t) size,
-                                                 PROT_READ,
-                                                 MAP_SHARED, fd, (off_t) 0))) {
-        fprintf(stderr,
-                "trec_eval.get_results: Cannot read results file '%s'\n",
-                text_results_file);
-        return (UNDEF);
+    if (-1 == (fd = open (text_results_file, 0)) ||
+        0 >= (size = lseek (fd, 0L, 2)) ||
+        (char *) -1 == (orig_buf = (char *) mmap (0,
+						  (size_t) size,
+						  PROT_READ,
+						  MAP_SHARED,
+						  fd,
+						  (off_t) 0))) {
+	fprintf (stderr,
+		 "trec_eval.get_results: Cannot read results file '%s'\n",
+		 text_results_file);
+	return (UNDEF);
     }
     if (NULL == (trec_results_buf = malloc((size_t) size + 2))) {
         fprintf(stderr,

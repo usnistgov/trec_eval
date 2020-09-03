@@ -12,7 +12,6 @@
 #include "trec_format.h"
 #include <ctype.h>
 
-
 /* Read all relevance information from text_qrels_file.
 Relevance for each docno to qid is determined from text_qrels_file, which
 consists of text tuples of the form
@@ -64,6 +63,8 @@ static int parse_qrels_line(char **start_ptr, char **qid_ptr,
 
 static int comp_lines_qid_docno();
 
+extern int errno ;
+
 
 /* static pools of memory, allocated here and never changed.  
    Declared static so one day I can write a cleanup procedure to free them */
@@ -74,7 +75,7 @@ static REL_INFO *rel_info_pool = NULL;
 
 int te_get_qrels(EPI * epi, char *text_qrels_file, ALL_REL_INFO * all_rel_info)
 {
-    int fd;
+    FILE *fd;
     int size = 0;
     char *ptr;
     char *current_qid;
@@ -89,14 +90,15 @@ int te_get_qrels(EPI * epi, char *text_qrels_file, ALL_REL_INFO * all_rel_info)
     TEXT_QRELS *text_qrels_ptr;
 
     /* Read entire file into memory */
-    if (-1 == (fd = open(text_qrels_file, 0)) ||
-        0 >= (size = lseek(fd, 0L, 2)) ||
-        NULL == (trec_qrels_buf = malloc((unsigned) size + 2)) ||
-        -1 == lseek(fd, 0L, 0) ||
-        size != read(fd, trec_qrels_buf, size) || -1 == close(fd)) {
-        fprintf(stderr,
-                "trec_eval.get_qrels: Cannot read qrels file '%s'\n",
-                text_qrels_file);
+    if (!(fd = fopen (text_qrels_file, "rb")) ||
+        fseek (fd, 0L, SEEK_END) != 0 || 0 >= (size = ftell(fd)) ||
+        NULL == (trec_qrels_buf = malloc ((unsigned) size+2)) ||
+        -1 == fseek (fd, 0L, SEEK_SET) ||
+        size != fread (trec_qrels_buf, 1, size, fd) ||
+        -1 == fclose (fd)) {
+        fprintf (stderr,
+		 "trec_eval.get_qrels: Cannot read qrels file '%s'\n",
+		 text_qrels_file);
         return (UNDEF);
     }
 

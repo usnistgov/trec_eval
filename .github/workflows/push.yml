@@ -1,0 +1,60 @@
+# This workflow will install Python dependencies, and runs tests with a variety of Python versions
+# For more information see: https://help.github.com/actions/language-and-framework-guides/using-python-with-github-actions
+
+name: Continuous Integration
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    
+    strategy:
+      matrix:
+        os: ['ubuntu-latest', 'windows-latest', 'macOs-latest']
+        architecture: ['x64']
+
+    runs-on: ${{ matrix.os }}
+    steps:
+
+    - uses: actions/checkout@v2
+
+    - name: build-windows
+      if: matrix.os == 'windows-latest'
+      shell: cmd
+      run: |
+        call "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat" x86_amd64
+        build.bat
+        dir trec_eval.exe
+
+    - name: build-unix
+      if: matrix.os == 'ubuntu-latest' || matrix.os == 'macOs-latest'
+      run: |
+        make
+
+    - name: run-unix
+      if: matrix.os == 'ubuntu-latest' || matrix.os == 'macOs-latest'
+      run: |
+        ./trec_eval -h
+
+    - name: run-windows
+      if: matrix.os == 'windows-latest'
+      shell: cmd
+      run: |
+        trec_eval -h
+    
+    - name: test-unix
+      if: matrix.os == 'ubuntu-latest' || matrix.os == 'macOs-latest'
+      run: |
+        make quicktest
+        # longtest doesnt pass at present
+        #make longtest
+    
+    - name: test-windows
+      if: matrix.os == 'windows-latest'
+      shell: cmd
+      run: |
+        quicktest.bat
+
+    

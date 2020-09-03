@@ -67,7 +67,7 @@ int
 te_get_zscores(const EPI * epi, const char *zscores_file,
                ALL_ZSCORES * all_zscores)
 {
-    int fd;
+    FILE* fd;
     int size = 0;
     char *ptr;
     char *current_qid;
@@ -81,17 +81,19 @@ te_get_zscores(const EPI * epi, const char *zscores_file,
     ZSCORES *zscores_ptr;
 
     /* Read entire file into memory */
-    if (-1 == (fd = open(zscores_file, 0)) ||
-        0 >= (size = lseek(fd, 0L, 2)) ||
-        NULL == (trec_zscores_buf = malloc((unsigned) size + 2)) ||
-        -1 == lseek(fd, 0L, 0) ||
-        size != read(fd, trec_zscores_buf, size) || -1 == close(fd)) {
-        fprintf(stderr,
-                "trec_eval.get_zscores: Cannot read zscores file '%s'\n",
-                zscores_file);
+
+    if (!(fd = fopen (zscores_file, "rb")) ||
+        fseek (fd, 0L, SEEK_END) != 0 || 0 >= (size = ftell(fd)) ||
+        NULL == (trec_zscores_buf = malloc ((unsigned) size+2)) ||
+        -1 == fseek (fd, 0L, SEEK_SET) ||
+        size != fread (trec_zscores_buf, 1, size, fd) ||
+        -1 == fclose (fd)) {
+        fprintf (stderr,
+		 "trec_eval.get_prefs: Cannot read zscores file '%s'\n",
+		 zscores_file);
         return (UNDEF);
     }
-
+    
     /* Append ending newline if not present, Append NULL terminator */
     if (trec_zscores_buf[size - 1] != '\n') {
         trec_zscores_buf[size] = '\n';
