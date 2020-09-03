@@ -47,9 +47,9 @@ MEAS_SRCS =  measures.c  m_map.c m_P.c m_num_q.c m_num_ret.c m_num_rel.c \
 
 SRCS = $(TOP_SRCS) $(FORMAT_SRCS) $(MEAS_SRCS)
 
-SRCH = common.h trec_eval.h sysfunc.h functions.h trec_format.h
+SRCH = common.h trec_eval.h sysfunc.h functions.h trec_format.h 
 
-SRCOTHER = README Makefile test bpref_bug CHANGELOG
+SRCOTHER = README Makefile test bpref_bug CHANGELOG windows
 
 trec_eval: $(SRCS) Makefile $(SRCH)
 	$(CC) $(CFLAGS)  -o trec_eval $(SRCS) -lm

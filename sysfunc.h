@@ -11,7 +11,11 @@
    suit!), this file should just include system header files from 
    /usr/include.  Until then... */
 
+#if defined(_WIN32) || defined(_WIN64)
+#include "windows/unistd.h"
+#else
 #include <unistd.h>
+#endif
 #include <limits.h>
 #include <ctype.h>
 #include <fcntl.h>
@@ -21,15 +25,26 @@
 #include <math.h>
 #include <memory.h>
 #include <sys/stat.h>
-#include <sys/wait.h>
-#include <sys/time.h>
+#if defined(_WIN32) || defined(_WIN64)
+#include "windows/mman.h"
+#include "windows/ya_getopt.h"
+#else
 #include <sys/mman.h>
-
 #include <getopt.h>
+#endif
+
+/* see http://stackoverflow.com/questions/33058014/trec-eval-make-error-using-cygwin/34927338 */
+#ifdef __CYGWIN__
+#undef log2
+#endif
 
 /* For time being, define Berkeley constructs in terms of SVR4 constructs*/
+#ifndef bzero
 #define bzero(dest,len)      memset(dest,'\0',len)
+#endif
+#ifndef bcopy
 #define bcopy(source,dest,len)   memcpy(dest,source,len)
+#endif
 #define srandom(seed)        srand(seed)
 #define random()             rand()
 

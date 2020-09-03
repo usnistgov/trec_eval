@@ -110,7 +110,7 @@ int
 te_get_qrels_prefs(EPI * epi, char *text_prefs_file,
                    ALL_REL_INFO * all_rel_info)
 {
-    int fd;
+    FILE* fd;
     int size = 0;
     char *ptr;
     char *current_qid;
@@ -125,14 +125,15 @@ te_get_qrels_prefs(EPI * epi, char *text_prefs_file,
     TEXT_PREFS *text_prefs_ptr;
 
     /* Read entire file into memory */
-    if (-1 == (fd = open(text_prefs_file, 0)) ||
-        0 >= (size = lseek(fd, 0L, 2)) ||
-        NULL == (trec_prefs_buf = malloc((unsigned) size + 2)) ||
-        -1 == lseek(fd, 0L, 0) ||
-        size != read(fd, trec_prefs_buf, size) || -1 == close(fd)) {
-        fprintf(stderr,
-                "trec_eval.get_prefs: Cannot read prefs file '%s'\n",
-                text_prefs_file);
+    if (!(fd = fopen (text_prefs_file, "rb")) ||
+        fseek (fd, 0L, SEEK_END) != 0 || 0 >= (size = ftell(fd)) ||
+        NULL == (trec_prefs_buf = malloc ((unsigned) size+2)) ||
+        -1 == fseek (fd, 0L, SEEK_SET) ||
+        size != fread (trec_prefs_buf, 1, size, fd) ||
+        -1 == fclose (fd)) {
+        fprintf (stderr,
+		 "trec_eval.get_prefs: Cannot read prefs file '%s'\n",
+		 text_prefs_file);
         return (UNDEF);
     }
 

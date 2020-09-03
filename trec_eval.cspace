@@ -1,9 +1,9 @@
-/* 
-   Copyright (c) 2008 - Chris Buckley. 
-
-   Permission is granted for use and modification of this file for
-   research, non-commercial purposes. 
-*/
+/*
+ * Copyright (c) 2008 - Chris Buckley.
+ * 
+ * Permission is granted for use and modification of this file for research,
+ * non-commercial purposes.
+ */
 static char *VersionID = VERSIONID;
 
 static char *help_message =
@@ -123,15 +123,15 @@ static char *usage =
    -m: calculate and print measures indicated by 'measure'\n\
        ('-m all_qrels' prints all qrels measures, '-m official' is default)\n";
 
-extern int te_num_trec_measures;
+extern long te_num_trec_measures;
 extern TREC_MEAS *te_trec_measures[];
-extern int te_num_trec_measure_nicknames;
+extern long te_num_trec_measure_nicknames;
 extern TREC_MEASURE_NICKNAMES te_trec_measure_nicknames[];
-extern int te_num_rel_info_format;
+extern long te_num_rel_info_format;
 extern REL_INFO_FILE_FORMAT te_rel_info_format[];
-extern int te_num_results_format;
+extern long te_num_results_format;
 extern RESULTS_FILE_FORMAT te_results_format[];
-extern int te_num_form_inter_procs;
+extern long te_num_form_inter_procs;
 extern RESULTS_FILE_FORMAT te_form_inter_procs[];
 
 static int mark_measure(EPI * epi, char *optarg);
@@ -160,9 +160,11 @@ char *argv[];
     long measure_marked_flag = 0;
 
 #ifdef MDEBUG
-    /* Turn on memory debugging if environment variable MALLOC_TRACE is
-       defined as an output file for reports.
-       mcheck_check_all() will dynamically check */
+    /*
+     * Turn on memory debugging if environment variable MALLOC_TRACE is
+     * defined as an output file for reports. mcheck_check_all() will
+     * dynamically check
+     */
     mcheck(NULL);
     mtrace();
 #endif                          /* MDEBUG */
@@ -276,17 +278,17 @@ char *argv[];
             return (UNDEF);
         exit(0);
     }
-
     if (optind + 2 != argc) {
         (void) fputs(usage, stderr);
         exit(1);
     }
-
     trec_rel_info_file = argv[optind++];
     trec_results_file = argv[optind++];
 
-    /* Find and get qrels and ranked results information for all queries from
-       the input text files */
+    /*
+     * Find and get qrels and ranked results information for all queries from
+     * the input text files
+     */
     for (i = 0; i < te_num_rel_info_format; i++) {
         if (0 == strcmp(epi.rel_info_format, te_rel_info_format[i].name)) {
             if (UNDEF == te_rel_info_format[i].get_file(&epi,
@@ -321,12 +323,10 @@ char *argv[];
                 epi.results_format);
         exit(2);
     }
-
     if (epi.zscore_flag) {
         if (UNDEF == te_get_zscores(&epi, zscores_file, &all_zscores))
             return (UNDEF);
     }
-
     /* Initialize all marked measures (possibly using command line info) */
     if (0 == measure_marked_flag) {
         /* If no measures designated on command line, first mark "official" */
@@ -358,9 +358,11 @@ char *argv[];
     q_eval.num_values = accum_eval.num_values;
     q_eval.num_queries = 0;
 
-    /* For each topic which has both qrels and top results information,
-       calculate, possibly print (if query_flag), and accumulate
-       evaluation measures. */
+    /*
+     * For each topic which has both qrels and top results information,
+     * calculate, possibly print (if query_flag), and accumulate evaluation
+     * measures.
+     */
     for (i = 0; i < all_results.num_q_results; i++) {
         /* If debugging a particular query, then skip all others */
         if (epi.debug_query &&
@@ -384,10 +386,10 @@ char *argv[];
         for (m = 0; m < te_num_trec_measures; m++) {
             if (MEASURE_REQUESTED(te_trec_measures[m])) {
                 if (UNDEF == te_trec_measures[m]->calc_meas(&epi,
-                                                            &all_rel_info.rel_info
-                                                            [j],
-                                                            &all_results.results
-                                                            [i],
+                                                            &all_rel_info.
+                                                            rel_info[j],
+                                                            &all_results.
+                                                            results[i],
                                                             te_trec_measures[m],
                                                             &q_eval)) {
                     fprintf(stderr, "trec_eval: Can't calculate measure '%s'\n",
@@ -402,7 +404,6 @@ char *argv[];
             if (UNDEF == te_convert_to_zscore(&all_zscores, &q_eval))
                 return (UNDEF);
         }
-
         /* Add this topics value to accumulated values, and possibly print */
         for (m = 0; m < te_num_trec_measures; m++) {
             if (MEASURE_REQUESTED(te_trec_measures[m])) {
@@ -435,10 +436,11 @@ char *argv[];
                 "trec_eval: No queries with both results and relevance info\n");
         exit(7);
     }
-
     /* Calculate final averages, and print (if desired) */
-    /* Note that averages may depend on the entire rel_info data if
-       epi.average_complete_flag is set */
+    /*
+     * Note that averages may depend on the entire rel_info data if
+     * epi.average_complete_flag is set
+     */
     for (m = 0; m < te_num_trec_measures; m++) {
         if (MEASURE_REQUESTED(te_trec_measures[m])) {
             if (UNDEF == te_trec_measures[m]->calc_avg_meas
@@ -468,8 +470,10 @@ static int add_meas_arg_info(EPI * epi, char *meas, char *param)
 {
     long i;
 
-    /* Guaranteed space since malloc'd argc+1 entries and can't be more
-       than one entry per command line argument */
+    /*
+     * Guaranteed space since malloc'd argc+1 entries and can't be more than
+     * one entry per command line argument
+     */
 
     /* Find non-NULL entry */
     i = 0;
@@ -479,14 +483,15 @@ static int add_meas_arg_info(EPI * epi, char *meas, char *param)
     epi->meas_arg[i].measure_name = meas;
     epi->meas_arg[i].parameters = param;
 
-    /* Ensure measure_name exists, has non_NULL parameter and mark it 
-       to be calculated */
+    /*
+     * Ensure measure_name exists, has non_NULL parameter and mark it to be
+     * calculated
+     */
     if (*param == '\0') {
         fprintf(stderr, "trec_eval: improper measure in parameter '%s'\n",
                 epi->meas_arg[i].measure_name);
         return (UNDEF);
     }
-
     epi->meas_arg[i + 1].measure_name = NULL;
     return (1);
 }
@@ -519,7 +524,6 @@ static int mark_measure(EPI * epi, char *optarg)
         if (UNDEF == add_meas_arg_info(epi, optarg, ptr))
             return (UNDEF);
     }
-
     for (i = 0; i < te_num_trec_measure_nicknames; i++) {
         if (0 == strcmp(optarg, te_trec_measure_nicknames[i].name)) {
             /* Have found nickname.  Mark all real names it refers to */
