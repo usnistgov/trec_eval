@@ -31,12 +31,12 @@ TREC_MEAS te_meas_ndcg_p = { "ndcg_p",
     Gains are allowed to be 0 or negative, and relevance level 0\n\
     can be given a gain.\n\
     Based on an implementation by Ian Soboroff\n",
-    te_init_meas_s_float_p_pair,
+    te_init_meas_s_double_p_pair,
     te_calc_ndcg_p,
     te_acc_meas_s,
     te_calc_avg_meas_s,
-    te_print_single_meas_s_float,
-    te_print_final_meas_s_float_p,
+    te_print_single_meas_s_double,
+    te_print_final_meas_s_double_p,
     &default_ndcg_gains, -1
 };
 
@@ -87,7 +87,7 @@ te_calc_ndcg_p(const EPI * epi, const REL_INFO * rel_info,
         if (i == 0)
             ideal_dcg += gain;
         else
-            ideal_dcg += gain / (float) log2((double) (i + 1));
+            ideal_dcg += gain / (double) log2((double) (i + 1));
         if (epi->debug_level > 0)
             printf("ndcg_p:%ld %ld %3.1f %6.4f\n", i, cur_lvl, gain, ideal_dcg);
     }

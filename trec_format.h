@@ -12,7 +12,7 @@
 /* trec_results - pointed to by results->q_results */
 typedef struct {                /* For each retrieved document result */
     char *docno;                /* document id */
-    float sim;                  /* score */
+    double sim;                  /* score */
 } TEXT_RESULTS;
 
 typedef struct {                /* For each query in retrieved results */
@@ -50,7 +50,7 @@ typedef struct {                /* For each query in rel judgments */
 typedef struct {                /* For each line in rel prefs judgments */
     char *jg;                   /* Judgment group id */
     char *jsg;                  /* Judgment subgroup id */
-    float rel_level;            /* Relevance level of this docno */
+    double rel_level;            /* Relevance level of this docno */
     char *docno;                /* docno */
 } TEXT_PREFS;
 
@@ -109,7 +109,7 @@ typedef struct {
    docs,if retrieved, and then by docno if not retrieved. 
    Docid_rank for a docno is the index of docno within that ordered list */
 typedef struct {
-    float rel_level;            /* rel_level of this EC in this JG */
+    double rel_level;            /* rel_level of this EC in this JG */
     long num_in_ec;             /* number in rel_info file in this ec
                                    (indpendent of results) */
     long *docid_ranks;          /* List of docids in ec.
@@ -177,7 +177,7 @@ typedef struct {
                                    num_judged is the same for all JGs and is the
                                    total number of distinct docnos involved
                                    with preferences for this topic */
-    float *rel_array;           /* Size num_judged. A rel_level value for each
+    double *rel_array;           /* Size num_judged. A rel_level value for each
                                    doc in the judgements.  There may be multiple
                                    different values for a given docno, only the
                                    last encountered is used.  The restriction

@@ -27,12 +27,12 @@ TREC_MEAS te_meas_prefs_pair_imp = { "prefs_pair_imp",
     pref_*_imp measures don't have any preferred applications that I know of,\n\
     but some people like them.\n\
     Assumes '-R prefs' or '-R qrels_prefs'\n",
-    te_init_meas_s_float,
+    te_init_meas_s_double,
     te_calc_prefs_pair_imp,
     te_acc_meas_s,
     te_calc_avg_meas_s,
-    te_print_single_meas_s_float,
-    te_print_final_meas_s_float,
+    te_print_single_meas_s_double,
+    te_print_final_meas_s_double,
     NULL, -1
 };
 

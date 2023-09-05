@@ -33,7 +33,7 @@ TREC_MEAS te_meas_ndcg_cut = { "ndcg_cut",
     Cutoffs must be positive without duplicates\n\
     Default params: -m ndcg_cut.5,10,15,20,30,100,200,500,1000\n\
     Based on an implementation by Ian Soboroff\n",
-    te_init_meas_a_float_cut_long,
+    te_init_meas_a_double_cut_long,
     te_calc_ndcg_cut,
     te_acc_meas_a_cut,
     te_calc_avg_meas_a_cut,

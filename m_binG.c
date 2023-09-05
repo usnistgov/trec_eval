@@ -25,12 +25,12 @@ TREC_MEAS te_meas_binG = { "binG",
     sum (rel_level_gain).\n\
     BinG restricts the gain to either 0 or 1 (nonrel or rel), and thus is the\n\
     average over all rel docs of (1 / log2 (2+num_nonrel before doc))\n",
-    te_init_meas_s_float,
+    te_init_meas_s_double,
     te_calc_binG,
     te_acc_meas_s,
     te_calc_avg_meas_s,
-    te_print_single_meas_s_float,
-    te_print_final_meas_s_float,
+    te_print_single_meas_s_double,
+    te_print_final_meas_s_double,
     NULL, -1
 };
 

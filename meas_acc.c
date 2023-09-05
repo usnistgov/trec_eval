@@ -32,7 +32,7 @@ te_acc_meas_empty(const EPI * epi, const TREC_MEAS * tm,
     return (1);
 }
 
-/* Measure is a single float/long that should now be summed */
+/* Measure is a single double/long that should now be summed */
 int
 te_acc_meas_s(const EPI * epi, const TREC_MEAS * tm,
               const TREC_EVAL * q_eval, TREC_EVAL * accum_eval)

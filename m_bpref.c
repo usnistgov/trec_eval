@@ -25,12 +25,12 @@ TREC_MEAS te_meas_bpref = { "bpref",
     ranking preserves.\n\
     Cite: 'Retrieval Evaluation with Incomplete Information', Chris Buckley\n\
     and Ellen Voorhees. In Proceedings of 27th SIGIR, 2004.\n",
-    te_init_meas_s_float,
+    te_init_meas_s_double,
     te_calc_bpref,
     te_acc_meas_s,
     te_calc_avg_meas_s,
-    te_print_single_meas_s_float,
-    te_print_final_meas_s_float,
+    te_print_single_meas_s_double,
+    te_print_final_meas_s_double,
     NULL, -1
 };
 

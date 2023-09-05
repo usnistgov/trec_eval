@@ -33,9 +33,9 @@ int te_print_final_meas_empty(const EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
 }
 
 
-/* Measure is a single float measure with no parameters */
+/* Measure is a single double measure with no parameters */
 int
-te_print_final_meas_s_float(const EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
+te_print_final_meas_s_double(const EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
 {
     if (epi->summary_flag)
         printf("%s%-22s\t%s\t%6.4f\n",
@@ -63,7 +63,7 @@ te_print_final_meas_s_long(const EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
 }
 
 
-/* Measure is a float array with cutoffs */
+/* Measure is a double array with cutoffs */
 int te_print_final_meas_a_cut(const EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
 {
     long i;
@@ -84,9 +84,9 @@ int te_print_final_meas_a_cut(const EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
     return (1);
 }
 
-/* Measure is a single float with float params */
+/* Measure is a single double with double params */
 int
-te_print_final_meas_s_float_p(const EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
+te_print_final_meas_s_double_p(const EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
 {
     if (epi->summary_flag)
         printf("%s%-22s\t%s\t%6.4f\n",

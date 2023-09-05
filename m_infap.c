@@ -28,12 +28,12 @@ TREC_MEAS te_meas_infAP = { "infAP",
     to be relevant in the same proportion as those judged.)\n\
     Cite:    'Estimating Average Precision with Incomplete and Imperfect\n\
     Judgments', Emine Yilmaz and Javed A. Aslam. CIKM \n",
-    te_init_meas_s_float,
+    te_init_meas_s_double,
     te_calc_infap,
     te_acc_meas_s,
     te_calc_avg_meas_s,
-    te_print_single_meas_s_float,
-    te_print_final_meas_s_float,
+    te_print_single_meas_s_double,
+    te_print_final_meas_s_double,
     NULL, -1
 };
 

@@ -26,12 +26,12 @@ TREC_MEAS te_meas_map_avgjg = { "map_avgjg",
     set of relevance judgments for this query (each set indicated by a\n\
     different judgment group), the score will be averaged over the judgment\n\
     groups.\n",
-    te_init_meas_s_float,
+    te_init_meas_s_double,
     te_calc_map_avgjg,
     te_acc_meas_s,
     te_calc_avg_meas_s,
-    te_print_single_meas_s_float,
-    te_print_final_meas_s_float,
+    te_print_single_meas_s_double,
+    te_print_final_meas_s_double,
     NULL, -1
 };
 

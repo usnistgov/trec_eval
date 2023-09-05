@@ -29,12 +29,12 @@ TREC_MEAS te_meas_Rprec = { "Rprec",
     Cite: 'Retrieval System Evaluation', Chris Buckley and Ellen Voorhees.\n\
     Chapter 3 in TREC: Experiment and Evaluation in Information Retrieval\n\
     edited by Ellen Voorhees and Donna Harman.  MIT Press 2005\n",
-    te_init_meas_s_float,
+    te_init_meas_s_double,
     te_calc_Rprec,
     te_acc_meas_s,
     te_calc_avg_meas_s,
-    te_print_single_meas_s_float,
-    te_print_final_meas_s_float,
+    te_print_single_meas_s_double,
+    te_print_final_meas_s_double,
     NULL, -1
 };
 

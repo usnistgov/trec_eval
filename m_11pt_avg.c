@@ -15,13 +15,13 @@ static int
 te_calc_11ptavg(const EPI * epi, const REL_INFO * rel_info,
                 const RESULTS * results, const TREC_MEAS * tm,
                 TREC_EVAL * eval);
-static double float_cutoff_array[] = {
+static double double_cutoff_array[] = {
     0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
 };
 
 static PARAMS default_11ptavg_cutoffs = {
-    NULL, sizeof(float_cutoff_array) / sizeof(float_cutoff_array[0]),
-    &float_cutoff_array[0]
+    NULL, sizeof(double_cutoff_array) / sizeof(double_cutoff_array[0]),
+    &double_cutoff_array[0]
 };
 
 /* See trec_eval.h for definition of TREC_MEAS */
@@ -38,12 +38,12 @@ TREC_MEAS te_meas_11pt_avg = { "11pt_avg",
     To get 3-pt_avg as in trec_eval version 8 and earlier, use\n\
       trec_eval -m 11-pt_avg.0.2,0.5,0.8 ...\n\
     Default usage: -m 11-pt_avg.0.0,.1,.2,.3,.4,.5,.6,.7,.8..9,1.0\n",
-    te_init_meas_s_float_p_float,
+    te_init_meas_s_double_p_double,
     te_calc_11ptavg,
     te_acc_meas_s,
     te_calc_avg_meas_s,
-    te_print_single_meas_s_float,
-    te_print_final_meas_s_float_p,
+    te_print_single_meas_s_double,
+    te_print_final_meas_s_double_p,
     &default_11ptavg_cutoffs, -1
 };
 

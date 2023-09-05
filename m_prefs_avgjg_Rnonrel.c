@@ -40,12 +40,12 @@ TREC_MEAS te_meas_prefs_avgjg_Rnonrel = { "prefs_avgjg_Rnonrel",
     If there is a single jg with two equivalence classes (one of them 0.0), \n\
     then prefs_avgjg_Rnonrel is akin to the ranked measure bpref.\n\
     Assumes '-R prefs' or '-R qrels_prefs'\n",
-    te_init_meas_s_float,
+    te_init_meas_s_double,
     te_calc_prefs_avgjg_Rnonrel,
     te_acc_meas_s,
     te_calc_avg_meas_s,
-    te_print_single_meas_s_float,
-    te_print_final_meas_s_float,
+    te_print_single_meas_s_double,
+    te_print_final_meas_s_double,
     NULL, -1
 };
 

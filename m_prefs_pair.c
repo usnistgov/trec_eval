@@ -25,12 +25,12 @@ TREC_MEAS te_meas_prefs_pair = { "prefs_pair",
     For doc pref A>B, this includes implied preferences (only one of A or B\n\
     retrieved), and counts as failure if neither A nor B retrieved.\n\
     Assumes '-R prefs' or '-R qrels_prefs'\n",
-    te_init_meas_s_float,
+    te_init_meas_s_double,
     te_calc_prefs_pair,
     te_acc_meas_s,
     te_calc_avg_meas_s,
-    te_print_single_meas_s_float,
-    te_print_final_meas_s_float,
+    te_print_single_meas_s_double,
+    te_print_final_meas_s_double,
     NULL, -1
 };
 

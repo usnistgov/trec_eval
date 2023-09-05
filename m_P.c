@@ -38,7 +38,7 @@ TREC_MEAS te_meas_P = { "P",
     docs retrieved\n\
     Cutoffs must be positive without duplicates\n\
     Default param: -m P.5,10,15,20,30,100,200,500,1000\n",
-    te_init_meas_a_float_cut_long,
+    te_init_meas_a_double_cut_long,
     te_calc_P,
     te_acc_meas_a_cut,
     te_calc_avg_meas_a_cut,

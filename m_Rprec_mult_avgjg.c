@@ -36,7 +36,7 @@ TREC_MEAS te_meas_Rprec_mult_avgjg = { "Rprec_mult_avgjg",
     of a user), then the measure is averaged over those jgs.\n\
     Default param: \n\
     trec_eval -m Rprec_mult_avgjg.0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.6,1.8,2.0  ...\n",
-    te_init_meas_a_float_cut_float,
+    te_init_meas_a_double_cut_double,
     te_calc_Rprec_mult_avgjg,
     te_acc_meas_a_cut,
     te_calc_avg_meas_a_cut,
