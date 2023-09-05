@@ -35,10 +35,10 @@ te_print_single_meas_empty (const EPI *epi, const TREC_MEAS *tm,
 }
 
 
-/* Measure is a single float measure with no parameters, */
-int 
-te_print_single_meas_s_float (const EPI *epi, const TREC_MEAS *tm,
-			      const TREC_EVAL *eval)
+/* Measure is a single double measure with no parameters, */
+int
+te_print_single_meas_s_double(const EPI * epi, const TREC_MEAS * tm,
+                             const TREC_EVAL * eval)
 {
     if (epi->zscore_flag)
 	printf ("Z%-22s\t%s\t%6.4f\n",
@@ -71,10 +71,10 @@ te_print_single_meas_s_long (const EPI *epi, const TREC_MEAS *tm,
     return (1);
 }
 
-/* Measure is a float array with cutoffs */
-int 
-te_print_single_meas_a_cut (const EPI *epi, const TREC_MEAS *tm,
-			    const TREC_EVAL *eval)
+/* Measure is a double array with cutoffs */
+int
+te_print_single_meas_a_cut(const EPI * epi, const TREC_MEAS * tm,
+                           const TREC_EVAL * eval)
 {
     long i;
     for (i = 0; i < tm->meas_params->num_params; i++) {

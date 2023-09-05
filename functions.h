@@ -24,19 +24,19 @@ int te_convert_to_zscore (const ALL_ZSCORES *all_zscores, TREC_EVAL *q_eval);
 /* -------- Initialize measure -------- */
 /* Code is in meas_init.c */
 /* Measure does not require initialization or storage */
-int te_init_meas_empty (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval);
-/* Measure is a single float measure, no parameters */
-int te_init_meas_s_float (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval);
+int te_init_meas_empty(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval);
+/* Measure is a single double measure, no parameters */
+int te_init_meas_s_double(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval);
 /* Measure is a single long measure, no parameters. */
-int te_init_meas_s_long (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval);
-/* Measure is a float array with long cutoffs */
-int te_init_meas_a_float_cut_long (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval);
-/* Measure is a float array with float cutoffs */
-int te_init_meas_a_float_cut_float (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval);
-/* Measure is a single float with float params */
-int te_init_meas_s_float_p_float (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval);
-/* Measure is a single float with paired name=float params */
-int te_init_meas_s_float_p_pair (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval);
+int te_init_meas_s_long(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval);
+/* Measure is a double array with long cutoffs */
+int te_init_meas_a_double_cut_long(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval);
+/* Measure is a double array with double cutoffs */
+int te_init_meas_a_double_cut_double(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval);
+/* Measure is a single double with double params */
+int te_init_meas_s_double_p_double(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval);
+/* Measure is a single double with paired name=double params */
+int te_init_meas_s_double_p_pair(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval);
 
 
 /* -------- Accumulate Measure -------- */
@@ -69,35 +69,35 @@ int te_calc_avg_meas_s_gm (const EPI *epi, const TREC_MEAS *tm,
 /* ----- Print single query for measure ---- */
 /* Code is in meas_print_single.c */
 /* Measure does not require printing */
-int te_print_single_meas_empty (const EPI *epi, const TREC_MEAS *tm,
-				const TREC_EVAL *eval);
-/* Measure is a single float measure with no parameters, */
-int te_print_single_meas_s_float (const EPI *epi, const TREC_MEAS *tm,
-				  const TREC_EVAL *eval);
+int te_print_single_meas_empty(const EPI * epi, const TREC_MEAS * tm,
+                               const TREC_EVAL * eval);
+/* Measure is a single double measure with no parameters, */
+int te_print_single_meas_s_double(const EPI * epi, const TREC_MEAS * tm,
+                                 const TREC_EVAL * eval);
 /* Measure is a single long measure with no parameters. */
-int te_print_single_meas_s_long (const EPI *epi, const TREC_MEAS *tm,
-				 const TREC_EVAL *eval);
-/* Measure is a float array with cutoffs */
-int te_print_single_meas_a_cut (const EPI *epi, const TREC_MEAS *tm,
-				      const TREC_EVAL *eval);
+int te_print_single_meas_s_long(const EPI * epi, const TREC_MEAS * tm,
+                                const TREC_EVAL * eval);
+/* Measure is a double array with cutoffs */
+int te_print_single_meas_a_cut(const EPI * epi, const TREC_MEAS * tm,
+                               const TREC_EVAL * eval);
 
 
 /* ----- Print final query for measure ---- */
 /* Code is in meas_print_final.c */
 /* Measure does not require printing or storage */
-int te_print_final_meas_empty (const EPI *epi, TREC_MEAS *tm,
-			       TREC_EVAL *eval);
-/* Measure is a single float measure with no parameters */
-int te_print_final_meas_s_float (const EPI *epi, TREC_MEAS *tm,
-				 TREC_EVAL *eval);
+int te_print_final_meas_empty(const EPI * epi, TREC_MEAS * tm,
+                              TREC_EVAL * eval);
+/* Measure is a single double measure with no parameters */
+int te_print_final_meas_s_double(const EPI * epi, TREC_MEAS * tm,
+                                TREC_EVAL * eval);
 /* Measure is a single long measure with no parameters. */
-int te_print_final_meas_s_long (const EPI *epi, TREC_MEAS *tm,
-				TREC_EVAL *eval);
-/* Measure is a float array with cutoffs */
-int te_print_final_meas_a_cut (const EPI *epi, TREC_MEAS *tm,
-			       TREC_EVAL *eval);
-/* Measure is a single float with float params */
-int te_print_final_meas_s_float_p (const EPI *epi, TREC_MEAS *tm,
-				   TREC_EVAL *eval);
+int te_print_final_meas_s_long(const EPI * epi, TREC_MEAS * tm,
+                               TREC_EVAL * eval);
+/* Measure is a double array with cutoffs */
+int te_print_final_meas_a_cut(const EPI * epi, TREC_MEAS * tm,
+                              TREC_EVAL * eval);
+/* Measure is a single double with double params */
+int te_print_final_meas_s_double_p(const EPI * epi, TREC_MEAS * tm,
+                                  TREC_EVAL * eval);
 
 #endif /* FUNCTIONSH */

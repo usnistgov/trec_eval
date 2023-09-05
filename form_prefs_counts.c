@@ -104,14 +104,14 @@ Three part process here:
 
 typedef struct {
     char *docno;
-    float sim;
+    double sim;
     long rank;
 } DOCNO_RESULTS;
 
 typedef struct {
     char *jg;
     char *jsg;
-    float rel_level;
+    double rel_level;
     char *docno;
     long rank;
 } PREFS_AND_RANKS;
@@ -176,7 +176,7 @@ static unsigned char *pa_pool;
 static long max_pa_pool = 0;
 static unsigned char **pa_ptr_pool;
 static long max_pa_ptr_pool = 0;
-static float *rel_pool;
+static double *rel_pool;
 static long max_rel_pool = 0;
 /* Space reserved for intermediate values */
 static PREFS_AND_RANKS *prefs_and_ranks;
@@ -200,10 +200,10 @@ form_prefs_counts (const EPI *epi, const REL_INFO *rel_info,
     char *jgid, *jsgid;
     long jg_ind;
     long num_jgs_with_subgroups;
-    float rel_level;
+    double rel_level;
 
-    EC * ec_pool_ptr;
-    float *rel_pool_ptr;
+    EC *ec_pool_ptr;
+    double *rel_pool_ptr;
     long *rank_pool_ptr;
     unsigned char *pa_pool_ptr;
     unsigned char **pa_ptr_pool_ptr;
@@ -303,20 +303,21 @@ form_prefs_counts (const EPI *epi, const REL_INFO *rel_info,
 	return (UNDEF);
 
     if (num_jgs_with_subgroups) {
-	/* Reserve pool space for preference arrays, and rel_level arrays */
-	if (NULL == (rel_pool =
-		     te_chk_and_malloc (rel_pool, &max_rel_pool,
-				     num_judged * num_jgs_with_subgroups,
-				     sizeof (float))) ||
-	    NULL == (pa_pool =
-		     te_chk_and_malloc (pa_pool, &max_pa_pool,
-			       num_judged * num_judged * num_jgs_with_subgroups,
-				     sizeof (unsigned char))) ||
-	    NULL == (pa_ptr_pool =
-		     te_chk_and_malloc (pa_ptr_pool, &max_pa_ptr_pool,
-				     num_judged * num_jgs_with_subgroups,
-				     sizeof (unsigned char *))))
-	    return (UNDEF);
+        /* Reserve pool space for preference arrays, and rel_level arrays */
+        if (NULL == (rel_pool =
+                     te_chk_and_malloc(rel_pool, &max_rel_pool,
+                                       num_judged * num_jgs_with_subgroups,
+                                       sizeof(double))) ||
+            NULL == (pa_pool =
+                     te_chk_and_malloc(pa_pool, &max_pa_pool,
+                                       num_judged * num_judged *
+                                       num_jgs_with_subgroups,
+                                       sizeof(unsigned char)))
+            || NULL == (pa_ptr_pool =
+                        te_chk_and_malloc(pa_ptr_pool, &max_pa_ptr_pool,
+                                          num_judged * num_jgs_with_subgroups,
+                                          sizeof(unsigned char *))))
+            return (UNDEF);
     }
 
     ec_pool_ptr = ec_pool;
@@ -436,7 +437,7 @@ form_jg_ec (const PREFS_AND_RANKS *prefs, const long num_prefs,
     EC *ec_ptr =jg->ecs;
     long *rank_ptr = rank_pool_ptr;
     long i;
-    float rel_level;
+    double rel_level;
 
     /* Fill in prefs array with all known info from prefs */
     /* prefs is sorted by jsg, then rel_level, then rank */

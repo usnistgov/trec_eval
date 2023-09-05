@@ -25,13 +25,14 @@ TREC_MEAS te_meas_yaap =  {"yaap",
     Cite: 'On Smoothing Average Precision', Stephen Robertson.\n\
     ECIR 2012, LNCS 7224, pp.158-169.  2012.\n\
     Edited by R.Baeza-Yates et al. Springer-Verlag Berlin\n",
-     te_init_meas_s_float,
-     te_calc_yaap,
-     te_acc_meas_s,
-     te_calc_avg_meas_s,
-     te_print_single_meas_s_float,
-     te_print_final_meas_s_float,
-     NULL, -1};
+    te_init_meas_s_double,
+    te_calc_yaap,
+    te_acc_meas_s,
+    te_calc_avg_meas_s,
+    te_print_single_meas_s_double,
+    te_print_final_meas_s_double,
+    NULL, -1
+};
 
 static int 
 te_calc_yaap (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,
