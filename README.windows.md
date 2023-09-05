@@ -4,7 +4,7 @@ trec_eval can be compiled natively for Windows, using Visual Studio build tools,
 
 ## Compiling using Visual Studio build tools
 
-See the [Github Workflow](.github/workflow/push.yml) for compilation.
+See the [Github Workflow](.github/workflows/push.yml) for compilation.
 
 A few additional includes are used:
  - `mman.h` - a mmap() implementation for Windows
