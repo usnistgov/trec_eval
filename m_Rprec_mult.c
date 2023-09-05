@@ -31,13 +31,14 @@ TREC_MEAS te_meas_Rprec_mult =
     dominates method B at the low multiples but performs less well at the\n\
     high multiples then it is precision oriented (compared to B).\n\
     Default param: -m Rprec_mult.0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.6,1.8,2.0 ...\n",
-     te_init_meas_a_float_cut_float,
-     te_calc_Rprec_mult,
-     te_acc_meas_a_cut,
-     te_calc_avg_meas_a_cut,
-     te_print_single_meas_a_cut,
-     te_print_final_meas_a_cut,
-    (void *) &default_Rprec_cutoffs, -1};
+    te_init_meas_a_double_cut_double,
+    te_calc_Rprec_mult,
+    te_acc_meas_a_cut,
+    te_calc_avg_meas_a_cut,
+    te_print_single_meas_a_cut,
+    te_print_final_meas_a_cut,
+    (void *) &default_Rprec_cutoffs, -1
+};
 
 static int 
 te_calc_Rprec_mult (const EPI *epi, const REL_INFO *rel_info,

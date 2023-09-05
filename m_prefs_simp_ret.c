@@ -29,13 +29,14 @@ TREC_MEAS te_meas_prefs_simp_ret =
     pref_*_ret measures should be used for dynamic collections but are\n\
     inferior in most other applications.\n\
     Assumes '-R prefs' or '-R qrels_prefs'\n",
-     te_init_meas_s_float,
-     te_calc_prefs_simp_ret,
-     te_acc_meas_s,
-     te_calc_avg_meas_s,
-     te_print_single_meas_s_float,
-     te_print_final_meas_s_float,
-     NULL, -1};
+    te_init_meas_s_double,
+    te_calc_prefs_simp_ret,
+    te_acc_meas_s,
+    te_calc_avg_meas_s,
+    te_print_single_meas_s_double,
+    te_print_final_meas_s_double,
+    NULL, -1
+};
 
 static int 
 te_calc_prefs_simp_ret (const EPI *epi, const REL_INFO *rel_info,

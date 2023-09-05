@@ -12,10 +12,10 @@
 #include "trec_format.h"
 double log2(double x);
 
-static int 
-te_calc_ndcg (const EPI *epi, const REL_INFO *rel_info,
-	      const RESULTS *results, const TREC_MEAS *tm, TREC_EVAL *eval);
-static PARAMS default_ndcg_gains = { NULL, 0, NULL};
+static int
+te_calc_ndcg(const EPI * epi, const REL_INFO * rel_info,
+             const RESULTS * results, const TREC_MEAS * tm, TREC_EVAL * eval);
+static PARAMS default_ndcg_gains = { NULL, 0, NULL };
 
 /* See trec_eval.h for definition of TREC_MEAS */
 TREC_MEAS te_meas_ndcg =
@@ -32,13 +32,14 @@ TREC_MEAS te_meas_ndcg =
     Gains are allowed to be 0 or negative, and relevance level 0\n\
     can be given a gain.\n\
     Based on an implementation by Ian Soboroff\n",
-     te_init_meas_s_float_p_pair,
-     te_calc_ndcg,
-     te_acc_meas_s,
-     te_calc_avg_meas_s,
-     te_print_single_meas_s_float,
-     te_print_final_meas_s_float_p,
-     &default_ndcg_gains, -1};
+    te_init_meas_s_double_p_pair,
+    te_calc_ndcg,
+    te_acc_meas_s,
+    te_calc_avg_meas_s,
+    te_print_single_meas_s_double,
+    te_print_final_meas_s_double_p,
+    &default_ndcg_gains, -1
+};
 
 /* Keep track of valid rel_levels and associated gains */
 /* Initialized in setup_gains */

@@ -37,13 +37,14 @@ TREC_MEAS te_meas_relstring =
     if the document has some other relevance value, '<' is printed.\n\
     Measure is only printed for individual queries.\n\
     Default usage:  -m relstring.10 \n",
-     te_init_meas_s_float_p_float,
-     te_calc_relstring,
-     te_acc_meas_empty,
-     te_calc_avg_meas_empty,
-     te_print_q_relstring,
-     te_print_relstring,
-     (void *) &default_relstring_params, -1};
+    te_init_meas_s_double_p_double,
+    te_calc_relstring,
+    te_acc_meas_empty,
+    te_calc_avg_meas_empty,
+    te_print_q_relstring,
+    te_print_relstring,
+    (void *) &default_relstring_params, -1
+};
 
 static int 
 te_calc_relstring (const EPI *epi, const REL_INFO *rel_info,

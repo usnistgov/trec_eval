@@ -44,13 +44,14 @@ TREC_MEAS te_meas_ndcg_rel =
     respectively (level 3 remains at the default).\n\
     Gains are allowed to be 0 or negative, and relevance level 0\n\
     can be given a gain.\n",
-     te_init_meas_s_float_p_pair,
-     te_calc_ndcg_rel,
-     te_acc_meas_s,
-     te_calc_avg_meas_s,
-     te_print_single_meas_s_float,
-     te_print_final_meas_s_float_p,
-     &default_ndcg_gains, -1};
+    te_init_meas_s_double_p_pair,
+    te_calc_ndcg_rel,
+    te_acc_meas_s,
+    te_calc_avg_meas_s,
+    te_print_single_meas_s_double,
+    te_print_final_meas_s_double_p,
+    &default_ndcg_gains, -1
+};
 
 /* Keep track of valid rel_levels and associated gains */
 /* Initialized in setup_gains */

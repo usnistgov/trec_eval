@@ -24,15 +24,15 @@
 */
 
 /* Static utility functions defined later */
-static int get_long_cutoffs (PARAMS *params, char *param_string);
-static int get_float_cutoffs (PARAMS *params, char *param_string);
-static int get_float_params (PARAMS *params, char *param_string);
-static int get_param_pairs (PARAMS *params, char *param_string);
-static int comp_long ();
-static int comp_float ();
-static char *append_long (char *name, long value);
-static char *append_float (char *name, double value);
-static char *append_string (char *name, char *value);
+static int get_long_cutoffs(PARAMS * params, char *param_string);
+static int get_double_cutoffs(PARAMS * params, char *param_string);
+static int get_double_params(PARAMS * params, char *param_string);
+static int get_param_pairs(PARAMS * params, char *param_string);
+static int comp_long();
+static int comp_double();
+static char *append_long(char *name, long value);
+static char *append_double(char *name, double value);
+static char *append_string(char *name, char *value);
 
 /* ---------------- Init measure generic procedures -------------- */
 
@@ -44,9 +44,8 @@ te_init_meas_empty (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
     return (1);
 }
 
-/* Measure is a single float measure with no parameters */
-int 
-te_init_meas_s_float (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
+/* Measure is a single double measure with no parameters */
+int te_init_meas_s_double(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
 {
     /* Make sure enough space */
     if (NULL == (eval->values =
@@ -82,9 +81,8 @@ te_init_meas_s_long (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
     return (1);
 }
 
-/* Measure is a float array with long cutoffs */
-int 
-te_init_meas_a_float_cut_long (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
+/* Measure is a double array with long cutoffs */
+int te_init_meas_a_double_cut_long(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
 {
     long *cutoffs;
     long i;
@@ -125,25 +123,24 @@ te_init_meas_a_float_cut_long (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
     return (1);
 }
 
-/* Measure is a float array with float cutoffs */
-int 
-te_init_meas_a_float_cut_float (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
+/* Measure is a double array with double cutoffs */
+int te_init_meas_a_double_cut_double(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
 {
     double *cutoffs;
     long i;
     /* See if there are command line parameters for this measure.
        Use those if given, otherwise use default cutoffs */
     if (epi->meas_arg) {
-	MEAS_ARG *meas_arg_ptr = epi->meas_arg;
-	while (meas_arg_ptr->measure_name) {
-	    if (0 == strcmp (meas_arg_ptr->measure_name, tm->name)) {
-		if (UNDEF == get_float_cutoffs (tm->meas_params,
-						meas_arg_ptr->parameters))
-		    return (UNDEF);
-		break;
-	    }
-	    meas_arg_ptr++;
-	}
+        MEAS_ARG *meas_arg_ptr = epi->meas_arg;
+        while (meas_arg_ptr->measure_name) {
+            if (0 == strcmp(meas_arg_ptr->measure_name, tm->name)) {
+                if (UNDEF == get_double_cutoffs(tm->meas_params,
+                                               meas_arg_ptr->parameters))
+                    return (UNDEF);
+                break;
+            }
+            meas_arg_ptr++;
+        }
     }
     cutoffs = (double *) tm->meas_params->param_values;
 
@@ -156,10 +153,10 @@ te_init_meas_a_float_cut_float (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
 
     /* Initialize full measure name and value for each cutoff */
     for (i = 0; i < tm->meas_params->num_params; i++) {
-	eval->values[eval->num_values+i] = (TREC_EVAL_VALUE)
-	    {append_float (tm->name, cutoffs[i]), 0.0};
-	if (NULL == eval->values[eval->num_values+i].name)
-	    return (UNDEF);
+        eval->values[eval->num_values + i] = (TREC_EVAL_VALUE) {
+        append_double(tm->name, cutoffs[i]), 0.0};
+        if (NULL == eval->values[eval->num_values + i].name)
+            return (UNDEF);
     }
 
     /* Set location of value of measure, and increment space used for values */
@@ -168,28 +165,27 @@ te_init_meas_a_float_cut_float (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
     return (1);
 }
 
-/* Note difference between float cutoffs and float params is that
+/* Note difference between double cutoffs and double params is that
    cutoff values are unordered, assumed unique, and one eval value is
    allocated to each cutoff. Param values are ordered and can be anything,
    and number of params means nothing about number of values*/
 
-/* Measure is a single float with float params */
-int 
-te_init_meas_s_float_p_float (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
+/* Measure is a single double with double params */
+int te_init_meas_s_double_p_double(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
 {
     /* See if there are command line parameters for this measure.
        Use those if given, otherwise use default cutoffs */
     if (epi->meas_arg) {
-	MEAS_ARG *meas_arg_ptr = epi->meas_arg;
-	while (meas_arg_ptr->measure_name) {
-	    if (0 == strcmp (meas_arg_ptr->measure_name, tm->name)) {
-		if (UNDEF == get_float_params (tm->meas_params,
-					       meas_arg_ptr->parameters))
-		    return (UNDEF);
-		break;
-	    }
-	    meas_arg_ptr++;
-	}
+        MEAS_ARG *meas_arg_ptr = epi->meas_arg;
+        while (meas_arg_ptr->measure_name) {
+            if (0 == strcmp(meas_arg_ptr->measure_name, tm->name)) {
+                if (UNDEF == get_double_params(tm->meas_params,
+                                              meas_arg_ptr->parameters))
+                    return (UNDEF);
+                break;
+            }
+            meas_arg_ptr++;
+        }
     }
 
     /* Make sure enough space */
@@ -214,9 +210,8 @@ te_init_meas_s_float_p_float (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval)
     return (1);
 }
 
-/* Measure is a single float with paired name=float params */
-int
-te_init_meas_s_float_p_pair (EPI *epi, TREC_MEAS *tm, TREC_EVAL *eval) 
+/* Measure is a single double with paired name=double params */
+int te_init_meas_s_double_p_pair(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
 {
      if (epi->meas_arg) {
         MEAS_ARG *meas_arg_ptr = epi->meas_arg;
@@ -311,8 +306,7 @@ get_long_cutoffs (PARAMS *params, char *param_string)
     return (1);
 }
 
-static int
-get_float_cutoffs (PARAMS *params, char *param_string)
+static int get_double_cutoffs(PARAMS * params, char *param_string)
 {
     long num_cutoffs;
     char *ptr, *start_ptr;
@@ -348,10 +342,7 @@ get_float_cutoffs (PARAMS *params, char *param_string)
     cutoffs[num_cutoffs++] = atof(start_ptr);
 
     /* Sort cutoffs in increasing order */
-    qsort ((char *) cutoffs,
-           (int) num_cutoffs,
-           sizeof (double),
-           comp_float);
+    qsort((char *) cutoffs, (int) num_cutoffs, sizeof(double), comp_double);
 
     /* Sanity checking: non-duplicates */
     for (i = 1; i < num_cutoffs; i++) {
@@ -364,8 +355,7 @@ get_float_cutoffs (PARAMS *params, char *param_string)
     return (1);
 }
 
-static int
-get_float_params (PARAMS *params, char *param_string)
+static int get_double_params(PARAMS * params, char *param_string)
 {
     long num_params;
     char *ptr, *start_ptr;
@@ -402,14 +392,13 @@ get_float_params (PARAMS *params, char *param_string)
     return (1);
 }
 
-/* Params are in comma separated form name=float. Eg, -m ndcg_p.1=4.0,2=8.0 */
-static int
-get_param_pairs (PARAMS *params, char *param_string)
+/* Params are in comma separated form name=double. Eg, -m ndcg_p.1=4.0,2=8.0 */
+static int get_param_pairs(PARAMS * params, char *param_string)
 {
     long num_params;
     char last_seen;
     char *ptr, *start_ptr;
-    FLOAT_PARAM_PAIR *values;
+    DOUBLE_PARAM_PAIR *values;
 
     /* Count number of parameters in param_string (comma separated), all
        of form name=value.  Return error if not of right form */
@@ -438,8 +427,8 @@ get_param_pairs (PARAMS *params, char *param_string)
 
     /* Reserve space for params */
     if (NULL == (params->printable_params =
-		 Malloc (strlen(param_string)+1, char)) ||
-        NULL == (values = Malloc (num_params, FLOAT_PARAM_PAIR)))
+                 Malloc(strlen(param_string) + 1, char)) ||
+        NULL == (values = Malloc(num_params, DOUBLE_PARAM_PAIR)))
         return (UNDEF);
 
     (void) strncpy (params->printable_params,
@@ -473,8 +462,8 @@ comp_long (long *ptr1, long *ptr2)
 {
     return (*ptr1 - *ptr2);
 }
-static int
-comp_float (double *ptr1, double *ptr2)
+
+static int comp_double(double *ptr1, double *ptr2)
 {
     if (*ptr1 < *ptr2)
 	return (-1);
@@ -494,8 +483,7 @@ append_long (char *name, long value)
     return (full_name);
 }
 
-static char *
-append_float (char *name, double value)
+static char *append_double(char *name, double value)
 {
     long length_required = strlen(name) + 8 + 2;
     char *full_name;

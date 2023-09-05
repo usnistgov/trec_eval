@@ -45,13 +45,14 @@ TREC_MEAS te_meas_prefs_avgjg_Rnonrel_ret =
     pref_*_ret measures should be used for dynamic collections but are\n\
     inferior in most other applications.\n\
     Assumes '-R prefs' or '-R qrels_prefs'\n",
-     te_init_meas_s_float,
-     te_calc_prefs_avgjg_Rnonrel_ret,
-     te_acc_meas_s,
-     te_calc_avg_meas_s,
-     te_print_single_meas_s_float,
-     te_print_final_meas_s_float,
-     NULL, -1};
+    te_init_meas_s_double,
+    te_calc_prefs_avgjg_Rnonrel_ret,
+    te_acc_meas_s,
+    te_calc_avg_meas_s,
+    te_print_single_meas_s_double,
+    te_print_final_meas_s_double,
+    NULL, -1
+};
 
 static void recalculate (const JG *jg, const long num_judged_ret,
 			 long *ret_num_ful, long *ret_num_poss);
