@@ -25,7 +25,7 @@ Preferences of user(s) for docs for a given qid is determined from
 text_prefs_file, which consists of text tuples of the form
    qid  ujg   docno  rel_level
 giving TREC document numbers (docno, a string) and their relevance
-level (rel_level,a non-negative double) to query qid (a string) for a 
+level (rel_level,a non-negative float) to query qid (a string) for a 
  user judgment group (ujg, a string).
 Fields are separated by whitespace, string fields can contain no whitespace.
 File may contain no NULL characters.

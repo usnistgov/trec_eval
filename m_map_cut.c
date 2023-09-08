@@ -29,14 +29,13 @@ TREC_MEAS te_meas_map_cut =
     averaged over all relevant docs for the topic.\n\
     Cutoffs must be positive without duplicates\n\
     Default param: -m map_cut.5,10,15,20,30,100,200,500,1000\n",
-    te_init_meas_a_double_cut_long,
-    te_calc_map_cut,
-    te_acc_meas_a_cut,
-    te_calc_avg_meas_a_cut,
-    te_print_single_meas_a_cut,
-    te_print_final_meas_a_cut,
-    (void *) &default_map_cutoffs, -1
-};
+     te_init_meas_a_float_cut_long,
+     te_calc_map_cut,
+     te_acc_meas_a_cut,
+     te_calc_avg_meas_a_cut,
+     te_print_single_meas_a_cut,
+     te_print_final_meas_a_cut,
+     (void *) &default_map_cutoffs, -1};
 
 static int 
 te_calc_map_cut (const EPI *epi, const REL_INFO *rel_info,

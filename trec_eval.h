@@ -84,7 +84,7 @@ typedef struct {
 typedef struct {
     char* name;
     double value;
-} DOUBLE_PARAM_PAIR;
+} FLOAT_PARAM_PAIR;
 
 /* Definitions of internal formats for retrieval ranking and relevance info */
 /* These are format independent definitions, which have a pointer

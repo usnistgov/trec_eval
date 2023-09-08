@@ -25,14 +25,13 @@ TREC_MEAS te_meas_set_map =
     Was known as exact_unranked_avg_prec in earlier versions of trec_eval.\n\
     Another way of loooking at this is  Recall * Precision on the set of\n\
     docs retrieved for a topic.\n",
-    te_init_meas_s_double,
-    te_calc_set_map,
-    te_acc_meas_s,
-    te_calc_avg_meas_s,
-    te_print_single_meas_s_double,
-    te_print_final_meas_s_double,
-    NULL, -1
-};
+     te_init_meas_s_float,
+     te_calc_set_map,
+     te_acc_meas_s,
+     te_calc_avg_meas_s,
+     te_print_single_meas_s_float,
+     te_print_final_meas_s_float,
+     NULL, -1};
 
 static int 
 te_calc_set_map (const EPI *epi, const REL_INFO *rel_info,

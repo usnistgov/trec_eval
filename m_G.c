@@ -40,14 +40,13 @@ TREC_MEAS te_meas_G =
     should not be independent of the docs before. If most docs before have\n\
     higher gain, then the retrieval of this doc at i is nearly as good as \n\
     possible, and should be rewarded appropriately\n",
-    te_init_meas_s_double_p_pair,
-    te_calc_G,
-    te_acc_meas_s,
-    te_calc_avg_meas_s,
-    te_print_single_meas_s_double,
-    te_print_final_meas_s_double_p,
-    &default_G_gains, -1
-};
+     te_init_meas_s_float_p_pair,
+     te_calc_G,
+     te_acc_meas_s,
+     te_calc_avg_meas_s,
+     te_print_single_meas_s_float,
+     te_print_final_meas_s_float_p,
+     &default_G_gains, -1};
 
 /* Keep track of valid rel_levels and associated gains */
 /* Initialized in setup_gains */

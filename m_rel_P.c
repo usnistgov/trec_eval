@@ -27,14 +27,13 @@ TREC_MEAS te_meas_relative_P =
     cutoff.  Equivalent to Precision up until R, and then recall after R\n\
     Cutoffs must be positive without duplicates\n\
     Default params: -m relative_P.5,10,15,20,30,100,200,500,1000\n",
-    te_init_meas_a_double_cut_long,
-    te_calc_rel_P,
-    te_acc_meas_a_cut,
-    te_calc_avg_meas_a_cut,
-    te_print_single_meas_a_cut,
-    te_print_final_meas_a_cut,
-    (void *) &default_relative_P_cutoffs, -1
-};
+     te_init_meas_a_float_cut_long,
+     te_calc_rel_P,
+     te_acc_meas_a_cut,
+     te_calc_avg_meas_a_cut,
+     te_print_single_meas_a_cut,
+     te_print_final_meas_a_cut,
+     (void *) &default_relative_P_cutoffs, -1};
 
 static int 
 te_calc_rel_P (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,

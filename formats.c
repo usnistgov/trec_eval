@@ -62,7 +62,7 @@ Preferences of user(s) for docs for a given qid is determined from\n\
 text_prefs_file, which consists of text tuples of the form\n\
    qid  ujg  ujsubg  docno  rel_level\n\
 giving TREC document numbers (docno, a string) and their relevance\n\
-level (rel_level,a non-negative double) to query qid (a string) for a \n\
+level (rel_level,a non-negative float) to query qid (a string) for a \n\
 user judgment sub-group (ujsubg, a string) within a user judgment\n\
 group (ujg, a string).\n\
 Fields are separated by whitespace, string fields can contain no whitespace.\n\
@@ -170,7 +170,7 @@ Preferences of user(s) for docs for a given qid is determined from\n\
 text_prefs_file, which consists of text tuples of the form\n\
    qid  ujg   docno  rel_level\n\
 giving TREC document numbers (docno, a string) and their relevance\n\
-level (rel_level,a non-negative double) to query qid (a string) for a \n\
+level (rel_level,a non-negative float) to query qid (a string) for a \n\
  user judgment group (ujg, a string).\n\
 Fields are separated by whitespace, string fields can contain no whitespace.\n\
 File may contain no NULL characters.\n\
@@ -239,7 +239,7 @@ Lines of results_file are of the form \n\
      030  Q0  ZF08-175-870  0   4238   prise1 \n\
      qid iter   docno      rank  sim   run_id \n\
 giving TREC document numbers (a string) retrieved by query qid  \n\
-(a string) with similarity sim (a double).  The other fields are ignored, \n\
+(a string) with similarity sim (a float).  The other fields are ignored, \n\
 with the exception that the run_id field of the last line is kept and \n\
 output.  In particular, note that the rank field is ignored here; \n\
 internally ranks are assigned by sorting by the sim field with ties  \n\

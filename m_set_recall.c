@@ -22,14 +22,13 @@ TREC_MEAS te_meas_set_recall =
      "    Set Recall: num_relevant_retrieved / num_relevant \n\
     Recall over all docs retrieved for a topic.\n\
     Was known as exact_recall in earlier versions of trec_eval",
-    te_init_meas_s_double,
-    te_calc_set_recall,
-    te_acc_meas_s,
-    te_calc_avg_meas_s,
-    te_print_single_meas_s_double,
-    te_print_final_meas_s_double,
-    NULL, -1
-};
+     te_init_meas_s_float,
+     te_calc_set_recall,
+     te_acc_meas_s,
+     te_calc_avg_meas_s,
+     te_print_single_meas_s_float,
+     te_print_final_meas_s_float,
+     NULL, -1};
 
 static int 
 te_calc_set_recall (const EPI *epi, const REL_INFO *rel_info,

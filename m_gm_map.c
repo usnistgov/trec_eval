@@ -26,14 +26,13 @@ TREC_MEAS te_meas_gm_map =
     for others.\n\
     gm_ap is reported only in the summary over all topics, not for individual\n\
     topics.\n",
-    te_init_meas_s_double,
-    te_calc_gm_map,
-    te_acc_meas_s,
-    te_calc_avg_meas_s_gm,
-    te_print_single_meas_empty,
-    te_print_final_meas_s_double,
-    NULL, -1
-};
+     te_init_meas_s_float,
+     te_calc_gm_map,
+     te_acc_meas_s,
+     te_calc_avg_meas_s_gm,
+     te_print_single_meas_empty,
+     te_print_final_meas_s_float,
+     NULL, -1};
 
 static int 
 te_calc_gm_map (const EPI *epi, const REL_INFO *rel_info,

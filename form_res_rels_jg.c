@@ -33,7 +33,7 @@ static int comp_rank_judged (), comp_sim_docno (), comp_docno ();
 /* Definitions used for temporary and cached values */
 typedef struct {
     char *docno;
-    double sim;
+    float sim;
     long rank;
     long rel;
 } DOCNO_INFO;

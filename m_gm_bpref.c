@@ -25,14 +25,13 @@ TREC_MEAS te_meas_gm_bpref =
     high scores for some topics and low scores for others.\n\
     Gm_bpref is printed only as a summary measure across topics, not for the\n\
     individual topics.\n",
-    te_init_meas_s_double,
-    te_calc_gm_bpref,
-    te_acc_meas_s,
-    te_calc_avg_meas_s_gm,
-    te_print_single_meas_empty,
-    te_print_final_meas_s_double,
-    NULL, -1
-};
+     te_init_meas_s_float,
+     te_calc_gm_bpref,
+     te_acc_meas_s,
+     te_calc_avg_meas_s_gm,
+     te_print_single_meas_empty,
+     te_print_final_meas_s_float,
+     NULL, -1};
 
 static int 
 te_calc_gm_bpref (const EPI *epi, const REL_INFO *rel_info,

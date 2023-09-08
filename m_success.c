@@ -29,14 +29,13 @@ TREC_MEAS te_meas_success =
     Cutoffs must be positive without duplicates\n\
     Default param: trec_eval -m success.1,5,10\n\
     History: Developed by Stephen Tomlinson.\n",
-    te_init_meas_a_double_cut_long,
-    te_calc_success,
-    te_acc_meas_a_cut,
-    te_calc_avg_meas_a_cut,
-    te_print_single_meas_a_cut,
-    te_print_final_meas_a_cut,
-    (void *) &default_success_cutoffs, -1
-};
+     te_init_meas_a_float_cut_long,
+     te_calc_success,
+     te_acc_meas_a_cut,
+     te_calc_avg_meas_a_cut,
+     te_print_single_meas_a_cut,
+     te_print_final_meas_a_cut,
+     (void *) &default_success_cutoffs, -1};
 
 static int 
 te_calc_success (const EPI *epi, const REL_INFO *rel_info,

@@ -29,7 +29,7 @@ te_calc_avg_meas_empty (const EPI *epi, const TREC_MEAS *tm,
     return (1);
 }
 
-/* Measure is a single double/long that should now be averaged */
+/* Measure is a single float/long that should now be averaged */
 int
 te_calc_avg_meas_s (const EPI *epi, const TREC_MEAS *tm,
 		    const ALL_REL_INFO *all_rel_info, TREC_EVAL *accum_eval)
@@ -62,7 +62,7 @@ te_calc_avg_meas_a_cut (const EPI *epi, const TREC_MEAS *tm,
     return (1);
 }
 
-/* Measure is a single double with no parameters to be averaged with
+/* Measure is a single float with no parameters to be averaged with
    geometric mean */
 int
 te_calc_avg_meas_s_gm (const EPI *epi, const TREC_MEAS *tm,

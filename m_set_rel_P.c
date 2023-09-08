@@ -25,14 +25,13 @@ TREC_MEAS te_meas_set_relative_P =
     Note:   trec_eval -m relative_P.50 ...\n\
     is different from \n\
             trec_eval -M 50 -m set_relative_P ...\n",
-    te_init_meas_s_double,
-    te_calc_set_relative_P,
-    te_acc_meas_s,
-    te_calc_avg_meas_s,
-    te_print_single_meas_s_double,
-    te_print_final_meas_s_double,
-    NULL, -1
-};
+     te_init_meas_s_float,
+     te_calc_set_relative_P,
+     te_acc_meas_s,
+     te_calc_avg_meas_s,
+     te_print_single_meas_s_float,
+     te_print_final_meas_s_float,
+    NULL, -1};
 
 static int 
 te_calc_set_relative_P (const EPI *epi, const REL_INFO *rel_info,
