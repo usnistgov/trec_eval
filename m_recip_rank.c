@@ -22,13 +22,14 @@ TREC_MEAS te_meas_recip_rank =
      "    Reciprocal Rank of the first relevant retrieved doc.\n\
     Measure is most useful for tasks in which there is only one relevant\n\
     doc, or the user only wants one relevant doc.\n",
-     te_init_meas_s_float,
-     te_calc_recip_rank,
-     te_acc_meas_s,
-     te_calc_avg_meas_s,
-     te_print_single_meas_s_float,
-     te_print_final_meas_s_float,
-     NULL, -1};
+    te_init_meas_s_double,
+    te_calc_recip_rank,
+    te_acc_meas_s,
+    te_calc_avg_meas_s,
+    te_print_single_meas_s_double,
+    te_print_final_meas_s_double,
+    NULL, -1
+};
 
 static int 
 te_calc_recip_rank (const EPI *epi, const REL_INFO *rel_info,

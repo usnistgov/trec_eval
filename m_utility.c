@@ -39,13 +39,14 @@ TREC_MEAS te_meas_utility =
     Warning: Current version summary evaluation averages over all topics;\n\
     it could be argued that simply summing is more useful (but not backward\n\
     compatible)\n",
-     te_init_meas_s_float_p_float,
-     te_calc_utility,
-     te_acc_meas_s,
-     te_calc_avg_meas_s, 
-     te_print_single_meas_s_float,
-     te_print_final_meas_s_float_p,
-    (void *) &default_utility_params, -1};
+    te_init_meas_s_double_p_double,
+    te_calc_utility,
+    te_acc_meas_s,
+    te_calc_avg_meas_s,
+    te_print_single_meas_s_double,
+    te_print_final_meas_s_double_p,
+    (void *) &default_utility_params, -1
+};
 
 static int 
 te_calc_utility (const EPI *epi, const REL_INFO *rel_info,

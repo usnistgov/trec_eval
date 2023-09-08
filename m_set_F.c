@@ -28,13 +28,14 @@ TREC_MEAS te_meas_set_F =
     Default usage: trec_eval -m set_F.1.0 ...\n\
     Cite: Variant of van Rijsbergen's E measure ('Information Retrieval',\n\
     Butterworths, 1979).\n",
-     te_init_meas_s_float_p_float,
-     te_calc_set_F,
-     te_acc_meas_s,
-     te_calc_avg_meas_s,
-     te_print_single_meas_s_float,
-     te_print_final_meas_s_float_p,
-     (void *) &default_set_F_params, -1};
+    te_init_meas_s_double_p_double,
+    te_calc_set_F,
+    te_acc_meas_s,
+    te_calc_avg_meas_s,
+    te_print_single_meas_s_double,
+    te_print_final_meas_s_double_p,
+    (void *) &default_set_F_params, -1
+};
 
 static int 
 te_calc_set_F (const EPI *epi, const REL_INFO *rel_info, const RESULTS *results,

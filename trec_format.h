@@ -10,9 +10,9 @@
 /* ---------------------------------------------------------------------- */
 /* Format specific definitions for file input for results and rel_info */
 /* trec_results - pointed to by results->q_results */
-typedef struct {                    /* For each retrieved document result */
-    char *docno;                       /* document id */
-    float sim;                         /* score */
+typedef struct {                /* For each retrieved document result */
+    char *docno;                /* document id */
+    double sim;                  /* score */
 } TEXT_RESULTS;
 
 typedef struct {                    /* For each query in retrieved results */
@@ -47,11 +47,11 @@ typedef struct {                    /* For each query in rel judgments */
 } TEXT_QRELS_JG_INFO;
 
 /* prefs pointed to by rel_info->q_rel_info */
-typedef struct {                 /* For each line in rel prefs judgments */
-    char *jg;                       /* Judgment group id */          
-    char *jsg;                      /* Judgment subgroup id */          
-    float rel_level;                /* Relevance level of this docno */
-    char *docno;                    /* docno */
+typedef struct {                /* For each line in rel prefs judgments */
+    char *jg;                   /* Judgment group id */
+    char *jsg;                  /* Judgment subgroup id */
+    double rel_level;            /* Relevance level of this docno */
+    char *docno;                /* docno */
 } TEXT_PREFS;
 
 typedef struct {                    /* For each query in rel judgements */
@@ -109,12 +109,12 @@ typedef struct {
    docs,if retrieved, and then by docno if not retrieved. 
    Docid_rank for a docno is the index of docno within that ordered list */
 typedef struct {
-    float rel_level;                /* rel_level of this EC in this JG */
-    long num_in_ec;                 /* number in rel_info file in this ec
-				       (indpendent of results) */
-    long *docid_ranks;             /* List of docids in ec.
-				       After construction, sorted by increasing
-				       docid_rank numbers. */
+    double rel_level;            /* rel_level of this EC in this JG */
+    long num_in_ec;             /* number in rel_info file in this ec
+                                   (indpendent of results) */
+    long *docid_ranks;          /* List of docids in ec.
+                                   After construction, sorted by increasing
+                                   docid_rank numbers. */
 } EC;
 
 /* Preference array.  A square array, num_judgments * num_judgments, where
@@ -171,18 +171,18 @@ typedef struct {
     long num_ecs;           /* num_ecs == 0 means prefs_array being used for
 			       preference info rather than EC */
 
-    PREFS_ARRAY prefs_array;/* prefs_array[i][j] is 1 iff doc with docid_rank i
-			       is preferred to doc with docid_rank j.
-			       Size num_judged * num_judged where
-                               num_judged is the same for all JGs and is the
-			       total number of distinct docnos involved
-			       with preferences for this topic */
-    float *rel_array;       /* Size num_judged. A rel_level value for each
-			       doc in the judgements.  There may be multiple
-                               different values for a given docno, only the
-			       last encountered is used.  The restriction
-			       that values for a docno must be either all
-			       non-zero, or all zero, is enforced */
+    PREFS_ARRAY prefs_array;    /* prefs_array[i][j] is 1 iff doc with docid_rank i
+                                   is preferred to doc with docid_rank j.
+                                   Size num_judged * num_judged where
+                                   num_judged is the same for all JGs and is the
+                                   total number of distinct docnos involved
+                                   with preferences for this topic */
+    double *rel_array;           /* Size num_judged. A rel_level value for each
+                                   doc in the judgements.  There may be multiple
+                                   different values for a given docno, only the
+                                   last encountered is used.  The restriction
+                                   that values for a docno must be either all
+                                   non-zero, or all zero, is enforced */
 
     /* Prefs between doc A and doc B, fulfilled by results and possible */
     long num_prefs_fulfilled_ret;    /* Num prefs in this jg satisfied by

@@ -32,13 +32,14 @@ TREC_MEAS te_meas_ndcg_p =
     Gains are allowed to be 0 or negative, and relevance level 0\n\
     can be given a gain.\n\
     Based on an implementation by Ian Soboroff\n",
-     te_init_meas_s_float_p_pair,
-     te_calc_ndcg_p,
-     te_acc_meas_s,
-     te_calc_avg_meas_s,
-     te_print_single_meas_s_float,
-     te_print_final_meas_s_float_p,
-     &default_ndcg_gains, -1};
+    te_init_meas_s_double_p_pair,
+    te_calc_ndcg_p,
+    te_acc_meas_s,
+    te_calc_avg_meas_s,
+    te_print_single_meas_s_double,
+    te_print_final_meas_s_double_p,
+    &default_ndcg_gains, -1
+};
 
 /* Keep track of valid rel_levels and associated gains */
 /* Initialized in setup_gains */
@@ -93,22 +94,22 @@ te_calc_ndcg_p (const EPI *epi, const REL_INFO *rel_info,
     lvl_count = 0;
     ideal_dcg = 0.0;
     for (i = 0; i < gains.total_num_at_levels; i++) {
-	lvl_count++;
-	while (lvl_count > gains.rel_gains[cur_lvl].num_at_level) {
-	    lvl_count = 1;
-	    cur_lvl--;
-	    if (cur_lvl < 0 || gains.rel_gains[cur_lvl].gain <= 0.0)
-		break;
-	}
-	if (cur_lvl < 0 || gains.rel_gains[cur_lvl].gain <= 0.0)
-	    break;
-	gain = gains.rel_gains[cur_lvl].gain;
-	if (i == 0)
-	    ideal_dcg += gain;
-	else
-	    ideal_dcg += gain / (float) log2((double)(i + 1));
-	if (epi->debug_level > 0) 
-	    printf("ndcg_p:%ld %ld %3.1f %6.4f\n", i, cur_lvl, gain, ideal_dcg);
+        lvl_count++;
+        while (lvl_count > gains.rel_gains[cur_lvl].num_at_level) {
+            lvl_count = 1;
+            cur_lvl--;
+            if (cur_lvl < 0 || gains.rel_gains[cur_lvl].gain <= 0.0)
+                break;
+        }
+        if (cur_lvl < 0 || gains.rel_gains[cur_lvl].gain <= 0.0)
+            break;
+        gain = gains.rel_gains[cur_lvl].gain;
+        if (i == 0)
+            ideal_dcg += gain;
+        else
+            ideal_dcg += gain / (double) log2((double) (i + 1));
+        if (epi->debug_level > 0)
+            printf("ndcg_p:%ld %ld %3.1f %6.4f\n", i, cur_lvl, gain, ideal_dcg);
     }
 
     /* Compare sum to ideal NDCG */

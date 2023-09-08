@@ -10,15 +10,18 @@
 #include "functions.h"
 #include "trec_format.h"
 
-static int 
-te_calc_iprec_at_recall (const EPI *epi, const REL_INFO *rel_info,
-			 const RESULTS *results, const TREC_MEAS *tm,
-			 TREC_EVAL *eval);
-static double float_cutoff_array[] = {
-    0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0};
+static int
+te_calc_iprec_at_recall(const EPI * epi, const REL_INFO * rel_info,
+                        const RESULTS * results, const TREC_MEAS * tm,
+                        TREC_EVAL * eval);
+static double double_cutoff_array[] = {
+    0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
+};
+
 static PARAMS default_iprec_at_recall_cutoffs = {
-    NULL, sizeof (float_cutoff_array) / sizeof (float_cutoff_array[0]),
-    &float_cutoff_array[0]};
+    NULL, sizeof(double_cutoff_array) / sizeof(double_cutoff_array[0]),
+    &double_cutoff_array[0]
+};
 
 /* See trec_eval.h for definition of TREC_MEAS */
 TREC_MEAS te_meas_iprec_at_recall =
@@ -31,13 +34,14 @@ TREC_MEAS te_meas_iprec_at_recall =
     interpolation used here is\n\
       Int_Prec (rankX) == MAX (Prec (rankY)) for all Y >= X.\n\
     Default usage: -m iprec_at_recall.0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1 ...\n",
-     te_init_meas_a_float_cut_float,
-     te_calc_iprec_at_recall,
-     te_acc_meas_a_cut, 
-     te_calc_avg_meas_a_cut,
-     te_print_single_meas_a_cut,
-     te_print_final_meas_a_cut,
-     (void *) &default_iprec_at_recall_cutoffs, -1};
+    te_init_meas_a_double_cut_double,
+    te_calc_iprec_at_recall,
+    te_acc_meas_a_cut,
+    te_calc_avg_meas_a_cut,
+    te_print_single_meas_a_cut,
+    te_print_final_meas_a_cut,
+    (void *) &default_iprec_at_recall_cutoffs, -1
+};
 
 static int 
 te_calc_iprec_at_recall (const EPI *epi, const REL_INFO *rel_info,

@@ -29,13 +29,14 @@ TREC_MEAS te_meas_recall =
     REcall is a fine single topic measure, but does not average well.\n\
     Cutoffs must be positive without duplicates\n\
     Default param: -m recall.5,10,15,20,30,100,200,500,1000\n",
-     te_init_meas_a_float_cut_long,
-     te_calc_recall,
-     te_acc_meas_a_cut,
-     te_calc_avg_meas_a_cut,
-     te_print_single_meas_a_cut,
-     te_print_final_meas_a_cut,
-     (void *) &default_recall_cutoffs, -1};
+    te_init_meas_a_double_cut_long,
+    te_calc_recall,
+    te_acc_meas_a_cut,
+    te_calc_avg_meas_a_cut,
+    te_print_single_meas_a_cut,
+    te_print_final_meas_a_cut,
+    (void *) &default_recall_cutoffs, -1
+};
 
 static int 
 te_calc_recall (const EPI *epi, const REL_INFO *rel_info,

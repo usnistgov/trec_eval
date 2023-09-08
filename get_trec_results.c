@@ -17,7 +17,7 @@ Read text tuples from trec_results_file of the form
      030  Q0  ZF08-175-870  0   4238   prise1
      qid iter   docno      rank  sim   run_id
 giving TREC document numbers (a string) retrieved by query qid 
-(a string) with similarity sim (a float).  The other fields are ignored,
+(a string) with similarity sim (a double).  The other fields are ignored,
 with the exception that the run_id field of the last line is kept and
 output.  In particular, note that the rank field is ignored here;
 internally ranks will be assigned by sorting by the sim field with ties 
