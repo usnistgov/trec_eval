@@ -188,7 +188,7 @@ static char *off_names[] = {
 static char *trec_names[] = {
     "runid", "num_q", "num_ret", "num_rel", "num_rel_ret", "map", "gm_map",
     "Rprec", "bpref", "recip_rank", "iprec_at_recall", "P", "relstring",
-    "recall", "infAP", "gm_bpref",
+    "recall", "unj", "rbp", "rbp_resid", "infAP", "gm_bpref",
     "utility", "11pt_avg", "ndcg", "relative_P", "Rprec_mult", "success",
     "map_cut", "ndcg_cut", "ndcg_rel", "Rndcg", "binG", "G",
     "set_P", "set_recall", "set_relative_P", "set_map", "set_F",
