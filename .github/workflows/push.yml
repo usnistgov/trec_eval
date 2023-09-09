@@ -38,6 +38,9 @@ jobs:
       run: |
         ./trec_eval -h
 
+    - uses: ilammy/msvc-dev-cmd@v1
+      if: matrix.os == 'windows-latest'
+
     - name: run-windows
       if: matrix.os == 'windows-latest'
       shell: cmd
