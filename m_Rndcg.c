@@ -188,13 +188,13 @@ te_calc_Rndcg (const EPI *epi, const REL_INFO *rel_info,
 static int
 setup_gains (const TREC_MEAS *tm, const RES_RELS *res_rels, GAINS *gains)
 {
-    FLOAT_PARAM_PAIR *pairs = NULL;
+    DOUBLE_PARAM_PAIR *pairs = NULL;
     long num_pairs = 0;
     long i,j;
     long num_gains;
 
     if (tm->meas_params) {
-	pairs = (FLOAT_PARAM_PAIR *) tm->meas_params->param_values;
+	pairs = (DOUBLE_PARAM_PAIR *) tm->meas_params->param_values;
 	num_pairs = tm->meas_params->num_params;
     }
 
