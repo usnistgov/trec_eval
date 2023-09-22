@@ -89,6 +89,11 @@ set_recall            	301	0.1498
 set_map               	301	0.0213
 set_F                 	301	0.1458
 num_nonrel_judged_ret 	301	188
+rbp                   	301	0.1861
+rbp_resid             	301	0.0610
+unj_5                 	301	0.0000
+unj_10                	301	0.0000
+unj_20                	301	0.1000
 num_ret               	303	84
 num_rel               	303	10
 num_rel_ret           	303	6
@@ -180,6 +185,11 @@ set_recall            	303	0.6000
 set_map               	303	0.0429
 set_F                 	303	0.1277
 num_nonrel_judged_ret 	303	61
+rbp                   	303	0.3176
+rbp_resid             	303	0.0049
+unj_5                 	303	0.0000
+unj_10                	303	0.0000
+unj_20                	303	0.0000
 runid                 	all	STANDARD
 num_q                 	all	3
 num_ret               	all	584
@@ -274,3 +284,8 @@ set_recall            	all	0.2499
 set_map               	all	0.0214
 set_F                 	all	0.0912
 num_nonrel_judged_ret 	all	249
+rbp                   	all	0.1679
+rbp_resid             	all	0.0220
+unj_5                 	all	0.0000
+unj_10                	all	0.0000
+unj_20                	all	0.0333
