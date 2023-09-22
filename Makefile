@@ -1,12 +1,12 @@
-BIN = /usr/local/bin
 #   Copyright (c) 2008 - Chris Buckley. 
 #
 #   Permission is granted for use and modification of this file for
 #   research, non-commercial purposes. 
 
+BIN = /usr/local/bin
 H   = .
 
-VERSIONID = 10.0-rc1
+VERSIONID = 10.0-rc2
 
 # gcc
 CC       = gcc
