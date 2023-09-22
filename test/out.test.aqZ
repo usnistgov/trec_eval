@@ -89,6 +89,11 @@ Zset_recall            	301	-0.6336
 Zset_map               	301	-0.4675
 Zset_F                 	301	   nan
 Znum_nonrel_judged_ret 	301	-0.2633
+Zrbp                   	301	-1000000.0000
+Zrbp_resid             	301	-1000000.0000
+Zunj_5                 	301	-1000000.0000
+Zunj_10                	301	-1000000.0000
+Zunj_20                	301	-1000000.0000
 Znum_ret               	302	-1.6693
 Znum_rel               	302	-1000000.0000
 Znum_rel_ret           	302	-0.1901
@@ -99,7 +104,7 @@ Zrecip_rank            	302	0.3618
 Ziprec_at_recall_0.00  	302	0.3190
 Ziprec_at_recall_0.10  	302	0.3366
 Ziprec_at_recall_0.20  	302	0.6255
-Ziprec_at_recall_0.30  	302	0.3699
+Ziprec_at_recall_0.30  	302	0.2189
 Ziprec_at_recall_0.40  	302	0.3427
 Ziprec_at_recall_0.50  	302	0.0229
 Ziprec_at_recall_0.60  	302	-1.5090
@@ -138,7 +143,7 @@ ZRprec_mult_1.60       	302	-0.4071
 ZRprec_mult_1.80       	302	-0.4812
 ZRprec_mult_2.00       	302	-0.4859
 Zutility               	302	1.7482
-Z11pt_avg              	302	-0.3741
+Z11pt_avg              	302	-0.3925
 ZbinG                  	302	-0.4454
 ZG                     	302	-0.4454
 Zndcg                  	302	-0.3706
@@ -180,6 +185,11 @@ Zset_recall            	302	-0.6255
 Zset_map               	302	0.4257
 Zset_F                 	302	   nan
 Znum_nonrel_judged_ret 	302	-0.0899
+Zrbp                   	302	-1000000.0000
+Zrbp_resid             	302	-1000000.0000
+Zunj_5                 	302	-1000000.0000
+Zunj_10                	302	-1000000.0000
+Zunj_20                	302	-1000000.0000
 Znum_ret               	303	-1.6644
 Znum_rel               	303	0.0000
 Znum_rel_ret           	303	0.3233
@@ -271,6 +281,11 @@ Zset_recall            	303	0.3231
 Zset_map               	303	1.0123
 Zset_F                 	303	   nan
 Znum_nonrel_judged_ret 	303	-0.4112
+Zrbp                   	303	-1000000.0000
+Zrbp_resid             	303	-1000000.0000
+Zunj_5                 	303	-1000000.0000
+Zunj_10                	303	-1000000.0000
+Zunj_20                	303	-1000000.0000
 runid                 	all	STANDARD
 Znum_q                 	all	3.0000
 Znum_ret               	all	-5.2259
@@ -284,7 +299,7 @@ Zrecip_rank            	all	-0.5251
 Ziprec_at_recall_0.00  	all	-0.5469
 Ziprec_at_recall_0.10  	all	-0.3177
 Ziprec_at_recall_0.20  	all	-0.2204
-Ziprec_at_recall_0.30  	all	-0.2511
+Ziprec_at_recall_0.30  	all	-0.3014
 Ziprec_at_recall_0.40  	all	-0.2098
 Ziprec_at_recall_0.50  	all	-0.2714
 Ziprec_at_recall_0.60  	all	-0.7591
@@ -323,7 +338,7 @@ ZRprec_mult_1.60       	all	-0.7067
 ZRprec_mult_1.80       	all	-0.7458
 ZRprec_mult_2.00       	all	-0.5441
 Zutility               	all	1.6122
-Z11pt_avg              	all	-0.6511
+Z11pt_avg              	all	-0.6572
 ZbinG                  	all	-0.5123
 ZG                     	all	-0.5123
 Zndcg                  	all	-0.4828
@@ -365,3 +380,8 @@ Zset_recall            	all	-0.3120
 Zset_map               	all	0.3235
 Zset_F                 	all	   nan
 Znum_nonrel_judged_ret 	all	-0.7645
+Zrbp                   	all	-1000000.0000
+Zrbp_resid             	all	-1000000.0000
+Zunj_5                 	all	-1000000.0000
+Zunj_10                	all	-1000000.0000
+Zunj_20                	all	-1000000.0000
