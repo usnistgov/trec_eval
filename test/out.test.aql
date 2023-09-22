@@ -89,6 +89,11 @@ set_recall            	301	0.0833
 set_map               	301	0.0002
 set_F                 	301	0.0039
 num_nonrel_judged_ret 	301	258
+rbp                   	301	0.0465
+rbp_resid             	301	0.0610
+unj_5                 	301	0.0000
+unj_10                	301	0.0000
+unj_20                	301	0.1000
 num_ret               	302	500
 num_rel               	302	77
 num_rel_ret           	302	50
@@ -99,7 +104,7 @@ recip_rank            	302	1.0000
 iprec_at_recall_0.00  	302	1.0000
 iprec_at_recall_0.10  	302	0.8421
 iprec_at_recall_0.20  	302	0.8421
-iprec_at_recall_0.30  	302	0.7419
+iprec_at_recall_0.30  	302	0.7059
 iprec_at_recall_0.40  	302	0.6863
 iprec_at_recall_0.50  	302	0.5417
 iprec_at_recall_0.60  	302	0.1420
@@ -138,7 +143,7 @@ Rprec_mult_1.60       	302	0.3468
 Rprec_mult_1.80       	302	0.3094
 Rprec_mult_2.00       	302	0.2857
 utility               	302	-400.0000
-11pt_avg              	302	0.4360
+11pt_avg              	302	0.4327
 binG                  	302	0.2160
 G                     	302	0.1623
 ndcg                  	302	0.6617
@@ -180,6 +185,11 @@ set_recall            	302	0.6494
 set_map               	302	0.0649
 set_F                 	302	0.1733
 num_nonrel_judged_ret 	302	214
+rbp                   	302	0.7628
+rbp_resid             	302	0.0001
+unj_5                 	302	0.0000
+unj_10                	302	0.0000
+unj_20                	302	0.0000
 num_ret               	303	500
 num_rel               	303	8
 num_rel_ret           	303	8
@@ -271,6 +281,11 @@ set_recall            	303	1.0000
 set_map               	303	0.0160
 set_F                 	303	0.0315
 num_nonrel_judged_ret 	303	138
+rbp                   	303	0.0212
+rbp_resid             	303	0.4226
+unj_5                 	303	0.2000
+unj_10                	303	0.5000
+unj_20                	303	0.5000
 runid                 	all	STANDARD
 num_q                 	all	3
 num_ret               	all	1500
@@ -284,7 +299,7 @@ recip_rank            	all	0.3520
 iprec_at_recall_0.00  	all	0.3723
 iprec_at_recall_0.10  	all	0.3186
 iprec_at_recall_0.20  	all	0.3186
-iprec_at_recall_0.30  	all	0.2852
+iprec_at_recall_0.30  	all	0.2732
 iprec_at_recall_0.40  	all	0.2666
 iprec_at_recall_0.50  	all	0.2184
 iprec_at_recall_0.60  	all	0.0852
@@ -323,7 +338,7 @@ Rprec_mult_1.60       	all	0.1156
 Rprec_mult_1.80       	all	0.1031
 Rprec_mult_2.00       	all	0.0952
 utility               	all	-460.6667
-11pt_avg              	all	0.1804
+11pt_avg              	all	0.1793
 binG                  	all	0.1367
 G                     	all	0.1206
 ndcg                  	all	0.3894
@@ -365,3 +380,8 @@ set_recall            	all	0.5776
 set_map               	all	0.0270
 set_F                 	all	0.0696
 num_nonrel_judged_ret 	all	610
+rbp                   	all	0.2769
+rbp_resid             	all	0.1612
+unj_5                 	all	0.0667
+unj_10                	all	0.1667
+unj_20                	all	0.2000
