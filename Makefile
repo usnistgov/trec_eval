@@ -71,6 +71,7 @@ quicktest: trec_eval
 	./trec_eval -q -m all_trec -Z test/zscores_file test/qrels.test test/results.test | diff - test/out.test.aqZ
 	/bin/echo "Test succeeeded"
 
+# Don't use this test please
 longtest: trec_eval
 	/bin/rm -rf test.long; mkdir test.long
 	./trec_eval test/qrels.test test/results.test > test.long/out.test
