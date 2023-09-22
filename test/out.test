@@ -11,7 +11,7 @@ recip_rank            	all	0.4064
 iprec_at_recall_0.00  	all	0.4665
 iprec_at_recall_0.10  	all	0.3884
 iprec_at_recall_0.20  	all	0.3186
-iprec_at_recall_0.30  	all	0.2852
+iprec_at_recall_0.30  	all	0.2732
 iprec_at_recall_0.40  	all	0.2666
 iprec_at_recall_0.50  	all	0.2184
 iprec_at_recall_0.60  	all	0.0822
