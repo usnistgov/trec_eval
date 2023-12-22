@@ -6,7 +6,7 @@ ZRprec                 	301	-0.3001
 Zbpref                 	301	-0.5252
 Zrecip_rank            	301	-1.1526
 Ziprec_at_recall_0.00  	301	-1.0983
-Ziprec_at_recall_0.10  	301	-0.4041
+Ziprec_at_recall_0.10  	301	-0.4034
 Ziprec_at_recall_0.20  	301	-0.7546
 Ziprec_at_recall_0.30  	301	-0.5759
 Ziprec_at_recall_0.40  	301	-0.5639
@@ -104,10 +104,10 @@ Zrecip_rank            	302	0.4214
 Ziprec_at_recall_0.00  	302	0.3863
 Ziprec_at_recall_0.10  	302	0.3775
 Ziprec_at_recall_0.20  	302	0.6981
-Ziprec_at_recall_0.30  	302	0.5495
+Ziprec_at_recall_0.30  	302	0.6794
 Ziprec_at_recall_0.40  	302	0.8025
 Ziprec_at_recall_0.50  	302	0.5773
-Ziprec_at_recall_0.60  	302	-0.7015
+Ziprec_at_recall_0.60  	302	-0.6544
 Ziprec_at_recall_0.70  	302	-1.1666
 Ziprec_at_recall_0.80  	302	-0.8905
 Ziprec_at_recall_0.90  	302	-0.5818
@@ -297,12 +297,12 @@ ZRprec                 	all	-0.2241
 Zbpref                 	all	-0.2778
 Zrecip_rank            	all	-0.4904
 Ziprec_at_recall_0.00  	all	-0.4594
-Ziprec_at_recall_0.10  	all	-0.2309
+Ziprec_at_recall_0.10  	all	-0.2307
 Ziprec_at_recall_0.20  	all	-0.1876
-Ziprec_at_recall_0.30  	all	-0.1629
+Ziprec_at_recall_0.30  	all	-0.1196
 Ziprec_at_recall_0.40  	all	-0.0654
 Ziprec_at_recall_0.50  	all	-0.0740
-Ziprec_at_recall_0.60  	all	-0.4667
+Ziprec_at_recall_0.60  	all	-0.4510
 Ziprec_at_recall_0.70  	all	-0.5471
 Ziprec_at_recall_0.80  	all	-0.3653
 Ziprec_at_recall_0.90  	all	-0.1529

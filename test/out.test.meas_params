@@ -1,4 +1,4 @@
-iprec_at_recall_0.10  	301	0.2096
+iprec_at_recall_0.10  	301	0.2098
 iprec_at_recall_0.20  	301	0.0000
 iprec_at_recall_0.25  	301	0.0000
 iprec_at_recall_0.50  	301	0.0000
@@ -22,7 +22,7 @@ success_5             	301	0.0000
 success_20            	301	1.0000
 iprec_at_recall_0.10  	302	0.8421
 iprec_at_recall_0.20  	302	0.8421
-iprec_at_recall_0.25  	302	0.7500
+iprec_at_recall_0.25  	302	0.7917
 iprec_at_recall_0.50  	302	0.5417
 iprec_at_recall_0.75  	302	0.0000
 P_3                   	302	0.6667
@@ -64,9 +64,9 @@ ndcg_cut_23           	303	0.0509
 success_2             	303	0.0000
 success_5             	303	0.0000
 success_20            	303	1.0000
-iprec_at_recall_0.10  	all	0.3884
+iprec_at_recall_0.10  	all	0.3885
 iprec_at_recall_0.20  	all	0.3186
-iprec_at_recall_0.25  	all	0.2879
+iprec_at_recall_0.25  	all	0.3018
 iprec_at_recall_0.50  	all	0.2184
 iprec_at_recall_0.75  	all	0.0312
 P_3                   	all	0.2222

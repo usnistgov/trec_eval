@@ -6,7 +6,7 @@ Rprec                 	301	0.1456
 bpref                 	301	0.1230
 recip_rank            	301	0.1667
 iprec_at_recall_0.00  	301	0.2857
-iprec_at_recall_0.10  	301	0.2096
+iprec_at_recall_0.10  	301	0.2098
 iprec_at_recall_0.20  	301	0.0000
 iprec_at_recall_0.30  	301	0.0000
 iprec_at_recall_0.40  	301	0.0000

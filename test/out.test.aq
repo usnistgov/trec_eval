@@ -6,7 +6,7 @@ Rprec                 	301	0.1456
 bpref                 	301	0.1230
 recip_rank            	301	0.1667
 iprec_at_recall_0.00  	301	0.2857
-iprec_at_recall_0.10  	301	0.2096
+iprec_at_recall_0.10  	301	0.2098
 iprec_at_recall_0.20  	301	0.0000
 iprec_at_recall_0.30  	301	0.0000
 iprec_at_recall_0.40  	301	0.0000
@@ -104,10 +104,10 @@ recip_rank            	302	1.0000
 iprec_at_recall_0.00  	302	1.0000
 iprec_at_recall_0.10  	302	0.8421
 iprec_at_recall_0.20  	302	0.8421
-iprec_at_recall_0.30  	302	0.7059
+iprec_at_recall_0.30  	302	0.7419
 iprec_at_recall_0.40  	302	0.6863
 iprec_at_recall_0.50  	302	0.5417
-iprec_at_recall_0.60  	302	0.1420
+iprec_at_recall_0.60  	302	0.1528
 iprec_at_recall_0.70  	302	0.0000
 iprec_at_recall_0.80  	302	0.0000
 iprec_at_recall_0.90  	302	0.0000
@@ -297,12 +297,12 @@ Rprec                 	all	0.2174
 bpref                 	all	0.1981
 recip_rank            	all	0.4064
 iprec_at_recall_0.00  	all	0.4665
-iprec_at_recall_0.10  	all	0.3884
+iprec_at_recall_0.10  	all	0.3885
 iprec_at_recall_0.20  	all	0.3186
-iprec_at_recall_0.30  	all	0.2732
+iprec_at_recall_0.30  	all	0.2852
 iprec_at_recall_0.40  	all	0.2666
 iprec_at_recall_0.50  	all	0.2184
-iprec_at_recall_0.60  	all	0.0822
+iprec_at_recall_0.60  	all	0.0858
 iprec_at_recall_0.70  	all	0.0348
 iprec_at_recall_0.80  	all	0.0312
 iprec_at_recall_0.90  	all	0.0312
