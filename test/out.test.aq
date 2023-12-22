@@ -143,7 +143,7 @@ Rprec_mult_1.60       	302	0.3468
 Rprec_mult_1.80       	302	0.3094
 Rprec_mult_2.00       	302	0.2857
 utility               	302	-400.0000
-11pt_avg              	302	0.4327
+11pt_avg              	302	0.4370
 binG                  	302	0.2160
 G                     	302	0.2160
 ndcg                  	302	0.6617
@@ -338,7 +338,7 @@ Rprec_mult_1.60       	all	0.1468
 Rprec_mult_1.80       	all	0.1308
 Rprec_mult_2.00       	all	0.1369
 utility               	all	-412.6667
-11pt_avg              	all	0.1947
+11pt_avg              	all	0.1962
 binG                  	all	0.1393
 G                     	all	0.1393
 ndcg                  	all	0.4021
