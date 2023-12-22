@@ -34,7 +34,7 @@ Rprec_mult_0.20       	302	0.8125
 Rprec_mult_0.35       	302	0.7407
 Rprec_mult_5.00       	302	0.1247
 utility_2,-1,0,0      	302	-350.0000
-11pt_avg_.25,.5,.75   	302	0.4306
+11pt_avg_.25,.5,.75   	302	0.4444
 ndcg_1=3,2=9,4=4.5    	302	0.6617
 ndcg_cut_10           	302	0.7530
 ndcg_cut_20           	302	0.8082
@@ -78,7 +78,7 @@ Rprec_mult_0.20       	all	0.3445
 Rprec_mult_0.35       	all	0.3192
 Rprec_mult_5.00       	all	0.0849
 utility_2,-1,0,0      	all	-369.0000
-11pt_avg_.25,.5,.75   	all	0.1792
+11pt_avg_.25,.5,.75   	all	0.1838
 ndcg_1=3,2=9,4=4.5    	all	0.4021
 ndcg_cut_10           	all	0.3016
 ndcg_cut_20           	all	0.3525

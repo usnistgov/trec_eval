@@ -47,7 +47,7 @@ ZRprec_mult_1.60       	301	-0.4710
 ZRprec_mult_1.80       	301	-0.5165
 ZRprec_mult_2.00       	301	-0.5538
 Zutility               	301	1.4374
-Z11pt_avg              	301	-0.7344
+Z11pt_avg              	301	-0.7343
 ZbinG                  	301	-0.5626
 ZG                     	301	-0.5626
 Zndcg                  	301	-0.5685
@@ -143,7 +143,7 @@ ZRprec_mult_1.60       	302	0.2170
 ZRprec_mult_1.80       	302	0.1361
 ZRprec_mult_2.00       	302	0.1294
 Zutility               	302	1.9355
-Z11pt_avg              	302	0.1668
+Z11pt_avg              	302	0.1908
 ZbinG                  	302	-0.0295
 ZG                     	302	-0.0295
 Zndcg                  	302	-0.0308
@@ -338,7 +338,7 @@ ZRprec_mult_1.60       	all	-0.4006
 ZRprec_mult_1.80       	all	-0.4538
 ZRprec_mult_2.00       	all	-0.3328
 Zutility               	all	1.6957
-Z11pt_avg              	all	-0.3598
+Z11pt_avg              	all	-0.3518
 ZbinG                  	all	-0.3106
 ZG                     	all	-0.3106
 Zndcg                  	all	-0.2940
