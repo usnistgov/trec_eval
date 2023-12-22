@@ -4,6 +4,7 @@
    Permission is granted for use and modification of this file for
    research, non-commercial purposes. 
 */
+#include <math.h>
 #include "common.h"
 #include "sysfunc.h"
 #include "trec_eval.h"
@@ -59,13 +60,15 @@ te_calc_iprec_at_recall(const EPI * epi, const REL_INFO * rel_info,
         return (UNDEF);
 
     /* translate percentage of rels as given in the measure params, to
-       an actual cutoff number of docs.  Note addition of 0.9 
-       means the default 11 percentages should have same cutoffs as
-       historical MAP implementations (eg, old trec_eval) */
+       an actual cutoff number of docs.  In v9 and prior, this was done
+       by adding 0.9 and casting to an integral type, which is not
+       platform-safe. Changing to use rounding is more consistent
+       between platforms, but may break equivalence to "historical
+       MAP implementations (eg, old trec_eval)" */
     if (NULL == (cutoffs = Malloc(tm->meas_params->num_params, long)))
          return (UNDEF);
     for (i = 0; i < tm->meas_params->num_params; i++)
-        cutoffs[i] = (long) (cutoff_percents[i] * rr.num_rel + 0.9);
+        cutoffs[i] = lround(cutoff_percents[i] * rr.num_rel);
 
     current_cut = tm->meas_params->num_params - 1;
     while (current_cut >= 0 && cutoffs[current_cut] > rr.num_rel_ret)
