@@ -16,8 +16,10 @@
 #include <direct.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include "mman-win32/mman.h"
 #else
 #include <unistd.h>
+#include <sys/mman.h>
 #endif
 #include <limits.h>
 #include <ctype.h>
@@ -28,7 +30,6 @@
 #include <math.h>
 #include <memory.h>
 #include <sys/stat.h>
-#include <sys/mman.h>
 
 #include <getopt.h>
 
