@@ -17,9 +17,11 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "mman-win32/mman.h"
+#include "ya_getopt/ya_getopt.c"
 #else
 #include <unistd.h>
 #include <sys/mman.h>
+#include <getopt.h>
 #endif
 #include <limits.h>
 #include <ctype.h>
@@ -31,7 +33,6 @@
 #include <memory.h>
 #include <sys/stat.h>
 
-#include <getopt.h>
 
 /* For time being, define Berkeley constructs in terms of SVR4 constructs*/
 #define bzero(dest,len)      memset(dest,'\0',len)
