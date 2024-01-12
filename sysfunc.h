@@ -18,16 +18,17 @@
 #include <stdio.h>
 #include "mman-win32/mman.h"
 #include "ya_getopt/ya_getopt.h"
+#include "strings_h/strings.h"
 #else
 #include <unistd.h>
 #include <sys/mman.h>
 #include <getopt.h>
+#include <strings.h>
 #endif
 #include <limits.h>
 #include <ctype.h>
 #include <fcntl.h>
 #include <stdio.h>
-#include <strings.h>
 #include <stdlib.h>
 #include <math.h>
 #include <memory.h>
