@@ -17,7 +17,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include "mman-win32/mman.h"
-#include "ya_getopt/ya_getopt.c"
+#include "ya_getopt/ya_getopt.h"
 #else
 #include <unistd.h>
 #include <sys/mman.h>
