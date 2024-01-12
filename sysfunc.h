@@ -11,7 +11,14 @@
    suit!), this file should just include system header files from 
    /usr/include.  Until then... */
 
-#include <unistd.h>
+#ifdef _WIN32
+include <windows.h>
+include <direct.h>
+include <stdlib.h>
+include <stdio.h>
+#else
+include <unistd.h>
+#endif
 #include <limits.h>
 #include <ctype.h>
 #include <fcntl.h>
