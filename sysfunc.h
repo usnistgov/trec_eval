@@ -12,12 +12,12 @@
    /usr/include.  Until then... */
 
 #ifdef _WIN32
-include <windows.h>
-include <direct.h>
-include <stdlib.h>
-include <stdio.h>
+#include <windows.h>
+#include <direct.h>
+#include <stdlib.h>
+#include <stdio.h>
 #else
-include <unistd.h>
+#include <unistd.h>
 #endif
 #include <limits.h>
 #include <ctype.h>
