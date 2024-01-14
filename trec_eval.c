@@ -162,6 +162,7 @@ char *argv[];
     TREC_EVAL q_eval;
     long i, j, m;
     int c;
+    int found;
     long help_wanted = 0;
     long measure_marked_flag = 0;
 
@@ -447,13 +448,17 @@ char *argv[];
     /* Evaluate the bogus ranking for each missing topic in the run */
     if (epi.average_complete_flag) {
         for (i = 0; i < all_rel_info.num_q_rels; i++) {
+            found = 0;
             for (j = 0; j < all_results.num_q_results; j++) {
                 if (0 == strcmp(all_results.results[j].qid,
                                 all_rel_info.rel_info[i].qid)) {
-                    /* we already have this one */
-                    continue;
+                    /* we are missing this topic */
+                    found = 1;
+                    break;
                 }
             }
+            if (found)
+                continue;
 
             /* zero out all measures for new query */
             for (m = 0; m < q_eval.num_values; m++)
