@@ -151,6 +151,12 @@ char *argv[];
     char *zscores_file = NULL;
     ALL_ZSCORES all_zscores;
 
+    /* Bogus results for a missing topic */
+    TEXT_RESULTS bogus_result = { "ceci_nest_pas_un_docno", 1.0 };
+    TEXT_RESULTS_INFO bogus_info = { 1, 1, &bogus_result };
+    RESULTS bogus_ranking = { "foo", "bar", "trec_results", &bogus_info };
+    RESULTS *this_result;
+
     EPI epi;                    /* Eval parameter info */
     TREC_EVAL accum_eval;
     TREC_EVAL q_eval;
@@ -369,11 +375,19 @@ char *argv[];
         /* Find rel info for this query (skip if no rel info) */
         for (j = 0; j < all_rel_info.num_q_rels; j++) {
             if (0 == strcmp(all_results.results[i].qid,
-                            all_rel_info.rel_info[j].qid))
+                            all_rel_info.rel_info[j].qid)) {
+                this_result = &all_results.results[i];
                 break;
+            }
         }
-        if (j >= all_rel_info.num_q_rels)
+        if (j >= all_rel_info.num_q_rels) {
+            /* TODO This is where we should deal with a missing query */
+            /* idea: have an empty RESULTS.  Rather than using all_results.results[i]
+                below, have a RESULT* this_result, which might point into
+                the array, or to the empty RESULTS.  Eval that.
+            */
             continue;
+        }
 
         /* zero out all measures for new query */
         for (m = 0; m < q_eval.num_values; m++)
@@ -428,6 +442,50 @@ char *argv[];
             }
         }
         accum_eval.num_queries++;
+    }
+
+    /* Evaluate the bogus ranking for each missing topic in the run */
+    if (epi.average_complete_flag) {
+        for (i = 0; i < all_rel_info.num_q_rels; i++) {
+            for (j = 0; j < all_results.num_q_results; j++) {
+                if (0 == strcmp(all_results.results[j].qid,
+                                all_rel_info.rel_info[i].qid)) {
+                    /* we already have this one */
+                    continue;
+                }
+            }
+
+            /* zero out all measures for new query */
+            for (m = 0; m < q_eval.num_values; m++)
+                q_eval.values[m].value = 0;
+            q_eval.qid = all_rel_info.rel_info[i].qid;
+
+            for (m = 0; m < te_num_trec_measures; m++) {
+                if (MEASURE_REQUESTED(te_trec_measures[m])) {
+                    if (UNDEF == te_trec_measures[m]->calc_meas(&epi,
+                                                                &all_rel_info.rel_info
+                                                                     [i],
+                                                                &bogus_ranking,
+                                                                te_trec_measures[m],
+                                                                &q_eval)) {
+                        fprintf(stderr, "trec_eval: Can't calculate measure '%s'\n",
+                                te_trec_measures[m]->name);
+                        exit(4);
+                    }
+                    if (epi.query_flag &&
+                        UNDEF == te_trec_measures[m]->print_single_meas(&epi,
+                                                                        te_trec_measures
+                                                                            [m],
+                                                                        &q_eval)) {
+                        fprintf(stderr,
+                                "trec_eval: Can't print query measure '%s'\n",
+                                te_trec_measures[m]->name);
+                        exit(6);
+                    }
+                }
+            }
+            accum_eval.num_queries++;
+        }
     }
 
     if (accum_eval.num_queries == 0) {
