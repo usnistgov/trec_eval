@@ -154,7 +154,7 @@ char *argv[];
     /* Bogus results for a missing topic */
     TEXT_RESULTS bogus_result = { "ceci_nest_pas_un_docno", 1.0 };
     TEXT_RESULTS_INFO bogus_info = { 1, 1, &bogus_result };
-    RESULTS bogus_ranking = { "foo", "bar", "trec_results", &bogus_info };
+    RESULTS bogus_ranking = { NULL, NULL, "trec_results", &bogus_info };
     RESULTS *this_result;
 
     EPI epi;                    /* Eval parameter info */
@@ -368,41 +368,37 @@ char *argv[];
     /* For each topic which has both qrels and top results information,
        calculate, possibly print (if query_flag), and accumulate
        evaluation measures. */
-    for (i = 0; i < all_results.num_q_results; i++) {
+    for (i = 0; i < all_rel_info.num_q_rels; i++) {
         /* If debugging a particular query, then skip all others */
         if (epi.debug_query &&
-            strcmp(epi.debug_query, all_results.results[i].qid))
+            strcmp(epi.debug_query, all_rel_info.rel_info[i].qid))
             continue;
-        /* Find rel info for this query (skip if no rel info) */
-        for (j = 0; j < all_rel_info.num_q_rels; j++) {
-            if (0 == strcmp(all_results.results[i].qid,
-                            all_rel_info.rel_info[j].qid)) {
-                this_result = &all_results.results[i];
+        /* Find results for this query */
+        for (j = 0; j < all_results.num_q_results; j++) {
+            if (0 == strcmp(all_results.results[j].qid,
+                            all_rel_info.rel_info[i].qid)) {
+                this_result = &all_results.results[j];
                 break;
             }
         }
-        if (j >= all_rel_info.num_q_rels) {
-            /* TODO This is where we should deal with a missing query */
-            /* idea: have an empty RESULTS.  Rather than using all_results.results[i]
-                below, have a RESULT* this_result, which might point into
-                the array, or to the empty RESULTS.  Eval that.
-            */
-            continue;
+        if (epi.average_complete_flag && j >= all_results.num_q_results) {
+            bogus_ranking.qid = all_rel_info.rel_info[i].qid;
+            bogus_ranking.run_id = all_results.results[0].run_id;
+            this_result = &bogus_ranking;
         }
 
         /* zero out all measures for new query */
         for (m = 0; m < q_eval.num_values; m++)
             q_eval.values[m].value = 0;
-        q_eval.qid = all_results.results[i].qid;
+        q_eval.qid = this_result->qid;
 
         /* Calculate all measure scores */
         for (m = 0; m < te_num_trec_measures; m++) {
             if (MEASURE_REQUESTED(te_trec_measures[m])) {
                 if (UNDEF == te_trec_measures[m]->calc_meas(&epi,
                                                             &all_rel_info.rel_info
-                                                            [j],
-                                                            &all_results.results
                                                             [i],
+                                                            this_result,
                                                             te_trec_measures[m],
                                                             &q_eval)) {
                     fprintf(stderr, "trec_eval: Can't calculate measure '%s'\n",
@@ -443,54 +439,6 @@ char *argv[];
             }
         }
         accum_eval.num_queries++;
-    }
-
-    /* Evaluate the bogus ranking for each missing topic in the run */
-    if (epi.average_complete_flag) {
-        for (i = 0; i < all_rel_info.num_q_rels; i++) {
-            found = 0;
-            for (j = 0; j < all_results.num_q_results; j++) {
-                if (0 == strcmp(all_results.results[j].qid,
-                                all_rel_info.rel_info[i].qid)) {
-                    /* we are missing this topic */
-                    found = 1;
-                    break;
-                }
-            }
-            if (found)
-                continue;
-
-            /* zero out all measures for new query */
-            for (m = 0; m < q_eval.num_values; m++)
-                q_eval.values[m].value = 0;
-            q_eval.qid = all_rel_info.rel_info[i].qid;
-
-            for (m = 0; m < te_num_trec_measures; m++) {
-                if (MEASURE_REQUESTED(te_trec_measures[m])) {
-                    if (UNDEF == te_trec_measures[m]->calc_meas(&epi,
-                                                                &all_rel_info.rel_info
-                                                                     [i],
-                                                                &bogus_ranking,
-                                                                te_trec_measures[m],
-                                                                &q_eval)) {
-                        fprintf(stderr, "trec_eval: Can't calculate measure '%s'\n",
-                                te_trec_measures[m]->name);
-                        exit(4);
-                    }
-                    if (epi.query_flag &&
-                        UNDEF == te_trec_measures[m]->print_single_meas(&epi,
-                                                                        te_trec_measures
-                                                                            [m],
-                                                                        &q_eval)) {
-                        fprintf(stderr,
-                                "trec_eval: Can't print query measure '%s'\n",
-                                te_trec_measures[m]->name);
-                        exit(6);
-                    }
-                }
-            }
-            accum_eval.num_queries++;
-        }
     }
 
     if (accum_eval.num_queries == 0) {
