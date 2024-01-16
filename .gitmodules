@@ -1,0 +1,9 @@
+[submodule "mman-win32"]
+	path = mman-win32
+	url = https://github.com/alitrack/mman-win32.git
+[submodule "ya_getopt"]
+	path = ya_getopt
+	url = https://github.com/kubo/ya_getopt.git
+[submodule "strings_h"]
+	path = strings_h
+	url = https://github.com/win32ports/strings_h.git

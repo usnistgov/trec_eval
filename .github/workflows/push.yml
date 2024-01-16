@@ -18,7 +18,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
 
-    - uses: actions/checkout@v3
+    - uses: actions/checkout@v4
+      with:
+        submodules: 'recursive'
 
     - uses: ilammy/msvc-dev-cmd@v1
       if: matrix.os == 'windows-latest'
@@ -28,6 +30,7 @@ jobs:
       shell: cmd
       run: |
         call "%VS140COMNTOOLS%..\..\VC\vcvarsall.bat" x86_amd64
+        set INCLUDE "C:/Program Files (x86)/Windows Kits/10/Include/10.0.10240.0/ucrt"
         build.bat
         dir trec_eval.exe
 
