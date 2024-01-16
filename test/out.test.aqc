@@ -94,7 +94,7 @@ rbp_resid             	301	0.0610
 unj_5                 	301	0.0000
 unj_10                	301	0.0000
 unj_20                	301	0.1000
-num_ret               	302	1
+num_ret               	302	0
 num_rel               	302	77
 num_rel_ret           	302	0
 map                   	302	0.0000
@@ -121,7 +121,7 @@ P_100                 	302	0.0000
 P_200                 	302	0.0000
 P_500                 	302	0.0000
 P_1000                	302	0.0000
-relstring             	302	'-'
+relstring             	302	''
 recall_5              	302	0.0000
 recall_10             	302	0.0000
 recall_15             	302	0.0000
@@ -142,7 +142,7 @@ Rprec_mult_1.40       	302	0.0000
 Rprec_mult_1.60       	302	0.0000
 Rprec_mult_1.80       	302	0.0000
 Rprec_mult_2.00       	302	0.0000
-utility               	302	-1.0000
+utility               	302	0.0000
 11pt_avg              	302	0.0000
 binG                  	302	0.0000
 G                     	302	0.0000
@@ -186,10 +186,10 @@ set_map               	302	0.0000
 set_F                 	302	0.0000
 num_nonrel_judged_ret 	302	0
 rbp                   	302	0.0000
-rbp_resid             	302	1.0000
-unj_5                 	302	0.2000
-unj_10                	302	0.1000
-unj_20                	302	0.0500
+rbp_resid             	302	0.0000
+unj_5                 	302	0.0000
+unj_10                	302	0.0000
+unj_20                	302	0.0000
 num_ret               	303	84
 num_rel               	303	10
 num_rel_ret           	303	6
@@ -288,7 +288,7 @@ unj_10                	303	0.0000
 unj_20                	303	0.0000
 runid                 	all	STANDARD
 num_q                 	all	3
-num_ret               	all	585
+num_ret               	all	584
 num_rel               	all	561
 num_rel_ret           	all	77
 map                   	all	0.1016
@@ -337,7 +337,7 @@ Rprec_mult_1.40       	all	0.1547
 Rprec_mult_1.60       	all	0.1353
 Rprec_mult_1.80       	all	0.1388
 Rprec_mult_2.00       	all	0.1250
-utility               	all	-143.6667
+utility               	all	-143.3333
 11pt_avg              	all	0.1268
 binG                  	all	0.0911
 G                     	all	0.0911
@@ -381,7 +381,7 @@ set_map               	all	0.0214
 set_F                 	all	0.0912
 num_nonrel_judged_ret 	all	249
 rbp                   	all	0.1679
-rbp_resid             	all	0.3553
-unj_5                 	all	0.0667
-unj_10                	all	0.0333
-unj_20                	all	0.0500
+rbp_resid             	all	0.0220
+unj_5                 	all	0.0000
+unj_10                	all	0.0000
+unj_20                	all	0.0333
