@@ -73,7 +73,7 @@ te_get_trec_results(EPI * epi, char *text_results_file,
     /* mmap entire file into memory and copy it into writable memory */
     if (-1 == (fd = open(text_results_file, 0)) ||
         0 >= (size = lseek(fd, 0L, 2)) ||
-        (char *) -1 == (orig_buf = (char *) mmap((caddr_t) 0,
+        (char *) -1 == (orig_buf = (char *) mmap(0,
                                                  (size_t) size,
                                                  PROT_READ,
                                                  MAP_SHARED, fd, (off_t) 0))) {
