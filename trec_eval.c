@@ -162,7 +162,6 @@ char *argv[];
     TREC_EVAL q_eval;
     long i, j, m;
     int c;
-    int found;
     long help_wanted = 0;
     long measure_marked_flag = 0;
 
@@ -404,6 +403,23 @@ char *argv[];
                     fprintf(stderr, "trec_eval: Can't calculate measure '%s'\n",
                             te_trec_measures[m]->name);
                     exit(4);
+                }
+            }
+        }
+
+        if (this_result == &bogus_ranking) {
+            /* clean up leftovers */
+            for (m = 0; m < q_eval.num_values; m++) {
+                if (0 == strcmp(q_eval.values[m].name, "num_ret")) {
+                    q_eval.values[m].value = 0;
+                } else if (0 == strcmp(q_eval.values[m].name, "utility")) {
+                    q_eval.values[m].value = 0.0;
+                } else  if (0 == strcmp(q_eval.values[m].name, "relstring")) {
+                    clear_relstr();
+                } else if (0 == strncmp(q_eval.values[m].name, "unj", 3)) {
+                    q_eval.values[m].value = 0.0;
+                } else if (0 == strcmp(q_eval.values[m].name, "rbp_resid")) {
+                    q_eval.values[m].value = 0.0;
                 }
             }
         }

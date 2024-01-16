@@ -24,6 +24,8 @@ int te_convert_to_zscore(const ALL_ZSCORES * all_zscores, TREC_EVAL * q_eval);
 int setup_gains(const TREC_MEAS * tm, const RES_RELS * res_rels, GAINS * gains);
 double get_gain(const long rel_level, const GAINS * gains);
 int comp_rel_gain();
+/* Functions for dealing with relstrings */
+int clear_relstr();
 
 /* ------------------- Generic Routines for Measures ------------------------ */
 
