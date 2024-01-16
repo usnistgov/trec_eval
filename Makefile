@@ -14,7 +14,7 @@ CC       = gcc
 #CFLAGS   = -g -I$H  -Wall -DMDEBUG -DVERSIONID=\"$(VERSIONID)\"
 #CFLAGS   = -pg -I$H -O3 -Wall -DVERSIONID=\"$(VERSIONID)\"
 #CFLAGS   = -g -I$H -O3 -Wall -DVERSIONID=\"$(VERSIONID)\"
-CFLAGS   = -g -I$H  -Wall -Wno-macro-redefined -DVERSIONID=\"$(VERSIONID)\"
+CFLAGS   = -g -I$H  -Wall -Wno-macro-redefined -Wno-deprecated-non-prototype -Wno-unused-but-set-variable -DVERSIONID=\"$(VERSIONID)\"
 
 # Other macros used in some or all makefiles
 INSTALL = /bin/mv
