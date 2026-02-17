@@ -137,9 +137,9 @@ static int form_prefs_and_ranks(const EPI * epi,
 
 static void init_prefs_array(PREFS_ARRAY * pa);
 static void init_counts_array(COUNTS_ARRAY * ca);
-static int comp_prefs_and_ranks_jg_rel_level();
-static int comp_prefs_and_ranks_docno();
-static int comp_sim_docno(), comp_docno(), comp_results_inc_rank();
+static int comp_prefs_and_ranks_jg_rel_level(const void * ptr1, const void * ptr2);
+static int comp_prefs_and_ranks_docno(const void * ptr1, const void * ptr2);
+static int comp_sim_docno(const void * ptr1, const void * ptr2), comp_docno(const void * ptr1, const void * ptr2), comp_results_inc_rank(const void * ptr1, const void * ptr2);
 static void debug_print_ec(EC * ec), debug_print_prefs_array(PREFS_ARRAY * pa),
 debug_print_counts_array(COUNTS_ARRAY * ca), debug_print_jg(JG * jg),
 debug_print_results_prefs(RESULTS_PREFS * rp);
@@ -970,47 +970,49 @@ static void init_counts_array(COUNTS_ARRAY * ca)
 
 
 static int
-comp_prefs_and_ranks_docno(PREFS_AND_RANKS * ptr1, PREFS_AND_RANKS * ptr2)
+comp_prefs_and_ranks_docno(const void * ptr1, const void * ptr2)
 {
-    return (strcmp(ptr1->docno, ptr2->docno));
+    return (strcmp(((PREFS_AND_RANKS *)ptr1)->docno, ((PREFS_AND_RANKS *) ptr2)->docno));
 }
 
 static int
-comp_prefs_and_ranks_jg_rel_level(PREFS_AND_RANKS * ptr1,
-                                  PREFS_AND_RANKS * ptr2)
+comp_prefs_and_ranks_jg_rel_level(const void * ptr1,
+                                  const void * ptr2)
 {
-    int jg_comp = strcmp(ptr1->jg, ptr2->jg);
+    PREFS_AND_RANKS * p1 = (PREFS_AND_RANKS *) ptr1;
+    PREFS_AND_RANKS * p2 = (PREFS_AND_RANKS *) ptr2;
+    int jg_comp = strcmp(p1->jg, p2->jg);
     if (jg_comp != 0)
         return (jg_comp);
-    jg_comp = strcmp(ptr1->jsg, ptr2->jsg);
+    jg_comp = strcmp(p1->jsg, p2->jsg);
     if (jg_comp != 0)
         return (jg_comp);
-    if (ptr1->rel_level > ptr2->rel_level)
+    if (p1->rel_level > p2->rel_level)
         return (-1);
-    if (ptr1->rel_level < ptr2->rel_level)
+    if (p1->rel_level < p2->rel_level)
         return (1);
-    return (ptr1->rank - ptr2->rank);
+    return (p1->rank - p2->rank);
 }
 
-static int comp_sim_docno(ptr1, ptr2)
-DOCNO_RESULTS *ptr1;
-DOCNO_RESULTS *ptr2;
+static int comp_sim_docno(const void * ptr1, const void * ptr2)
 {
-    if (ptr1->sim > ptr2->sim)
+    DOCNO_RESULTS * p1 = (DOCNO_RESULTS *) ptr1;
+    DOCNO_RESULTS * p2 = (DOCNO_RESULTS *) ptr2;
+    if (p1->sim > p2->sim)
         return (-1);
-    if (ptr1->sim < ptr2->sim)
+    if (p1->sim < p2->sim)
         return (1);
-    return (strcmp(ptr1->docno, ptr2->docno));
+    return (strcmp(p1->docno, p2->docno));
 }
 
-static int comp_docno(DOCNO_RESULTS * ptr1, DOCNO_RESULTS * ptr2)
+static int comp_docno(const void * ptr1, const void * ptr2)
 {
-    return (strcmp(ptr1->docno, ptr2->docno));
+    return (strcmp(((DOCNO_RESULTS *) ptr1)->docno, ((DOCNO_RESULTS *) ptr2)->docno));
 }
 
-static int comp_results_inc_rank(DOCNO_RESULTS * ptr1, DOCNO_RESULTS * ptr2)
+static int comp_results_inc_rank(const void * ptr1, const void * ptr2)
 {
-    return (ptr1->rank - ptr2->rank);
+    return (((DOCNO_RESULTS *) ptr1)->rank - ((DOCNO_RESULTS *) ptr2)->rank);
 }
 
 

@@ -28,7 +28,7 @@
    UNDEF returned if error, 0 if used cache values, 1 if new values.
 */
 
-static int comp_rank_judged(), comp_sim_docno(), comp_docno();
+static int comp_rank_judged(const void * ptr1, const void * ptr2), comp_sim_docno(const void * ptr1, const void * ptr2), comp_docno(const void * ptr1, const void * ptr2);
 
 /* Definitions used for temporary and cached values */
 typedef struct {
@@ -260,40 +260,38 @@ te_form_res_rels_jg(const EPI * epi, const REL_INFO * rel_info,
     return (1);
 }
 
-static int comp_rank_judged(ptr1, ptr2)
-DOCNO_INFO *ptr1;
-DOCNO_INFO *ptr2;
+static int comp_rank_judged(const void * ptr1, const void * ptr2)
 {
-    if (ptr1->rel >= 0 && ptr2->rel >= 0) {
-        if (ptr1->rank < ptr2->rank)
+    DOCNO_INFO *p1 = (DOCNO_INFO *) ptr1;
+    DOCNO_INFO *p2 = (DOCNO_INFO *) ptr2;
+    if (p1->rel >= 0 && p2->rel >= 0) {
+        if (p1->rank < p2->rank)
             return (-1);
-        if (ptr1->rank > ptr2->rank)
+        if (p1->rank > p2->rank)
             return (1);
         return (0);
     }
-    if (ptr1->rel >= 0)
+    if (p1->rel >= 0)
         return (-1);
-    if (ptr2->rel >= 0)
+    if (p2->rel >= 0)
         return (1);
     return (0);
 }
 
-static int comp_sim_docno(ptr1, ptr2)
-DOCNO_INFO *ptr1;
-DOCNO_INFO *ptr2;
+static int comp_sim_docno(const void * ptr1, const void * ptr2)
 {
-    if (ptr1->sim > ptr2->sim)
+    DOCNO_INFO *p1 = (DOCNO_INFO *) ptr1;
+    DOCNO_INFO *p2 = (DOCNO_INFO *) ptr2;
+    if (p1->sim > p2->sim)
         return (-1);
-    if (ptr1->sim < ptr2->sim)
+    if (p1->sim < p2->sim)
         return (1);
-    return (strcmp(ptr2->docno, ptr1->docno));
+    return (strcmp(p2->docno, p1->docno));
 }
 
-static int comp_docno(ptr1, ptr2)
-DOCNO_INFO *ptr1;
-DOCNO_INFO *ptr2;
+static int comp_docno(const void * ptr1, const void * ptr2)
 {
-    return (strcmp(ptr1->docno, ptr2->docno));
+    return (strcmp(((DOCNO_INFO*) ptr1)->docno, ((DOCNO_INFO*) ptr2)->docno));
 }
 
 int te_form_res_rels_jg_cleanup()

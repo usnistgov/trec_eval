@@ -69,7 +69,7 @@ typedef struct {
 static int parse_qrels_line(char **start_ptr, char **qid_ptr, char **jg_ptr,
                             char **docno_ptr, char **rel_ptr);
 
-static int comp_lines_qid_jg_docno();
+static int comp_lines_qid_jg_docno(const void * ptr1, const void * ptr2);
 
 
 /* static pools of memory, allocated here and never changed.  
@@ -219,15 +219,17 @@ te_get_qrels_jg(EPI * epi, char *text_qrels_file, ALL_REL_INFO * all_rel_info)
     return (1);
 }
 
-static int comp_lines_qid_jg_docno(LINES * ptr1, LINES * ptr2)
+static int comp_lines_qid_jg_docno(const void * ptr1, const void * ptr2)
 {
-    int cmp = strcmp(ptr1->qid, ptr2->qid);
+    LINES* p1 = (LINES *) ptr1;
+    LINES* p2 = (LINES *) ptr2;
+    int cmp = strcmp(p1->qid, p2->qid);
     if (cmp)
         return (cmp);
-    cmp = strcmp(ptr1->jg, ptr2->jg);
+    cmp = strcmp(p1->jg, p2->jg);
     if (cmp)
         return (cmp);
-    return (strcmp(ptr1->docno, ptr2->docno));
+    return (strcmp(p1->docno, p2->docno));
 }
 
 static int
