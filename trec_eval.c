@@ -12,7 +12,8 @@ static char *help_message =
    rel_info_file  results_file \n\
  \n\
 Calculate and print various evaluation measures, evaluating the results  \n\
-in results_file against the relevance info in rel_info_file. \n\
+in results_file against the relevance info in rel_info_file. If results_file is \n\
+'-', then results_file is read from stdin.\n\
  \n\
 There are a fair number of options, of which only the lower case options are \n\
 normally ever used.   \n\
