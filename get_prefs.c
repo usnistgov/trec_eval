@@ -116,7 +116,7 @@ important future research problem.
 
 static int parse_prefs_line(char **start_ptr, char **qid_ptr, char **jg_ptr,
                             char **jsg_ptr, char **docno_ptr, char **rel_ptr);
-static int comp_lines_qid_docno();
+static int comp_lines_qid_docno(const void * ptr1, const void * ptr2);
 
 
 /* static pools of memory, allocated here and never changed.  
@@ -264,12 +264,14 @@ int te_get_prefs(EPI * epi, char *text_prefs_file, ALL_REL_INFO * all_rel_info)
     return (1);
 }
 
-static int comp_lines_qid_docno(LINES * ptr1, LINES * ptr2)
+static int comp_lines_qid_docno(const void * ptr1, const void * ptr2)
 {
-    int cmp = strcmp(ptr1->qid, ptr2->qid);
+    LINES* l1 = (LINES*) ptr1;
+    LINES* l2 = (LINES*) ptr2;
+    int cmp = strcmp(l1->qid, l2->qid);
     if (cmp)
         return (cmp);
-    return (strcmp(ptr1->docno, ptr2->docno));
+    return (strcmp(l1->docno, l2->docno));
 }
 
 static int

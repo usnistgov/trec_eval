@@ -87,9 +87,9 @@ int setup_gains(const TREC_MEAS * tm, const RES_RELS * res_rels, GAINS * gains)
     return (1);
 }
 
-int comp_rel_gain(REL_GAIN * ptr1, REL_GAIN * ptr2)
+int comp_rel_gain(const void * ptr1, const void * ptr2)
 {
-    return (ptr1->gain - ptr2->gain);
+    return (((REL_GAIN *) ptr1)->gain - ((REL_GAIN *) ptr2)->gain);
 }
 
 double get_gain(const long rel_level, const GAINS * gains)
