@@ -23,7 +23,7 @@ int te_convert_to_zscore(const ALL_ZSCORES * all_zscores, TREC_EVAL * q_eval);
 /* Functions for dealing with gain values, defined in gain_init.c */
 int setup_gains(const TREC_MEAS * tm, const RES_RELS * res_rels, GAINS * gains);
 double get_gain(const long rel_level, const GAINS * gains);
-int comp_rel_gain();
+int comp_rel_gain(const void * ptr1, const void * ptr2);
 
 /* ------------------- Generic Routines for Measures ------------------------ */
 

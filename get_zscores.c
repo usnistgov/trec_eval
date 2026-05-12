@@ -55,7 +55,7 @@ typedef struct {
 static int parse_zscore_line(char **start_ptr, char **qid_ptr, char **meas_ptr,
                              char **mean_ptr, char **stddev_ptr);
 
-static int comp_lines_qid_meas();
+static int comp_lines_qid_meas(const void * ptr1, const void * ptr2);
 
 
 /* static pools of memory, allocated here and never changed.  */
@@ -169,12 +169,14 @@ te_get_zscores(const EPI * epi, const char *zscores_file,
     return (1);
 }
 
-static int comp_lines_qid_meas(LINES * ptr1, LINES * ptr2)
+static int comp_lines_qid_meas(const void * ptr1, const void * ptr2)
 {
-    int cmp = strcmp(ptr1->qid, ptr2->qid);
+    LINES *p1 = (LINES*) ptr1;
+    LINES *p2 = (LINES*) ptr2;
+    int cmp = strcmp(p1->qid, p2->qid);
     if (cmp)
         return (cmp);
-    return (strcmp(ptr1->meas, ptr2->meas));
+    return (strcmp(p1->meas, p2->meas));
 }
 
 static int

@@ -28,8 +28,8 @@ static int get_long_cutoffs(PARAMS * params, char *param_string);
 static int get_double_cutoffs(PARAMS * params, char *param_string);
 static int get_double_params(PARAMS * params, char *param_string);
 static int get_param_pairs(PARAMS * params, char *param_string);
-static int comp_long();
-static int comp_double();
+static int comp_long(const void * ptr1, const void * ptr2);
+static int comp_double(const void * ptr1, const void * ptr2);
 static char *append_long(char *name, long value);
 static char *append_double(char *name, double value);
 static char *append_string(char *name, char *value);
@@ -454,16 +454,16 @@ static int get_param_pairs(PARAMS * params, char *param_string)
     return (1);
 }
 
-static int comp_long(long *ptr1, long *ptr2)
+static int comp_long(const void *ptr1, const void *ptr2)
 {
-    return (*ptr1 - *ptr2);
+    return (*((long *) ptr1) - *((long *) ptr2));
 }
 
-static int comp_double(double *ptr1, double *ptr2)
+static int comp_double(const void *ptr1, const void *ptr2)
 {
-    if (*ptr1 < *ptr2)
+    if (*((double *) ptr1) < *((double *) ptr2))
         return (-1);
-    if (*ptr1 > *ptr2)
+    if (*((double *) ptr1) > *((double *) ptr2))
         return (1);
     return (0);
 }

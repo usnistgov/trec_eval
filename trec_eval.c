@@ -140,9 +140,7 @@ static void get_debug_level_query(EPI * epi, char *optarg);
 static int cleanup(EPI * epi);
 
 
-int main(argc, argv)
-int argc;
-char *argv[];
+int main(int argc, char * argv[])
 {
     char *trec_results_file;
     ALL_RESULTS all_results;
