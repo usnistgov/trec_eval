@@ -65,6 +65,7 @@ quicktest: trec_eval
 	./trec_eval -m all_trec -q -c -M100 test/qrels.test test/results.trunc | diff - test/out.test.aqcM
 	./trec_eval -m all_trec -mrelstring.20 -q -l2 test/qrels.rel_level test/results.test | diff - test/out.test.aql
 	./trec_eval -m all_prefs -q -R prefs test/prefs.test test/prefs.results.test | diff - test/out.test.prefs
+	./trec_eval -m all_prefs -q -R prefs test/prefs.comment.test test/prefs.results.test | diff - test/out.test.prefs
 	./trec_eval -m all_prefs -q -R qrels_prefs test/qrels.test test/results.test | diff - test/out.test.qrels_prefs
 	./trec_eval -m qrels_jg -q -R qrels_jg  test/qrels.123 test/results.test | diff - test/out.test.qrels_jg
 	./trec_eval -q -miprec_at_recall..10,.20,.25,.75,.50 -m P.5,7,3 -m recall.20,2000 -m Rprec_mult.5.0,0.2,0.35 -mutility.2,-1,0,0 -m 11pt_avg..25,.5,.75 -mndcg.1=3,2=9,4=4.5 -mndcg_cut.10,20,23.4 -msuccess.2,5,20 test/qrels.test test/results.test | diff - test/out.test.meas_params

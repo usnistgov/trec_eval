@@ -145,6 +145,7 @@ int te_get_prefs(EPI * epi, char *text_prefs_file, ALL_REL_INFO * all_rel_info)
     LINES *lines;
     LINES *line_ptr;
     long num_lines;
+    long current_column;
     long num_qid;
     /* current pointers into static pools above */
     REL_INFO *rel_info_ptr;
@@ -171,10 +172,24 @@ int te_get_prefs(EPI * epi, char *text_prefs_file, ALL_REL_INFO * all_rel_info)
     }
     trec_prefs_buf[size] = '\0';
 
-    /* Count number of lines in file */
+    /* Count number of non-comment lines in file */
     num_lines = 0;
-    for (ptr = trec_prefs_buf; *ptr; ptr = index(ptr, '\n') + 1)
-        num_lines++;
+    current_column = 0;
+	ptr = trec_prefs_buf;
+	do {
+		if (*ptr == '\n') {
+			num_lines++;
+            current_column = 0;
+        }
+        else if (current_column == 0 && *ptr == '#') {
+			/* skip to end of line */
+			ptr = index(ptr, '\n');
+		}
+		if (*ptr != '\0') {
+			ptr++;
+            current_column++;
+        }
+	} while (*ptr != '\0');
 
     /* Get all lines */
     if (NULL == (lines = Malloc(num_lines, LINES)))
@@ -182,6 +197,9 @@ int te_get_prefs(EPI * epi, char *text_prefs_file, ALL_REL_INFO * all_rel_info)
     line_ptr = lines;
     ptr = trec_prefs_buf;
     while (*ptr) {
+  		if (*ptr == '#') {
+			ptr = index(ptr, '\n') + 1;
+		}
         if (UNDEF == parse_prefs_line(&ptr, &line_ptr->qid, &line_ptr->jg,
                                       &line_ptr->jsg, &line_ptr->docno,
                                       &line_ptr->rel)) {
