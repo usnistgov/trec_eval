@@ -58,7 +58,8 @@ install: $(BIN)/trec_eval
 
 quicktest: trec_eval
 	./trec_eval test/qrels.test test/results.test | diff - test/out.test
-	./trec_eval test/qrels.comment.test test/results.test | diff - test/out.test
+	./trec_eval test/qrels.test.with-comments test/results.test | diff - test/out.test
+	./trec_eval test/qrels.comment.test test/results.comment.test | diff - test/out.comment.test
 	./trec_eval -m all_trec test/qrels.test test/results.test | diff - test/out.test.a
 	./trec_eval -m all_trec -q test/qrels.test test/results.test | diff - test/out.test.aq
 	./trec_eval -m all_trec -q -c test/qrels.test test/results.trunc | diff - test/out.test.aqc

@@ -64,6 +64,7 @@ te_get_trec_results(EPI * epi, char *text_results_file,
     LINES *lines;
     LINES *line_ptr;
     size_t num_lines;
+    long current_column;
     long num_qid;
     char *run_id_ptr = NULL;
     /* current pointers into static pools above */
@@ -122,20 +123,24 @@ te_get_trec_results(EPI * epi, char *text_results_file,
     }
     trec_results_buf[size] = '\0';
 
-    /* Count number of lines in file */
     /* Count number of non-comment lines in file */
     num_lines = 0;
-    ptr = trec_results_buf;
-    do {
-        if (*ptr == '\n')
-            num_lines++;
-        else if (*ptr == '#') {
-            /* skip to end of line */
-            ptr = index(ptr, '\n');
+    current_column = 0;
+	ptr = trec_results_buf;
+	do {
+		if (*ptr == '\n') {
+			num_lines++;
+            current_column = 0;
         }
-        if (*ptr != '\0')
-            ptr++;
-    } while (*ptr != '\0');
+        else if (current_column == 0 && *ptr == '#') {
+			/* skip to end of line */
+			ptr = index(ptr, '\n');
+		}
+		if (*ptr != '\0') {
+			ptr++;
+            current_column++;
+        }
+	} while (*ptr != '\0');
 
     /* Get all lines */
     if (NULL == (lines = Malloc(num_lines, LINES)))
