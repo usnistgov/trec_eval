@@ -374,6 +374,7 @@ char *argv[];
             strcmp(epi.debug_query, all_rel_info.rel_info[i].qid))
             continue;
         /* Find results for this query */
+        this_result = NULL;
         for (j = 0; j < all_results.num_q_results; j++) {
             if (0 == strcmp(all_results.results[j].qid,
                             all_rel_info.rel_info[i].qid)) {
@@ -385,6 +386,12 @@ char *argv[];
             bogus_ranking.qid = all_rel_info.rel_info[i].qid;
             bogus_ranking.run_id = all_results.results[0].run_id;
             this_result = &bogus_ranking;
+        }
+
+        if (this_result == NULL) {
+            fprintf(stderr, "trec_eval: result qid '%s' not found in qrels\n",
+                    all_rel_info.rel_info[i].qid);
+            exit(4);
         }
 
         /* zero out all measures for new query */
