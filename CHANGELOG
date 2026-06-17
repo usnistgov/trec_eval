@@ -1,13 +1,15 @@
 ------------------------------------------------------------------------------
 Change Log  (only recent)
 ------------------------------------------------------------------------------
-??/??/24 Version 10.0
+6/18/26 Version 10.0
 	Breaking fix: change uses of int truncation to round/floor.
 	-c mode now prints out skipped queries in -q mode.
 	Added measures to the all_trec set: rbp, rbp_resid, unj_5/10/20
+	Support for '#' comment lines in TREC-format runs and qrels files.
+       Fixes for GCC 15 and Windows
+       Allow results files to be read from stdin
 	Added LICENSE: MIT-ish
 	Code reformatted
-	Support for '#' comment lines in TREC-format runs and qrels files.
 9/3/20 Version 9.0.8
 	Github workflow for CI.
 	Fix some use of stdlib literal values rather than constant names.
