@@ -10,6 +10,22 @@
 #include "trec_eval.h"
 #include "trec_format.h"
 #include <ctype.h>
+#include <errno.h>
+
+long str_to_long(const char * str) {
+    char *endptr = NULL;
+    errno = 0;
+
+    long value = strtol(str, &endptr, 10);
+    if (errno == ERANGE) {
+        fprintf(stderr, "Warning: value `%s' out of range.\n", str);
+    } else if (endptr == str) {
+        fprintf(stderr, "Warning: value `%s' could not be parsed.\n", str);
+    } else if (*endptr != '\0') {
+        fprintf(stderr, "Warning, value `%s' partially read as `%ld'.\n", str, value);
+    }
+    return value;
+}
 
 /* Read all relevance information from text_qrels_file.
 Relevance for each docno to qid is determined from text_qrels_file, which
@@ -189,7 +205,7 @@ int te_get_qrels(EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
                 current_qid, "qrels", text_info_ptr};
         }
         text_qrels_ptr->docno = lines[i].docno;
-        text_qrels_ptr->rel = atol(lines[i].rel);
+        text_qrels_ptr->rel = str_to_long(lines[i].rel);
         text_qrels_ptr++;
     }
     /* End last qid */

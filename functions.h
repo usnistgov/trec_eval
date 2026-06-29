@@ -26,6 +26,8 @@ double get_gain(const long rel_level, const GAINS * gains);
 int comp_rel_gain(const void * ptr1, const void * ptr2);
 /* Functions for dealing with relstrings */
 int clear_relstr();
+/* Functions for converting strings to ints, with warnings for unexpected inputs*/
+long str_to_long(const char * str);
 
 /* ------------------- Generic Routines for Measures ------------------------ */
 
