@@ -282,11 +282,11 @@ static int get_long_cutoffs(PARAMS * params, char *param_string)
     for (ptr = param_string; *ptr; ptr++) {
         if (*ptr == ',') {
             *ptr = '\0';
-            cutoffs[num_cutoffs++] = atol(start_ptr);
+            cutoffs[num_cutoffs++] = str_to_long(start_ptr);
             start_ptr = ptr + 1;
         }
     }
-    cutoffs[num_cutoffs++] = atol(start_ptr);
+    cutoffs[num_cutoffs++] = str_to_long(start_ptr);
 
     /* Sort cutoffs in increasing order */
     qsort((char *) cutoffs, (int) num_cutoffs, sizeof(long), comp_long);

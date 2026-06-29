@@ -9,6 +9,7 @@
 #include "sysfunc.h"
 #include "trec_eval.h"
 #include "trec_format.h"
+#include "functions.h"
 #include <ctype.h>
 
 
@@ -223,7 +224,7 @@ te_get_qrels_jg(EPI * epi, char *text_qrels_file, ALL_REL_INFO * all_rel_info)
             text_jg_ptr->text_qrels = text_qrels_ptr;
         }
         text_qrels_ptr->docno = lines[i].docno;
-        text_qrels_ptr->rel = atol(lines[i].rel);
+        text_qrels_ptr->rel = str_to_long(lines[i].rel);
         text_qrels_ptr++;
     }
     /* End last qid and jg */
