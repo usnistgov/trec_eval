@@ -238,7 +238,7 @@ int main(int argc, char * argv[])
                 epi.average_complete_flag++;
                 break;
             case 'l':
-                epi.relevance_level = atol(optarg);
+                epi.relevance_level = str_to_long(optarg);
                 break;
             case 'n':
                 epi.summary_flag = 0;
@@ -250,10 +250,10 @@ int main(int argc, char * argv[])
                 epi.judged_docs_only_flag++;
                 break;
             case 'N':
-                epi.num_docs_in_coll = atol(optarg);
+                epi.num_docs_in_coll = str_to_long(optarg);
                 break;
             case 'M':
-                epi.max_num_docs_per_topic = atol(optarg);
+                epi.max_num_docs_per_topic = str_to_long(optarg);
                 break;
             case 'R':
                 epi.rel_info_format = optarg;
@@ -619,7 +619,7 @@ static void get_debug_level_query(EPI * epi, char *optarg)
         *ptr++ = '\0';
         epi->debug_query = ptr;
     }
-    epi->debug_level = atol(optarg);
+    epi->debug_level = str_to_long(optarg);
 }
 
 static int cleanup(EPI * epi)
