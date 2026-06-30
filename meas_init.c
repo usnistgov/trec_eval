@@ -259,6 +259,7 @@ static int get_long_cutoffs(PARAMS * params, char *param_string)
     char *ptr, *start_ptr;
     long *cutoffs;
     long i;
+    int error = 0;
 
     /* Count number of parameters in param_string (comma separated) */
     num_cutoffs = 1;
@@ -282,11 +283,21 @@ static int get_long_cutoffs(PARAMS * params, char *param_string)
     for (ptr = param_string; *ptr; ptr++) {
         if (*ptr == ',') {
             *ptr = '\0';
-            cutoffs[num_cutoffs++] = str_to_long(start_ptr);
+            cutoffs[num_cutoffs++] = str_to_long(start_ptr, &error);
+            if (error) {
+                fprintf(stderr, "trec_eval: Illegal cutoff '%s'\n",
+                        start_ptr);
+                return (UNDEF);
+            }
             start_ptr = ptr + 1;
         }
     }
-    cutoffs[num_cutoffs++] = str_to_long(start_ptr);
+    cutoffs[num_cutoffs++] = str_to_long(start_ptr, &error);
+    if (error) {
+        fprintf(stderr, "trec_eval: Illegal cutoff '%s'\n",
+                start_ptr);
+        return (UNDEF);
+    }
 
     /* Sort cutoffs in increasing order */
     qsort((char *) cutoffs, (int) num_cutoffs, sizeof(long), comp_long);

@@ -99,6 +99,7 @@ te_get_qrels_jg(EPI * epi, char *text_qrels_file, ALL_REL_INFO * all_rel_info)
     TEXT_QRELS_JG_INFO *text_jg_info_ptr;
     TEXT_QRELS_JG *text_jg_ptr;
     TEXT_QRELS *text_qrels_ptr;
+    int error = 0;
 
     /* Read entire file into memory */
     if (!(fd = fopen (text_qrels_file, "rb")) ||
@@ -224,7 +225,12 @@ te_get_qrels_jg(EPI * epi, char *text_qrels_file, ALL_REL_INFO * all_rel_info)
             text_jg_ptr->text_qrels = text_qrels_ptr;
         }
         text_qrels_ptr->docno = lines[i].docno;
-        text_qrels_ptr->rel = str_to_long(lines[i].rel);
+        text_qrels_ptr->rel = str_to_long(lines[i].rel, &error);
+        if (error) {
+            fprintf(stderr, "trec_eval: Unusable relevance level '%s'\n",
+                    lines[i].rel);
+            return (UNDEF);
+        }
         text_qrels_ptr++;
     }
     /* End last qid and jg */

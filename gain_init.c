@@ -42,6 +42,7 @@ int setup_gains(const TREC_MEAS * tm, const RES_RELS * res_rels, GAINS * gains)
     long num_pairs = 0;
     long i, j;
     long num_gains;
+    int error = 0;
 
     if (tm->meas_params) {
         pairs = (DOUBLE_PARAM_PAIR *) tm->meas_params->param_values;
@@ -55,7 +56,12 @@ int setup_gains(const TREC_MEAS * tm, const RES_RELS * res_rels, GAINS * gains)
     for (i = 0; i < num_pairs; i++) {
         if (!valid_int(pairs[i].name))
             continue;
-        gains->rel_gains[num_gains].rel_level = str_to_long(pairs[i].name);
+        gains->rel_gains[num_gains].rel_level = str_to_long(pairs[i].name, &error);
+        if (error) {
+            fprintf(stderr, "trec_eval: Unusable relevance level '%s'\n",
+                    pairs[i].name);
+            return (UNDEF);
+        }
         gains->rel_gains[num_gains].gain = (double) pairs[i].value;
         gains->rel_gains[num_gains].num_at_level = 0;
         num_gains++;

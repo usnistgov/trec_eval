@@ -164,6 +164,8 @@ int main(int argc, char * argv[])
     long help_wanted = 0;
     long measure_marked_flag = 0;
 
+    int error = 0;
+
 #ifdef MDEBUG
     /* Turn on memory debugging if environment variable MALLOC_TRACE is
        defined as an output file for reports.
@@ -238,7 +240,12 @@ int main(int argc, char * argv[])
                 epi.average_complete_flag++;
                 break;
             case 'l':
-                epi.relevance_level = str_to_long(optarg);
+                epi.relevance_level = str_to_long(optarg, &error);
+                if (error) {
+                    fprintf(stderr, "trec_eval: Unusable relevance level '%s'\n",
+                            optarg);
+                    exit(1);
+                }
                 break;
             case 'n':
                 epi.summary_flag = 0;
@@ -250,10 +257,20 @@ int main(int argc, char * argv[])
                 epi.judged_docs_only_flag++;
                 break;
             case 'N':
-                epi.num_docs_in_coll = str_to_long(optarg);
+                epi.num_docs_in_coll = str_to_long(optarg, &error);
+                if (error) {
+                    fprintf(stderr, "trec_eval: Invalid number of documents in collection '%s'\n",
+                            optarg);
+                    exit(1);
+                }
                 break;
             case 'M':
-                epi.max_num_docs_per_topic = str_to_long(optarg);
+                epi.max_num_docs_per_topic = str_to_long(optarg, &error);
+                if (error) {
+                    fprintf(stderr, "trec_eval: Invalid maximum number of documents per topic '%s'\n",
+                            optarg);
+                    exit(1);
+                }
                 break;
             case 'R':
                 epi.rel_info_format = optarg;
@@ -613,13 +630,18 @@ static int trec_eval_help(EPI * epi)
 static void get_debug_level_query(EPI * epi, char *optarg)
 {
     char *ptr;
+    int error = 0;
 
     for (ptr = optarg; *ptr && *ptr != '.'; ptr++);
     if (*ptr) {
         *ptr++ = '\0';
         epi->debug_query = ptr;
     }
-    epi->debug_level = str_to_long(optarg);
+    epi->debug_level = str_to_long(optarg, &error);
+    if (error) {
+        fprintf(stderr, "trec_eval: Illegal debug level '%s'\n", optarg);
+        exit(1);
+    }
 }
 
 static int cleanup(EPI * epi)
