@@ -55,8 +55,14 @@ int
 te_get_trec_results(EPI * epi, char *text_results_file,
                     ALL_RESULTS * all_results)
 {
+#ifdef _WIN32
+    FILE *results_file;
+    __int64 file_size;
+    size_t bytes_read;
+#else
     int fd;
     char *orig_buf;
+#endif
     size_t size = 0;
     char *ptr;
     char *current_qid;
@@ -72,8 +78,55 @@ te_get_trec_results(EPI * epi, char *text_results_file,
     TEXT_RESULTS_INFO *text_info_ptr;
     TEXT_RESULTS *text_results_ptr;
 
-    /* mmap entire file into memory and copy it into writable memory */
+    /* Read entire file into writable memory */
     if (text_results_file[0] != '-') {
+#ifdef _WIN32
+        results_file = fopen(text_results_file, "rb");
+        if (NULL == results_file ||
+            0 != _fseeki64(results_file, 0, SEEK_END) ||
+            0 >= (file_size = _ftelli64(results_file)) ||
+            (unsigned __int64) file_size > (size_t) -1 - 2 ||
+            0 != _fseeki64(results_file, 0, SEEK_SET)) {
+            if (NULL != results_file)
+                (void) fclose(results_file);
+            fprintf(stderr,
+                    "trec_eval.get_results: Cannot read results file '%s'\n",
+                    text_results_file);
+            return (UNDEF);
+        }
+        size = (size_t) file_size;
+        if (NULL == (trec_results_buf = malloc(size + 2))) {
+            (void) fclose(results_file);
+            fprintf(stderr,
+                    "trec_eval.get_results: Cannot copy results file '%s'\n",
+                    text_results_file);
+            return (UNDEF);
+        }
+        bytes_read = 0;
+        while (bytes_read < size) {
+            size_t bytes_remaining = size - bytes_read;
+            size_t chunk_size = bytes_remaining < 64 * 1024 * 1024
+                ? bytes_remaining : 64 * 1024 * 1024;
+            size_t count = fread(trec_results_buf + bytes_read, 1,
+                                 chunk_size, results_file);
+            if (0 == count) {
+                (void) fclose(results_file);
+                Free(trec_results_buf);
+                trec_results_buf = NULL;
+                fprintf(stderr,
+                        "trec_eval.get_results: Cannot read results file '%s'\n",
+                        text_results_file);
+                return (UNDEF);
+            }
+            bytes_read += count;
+        }
+        if (0 != fclose(results_file)) {
+            fprintf(stderr,
+                    "trec_eval.get_results: Cannot close results file '%s'\n",
+                    text_results_file);
+            return (UNDEF);
+        }
+#else
         if (-1 == (fd = open(text_results_file, 0)) ||
             0 >= (size = lseek(fd, 0L, 2)) ||
             (char *) -1 == (orig_buf = (char *) mmap(0,
@@ -98,6 +151,7 @@ te_get_trec_results(EPI * epi, char *text_results_file,
                     text_results_file);
             return (UNDEF);
         }
+#endif
     } else {
         size_t capacity = 4096;
         size = 0; 
