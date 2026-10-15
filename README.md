@@ -59,9 +59,9 @@ The compiled binary will be located at `target/release/te-rust`.
 ### 2. Python Package (`trec-eval`)
 
 ```bash
-# Install development build into current Python environment
+# Install development build into current Python environment (requires uv)
 cd te-python
-uv run maturin develop
+uv run --with maturin maturin develop
 cd ..
 
 # Run Python test suite with all dev dependencies (Pandas, NumPy, SciPy):
