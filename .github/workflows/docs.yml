@@ -3,7 +3,7 @@ name: Deploy Documentation
 on:
   push:
     branches:
-      - main
+      - trec_eval_v11
   workflow_dispatch:
 
 # Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages

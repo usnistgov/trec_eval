@@ -11,7 +11,7 @@ on:
       - ".github/workflows/test-rust.yml"
   push:
     branches:
-      - main
+      - trec_eval_v11
     paths:
       - "te-rust/**"
       - "te-python/src/**"

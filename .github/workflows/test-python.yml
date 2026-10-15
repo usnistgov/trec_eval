@@ -10,7 +10,7 @@ on:
       - ".github/workflows/test-python.yml"
   push:
     branches:
-      - main
+      - trec_eval_v11
     paths:
       - "te-python/**"
       - "te-rust/**"
