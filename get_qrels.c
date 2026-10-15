@@ -10,6 +10,30 @@
 #include "trec_eval.h"
 #include "trec_format.h"
 #include <ctype.h>
+#include <errno.h>
+
+/*
+ * Convert a string to a long, with error checking.
+ */
+long str_to_long(const char * str, int * error) {
+    char *endptr = NULL;
+    errno = 0;
+
+    *error = 0;
+    long value = strtol(str, &endptr, 10);
+    if (errno == ERANGE) {
+        /* value is 0 */
+        fprintf(stderr, "Error: value `%s' out of range.\n", str);
+        *error = 1;
+    } else if (endptr == str) {
+        /* value is 0 */
+        fprintf(stderr, "Error: value `%s' could not be parsed.\n", str);
+        *error = 1;
+    } else if (*endptr != '\0') {
+        fprintf(stderr, "Warning, value `%s' partially read as `%ld'.\n", str, value);
+    }
+    return value;
+}
 
 /* Read all relevance information from text_qrels_file.
 Relevance for each docno to qid is determined from text_qrels_file, which
@@ -82,6 +106,7 @@ int te_get_qrels(EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
     long num_lines;
     long current_column;
     long num_qid;
+    int error = 0;
     /* current pointers into static pools above */
     REL_INFO *rel_info_ptr;
     TEXT_QRELS_INFO *text_info_ptr;
@@ -189,7 +214,12 @@ int te_get_qrels(EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
                 current_qid, "qrels", text_info_ptr};
         }
         text_qrels_ptr->docno = lines[i].docno;
-        text_qrels_ptr->rel = atol(lines[i].rel);
+        text_qrels_ptr->rel = str_to_long(lines[i].rel, &error);
+        if (error) {
+            fprintf(stderr, "trec_eval: Unusable relevance level '%s'\n",
+                    lines[i].rel);
+            return (UNDEF);
+        }
         text_qrels_ptr++;
     }
     /* End last qid */
