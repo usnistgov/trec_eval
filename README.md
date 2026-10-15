@@ -1,6 +1,6 @@
-# trec-eval-rust
+# trec_eval v11
 
-A compatible reimplementation of `trec_eval` in Rust, providing identical usage and exact numerical parity with the standard Information Retrieval evaluation tool, a standalone command-line interface, and native high-performance Python bindings.
+trec_eval version 11 represents a significant step in the development of this standard IR evaluation tool.  It is a compatible reimplementation in Rust, providing identical usage and exact numerical parity with the C version (v10.0), a standalone command-line interface, and native high-performance Python bindings.
 
 ## Documentation
 
