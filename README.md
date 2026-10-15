@@ -49,7 +49,8 @@ cargo build --release
 # Run CLI directly
 cargo run --release -- -q -m official qrels.test results.test
 
-# Run all Rust unit tests, boundary invariant tests, and C regression tests
+# Run all Rust unit tests, boundary invariant tests, and C regression tests (needs old trec_eval compiled)
+(cd trec_eval && make)
 cargo test
 ```
 
