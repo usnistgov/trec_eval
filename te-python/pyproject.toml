@@ -1,0 +1,54 @@
+[build-system]
+requires = ["maturin>=1.4,<2.0"]
+build-backend = "maturin"
+
+[project]
+name = "trec-eval"
+version = "11.0.0.dev0"
+description = "Rust re-implementation of trec_eval with added statistical tools, Python bindings, and compatibility with pytrec_eval and ir_measures."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT OR Apache-2.0" }
+authors = [
+    { name = "Ian Soboroff <ian.soboroff@nist.gov>" }
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Rust",
+    "Topic :: Scientific/Engineering :: Information Analysis",
+]
+
+dependencies = []
+
+[project.optional-dependencies]
+numpy = ["numpy>=1.20"]
+pandas = ["pandas>=1.0", "numpy>=1.20"]
+docs = ["zensical>=0.0.50"]
+all = [
+    "pandas>=1.0",
+    "numpy>=1.20",
+    "polars>=0.18",
+]
+dev = [
+    "pytest>=7.0",
+    "maturin>=1.4",
+    "pandas>=1.0",
+    "numpy>=1.20",
+    "scipy>=1.8",
+    "zensical>=0.0.50",
+]
+
+
+
+
+
+[tool.maturin]
+features = ["pyo3/extension-module"]
+module-name = "trec_eval._trec_eval"
+python-source = "python"

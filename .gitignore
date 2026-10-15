@@ -1,0 +1,38 @@
+# Original C trec_eval checkout (no changes should be made here)
+/trec_eval/
+
+# Rust build artifacts
+target/
+**/target/
+
+# Python build artifacts and virtualenvs
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*.so
+*.dylib
+*.pyd
+.venv/
+build/
+dist/
+*.egg-info/
+.pytest_cache/
+
+# Documentation site build artifacts
+site/
+.zensical_cache/
+
+# Backups and swap files
+*.rs.bk
+*.swp
+*.swo
+*~
+
+# IDE configurations
+.idea/
+.vscode/
+*.iml
+
+# OS-specific files
+.DS_Store
+Thumbs.db

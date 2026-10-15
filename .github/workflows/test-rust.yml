@@ -1,0 +1,56 @@
+name: Test Rust
+
+on:
+  pull_request:
+    paths:
+      - "te-rust/**"
+      - "te-python/src/**"
+      - "te-python/Cargo.toml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/test-rust.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "te-rust/**"
+      - "te-python/src/**"
+      - "te-python/Cargo.toml"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/test-rust.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test-matrix:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        rust-version: ["1.85.0", "stable"]
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: ${{ matrix.rust-version }}
+
+      - name: Check out C trec_eval reference
+        uses: actions/checkout@v4
+        with:
+          repository: usnistgov/trec_eval
+          ref: f4253652c8efd0d86ddffd0d163cc0a0f813111a # v10.0
+          path: trec_eval_ref
+
+      - name: Run Rust tests
+        run: |
+          cargo test --workspace --lib --bins
+          cargo test -p te-rust --test confidence_intervals
+          make -C trec_eval_ref -j2
+          TREC_EVAL_DIR=trec_eval_ref cargo test -p te-rust --test regression

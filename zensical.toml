@@ -1,0 +1,85 @@
+[project]
+site_url = "https://isoboroff.github.io/trec-eval-rust/"
+site_name = "trec_eval Documentation"
+site_description = "Clean-room reimplementation of trec_eval in Rust with Python bindings"
+repo_url = "https://github.com/isoboroff/trec-eval-rust"
+repo_name = "isoboroff/trec-eval-rust"
+
+nav = [
+
+  { "Overview" = "index.md" },
+  { "Command-Line Interface" = "cli.md" },
+  { "Python API" = [
+      { "Quickstart & Data Formats" = "python/quickstart.md" },
+      { "Evaluator & Result" = "python/evaluator.md" },
+      { "Statistical Significance" = "python/significance.md" },
+      { "Custom Measures" = "python/custom_measures.md" },
+      { "Compatibility Layers" = "python/compat.md" },
+  ] },
+  { "Measure Catalog" = [
+      { "Overview & Groups" = "measures/index.md" },
+      { "Standard Ranking Measures" = "measures/ranking.md" },
+      { "Gain & Discounted Measures" = "measures/gains.md" },
+      { "Set-Based Measures" = "measures/sets.md" },
+      { "Summary Models & Diagnostics" = "measures/models.md" },
+  ] },
+]
+
+extra_javascript = [
+  "https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.js",
+  "https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/contrib/auto-render.min.js",
+  "javascripts/katex.js",
+]
+
+extra_css = [
+  "https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.8/katex.min.css",
+]
+
+[project.theme]
+language = "en"
+features = [
+  "content.code.copy",
+  "content.code.select",
+  "content.tabs.link",
+  "navigation.footer",
+  "navigation.indexes",
+  "navigation.sections",
+  "navigation.top",
+  "search.highlight",
+]
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme)"
+toggle.icon = "lucide/sun-moon"
+toggle.name = "Switch to light mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: light)"
+scheme = "default"
+toggle.icon = "lucide/sun"
+toggle.name = "Switch to dark mode"
+
+[[project.theme.palette]]
+media = "(prefers-color-scheme: dark)"
+scheme = "slate"
+toggle.icon = "lucide/moon"
+toggle.name = "Switch to system preference"
+
+[project.markdown_extensions]
+admonition = {}
+attr_list = {}
+def_list = {}
+footnotes = {}
+md_in_html = {}
+toc.permalink = true
+pymdownx.arithmatex.generic = true
+pymdownx.betterem = {}
+pymdownx.details = {}
+pymdownx.highlight.anchor_linenums = true
+pymdownx.inlinehilite = {}
+pymdownx.magiclink = {}
+pymdownx.superfences.custom_fences = [
+  { name = "mermaid", class = "mermaid", format = "pymdownx.superfences.fence_code_format" },
+]
+pymdownx.tabbed.alternate_style = true
+pymdownx.tasklist.custom_checkbox = true
