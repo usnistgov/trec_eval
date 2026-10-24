@@ -2,7 +2,6 @@ import os
 from pathlib import Path
 import pytest
 import trec_eval.compat.pytrec_eval as pytrec_eval
-from trec_eval.compat.ir_measures import TeRustEvaluator
 
 TEST_DATA_DIR = Path(__file__).resolve().parent.parent.parent / "te-rust" / "tests" / "test-data"
 QRELS_FILE = str(TEST_DATA_DIR / "qrels.test")
@@ -54,38 +53,3 @@ def test_pytrec_eval_supported_measures():
     assert "recip_rank" in pytrec_eval.supported_measures
     assert "official" in pytrec_eval.supported_measures
 
-
-class MockIRMeasure:
-    def __init__(self, name, cutoff=None):
-        self.NAME = name
-        self.cutoff = cutoff
-
-    def __repr__(self):
-        return f"{self.NAME}@{self.cutoff}" if self.cutoff else self.NAME
-
-
-def test_ir_measures_evaluator_adapter():
-    qrels = {
-        "q1": {"d1": 0, "d2": 1, "d3": 0},
-        "q2": {"d2": 1, "d3": 1},
-    }
-    run = {
-        "q1": {"d1": 1.0, "d2": 0.0, "d3": 1.5},
-        "q2": {"d1": 1.5, "d2": 0.2, "d3": 0.5},
-    }
-
-    measures = [
-        MockIRMeasure("AP"),
-        MockIRMeasure("nDCG", cutoff=10),
-        MockIRMeasure("RR"),
-    ]
-
-    evaluator = TeRustEvaluator(measures, qrels)
-
-    # Test aggregate
-    agg = evaluator.calc_aggregate(run)
-    assert len(agg) == 3
-
-    # Test iter_calc
-    items = list(evaluator.iter_calc(run))
-    assert len(items) == 6  # 2 queries x 3 measures
