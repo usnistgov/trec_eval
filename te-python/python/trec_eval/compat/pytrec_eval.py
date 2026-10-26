@@ -82,11 +82,13 @@ class RelevanceEvaluator:
         qrel: Any,
         measures: Union[Set[str], Iterable[str], str],
         relevance_level: int = 1,
+        judged_docs_only_flag : bool = True,
     ):
         self._evaluator = Evaluator(
             qrels=qrel,
             measures=measures,
             relevance_level=relevance_level,
+            judged_docs_only=judged_docs_only_flag,
         )
         self.measures = set(measures) if not isinstance(measures, str) else {measures}
 
