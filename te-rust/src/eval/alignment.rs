@@ -4,6 +4,9 @@ pub const RELVALUE_NONPOOL: i64 = -1;
 
 pub const RELVALUE_UNJUDGED: i64 = -2;
 
+/// No document can reach a level above the largest legal grade (ISSUES.md item 17).
+const MAX_PADDED_LEVEL: i64 = 1_000_000;
+
 /// Aligned evaluation state for a single query topic.
 #[derive(Debug, Clone)]
 pub struct QueryEvalState {
@@ -37,7 +40,7 @@ pub struct QueryEvalState {
     pub num_unjudged_in_pool: usize,
 
     /// Flat array where `rel_levels[g]` stores the total number of documents in qrels with relevance grade `g`.
-    /// Sized defensively as `max(max_grade + 1, relevance_level_cutoff + 1)`.
+    /// Sized defensively as `max(max_grade + 1, min(relevance_level_cutoff, MAX_PADDED_LEVEL) + 1)`.
     pub rel_levels: Vec<usize>,
 }
 
@@ -65,7 +68,7 @@ pub fn align_query(
         }
     }
 
-    let rel_levels_size = std::cmp::max(max_rel_grade + 1, relevance_level_cutoff + 1) as usize;
+    let rel_levels_size = std::cmp::max(max_rel_grade + 1, relevance_level_cutoff.min(MAX_PADDED_LEVEL) + 1) as usize;
     let mut rel_levels = vec![0; rel_levels_size];
     let mut num_rel = 0;
 

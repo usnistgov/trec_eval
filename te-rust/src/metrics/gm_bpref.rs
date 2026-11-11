@@ -51,12 +51,8 @@ impl Measure for GMBprefMeasure {
             None => return self.initial_values(),
         };
 
-        let mut num_nonrel = 0;
-        for j in 0..config.relevance_level as usize {
-            if j < q_state.rel_levels.len() {
-                num_nonrel += q_state.rel_levels[j];
-            }
-        }
+        let below_level = config.relevance_level.max(0) as usize;
+        let num_nonrel: usize = q_state.rel_levels.iter().take(below_level).sum();
 
         let mut nonrel_so_far = 0;
         let mut bpref = 0.0;

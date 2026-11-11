@@ -30,7 +30,7 @@ graph TD
 
 ### 1.3 Aligned Evaluation Engine (`src/eval/alignment.rs`)
 *   **Tie-Breaking sorting**: Sort results descending by `sim` (primary), and **lexicographically descending** by `docno` (secondary) to match C tie-breaking exactly.
-*   **Defensive Allocation**: Populate `QueryEvalState::rel_levels` pre-allocated and initialized with zeros to `max(max_rel + 1, config.relevance_level + 1)` size.
+*   **Defensive Allocation**: Populate `QueryEvalState::rel_levels` pre-allocated and initialized with zeros to `max(max_rel + 1, min(config.relevance_level, 1,000,000) + 1)` size.
 *   **Complete Set Average (`-c`)**: Implement native empty execution states (`Vec::new()`) for topics missing from the run results file under `-c`, ensuring proper default score evaluation without overrides.
 
 ### 1.4 The `all_trec` Metric Registry (`src/metrics/`)

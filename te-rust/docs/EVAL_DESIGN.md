@@ -95,7 +95,7 @@ pub struct QueryEvalState {
     
     /// Frequency counts of judged documents in qrels at each non-negative relevance level.
     /// Index represents the relevance score; value represents the count of documents in qrels.
-    /// Defensively sized to at least `max(max_rel + 1, config.relevance_level + 1)` to prevent out-of-bounds reads.
+    /// Defensively sized to at least `max(max_rel + 1, min(config.relevance_level, 1,000,000) + 1)` to prevent out-of-bounds reads.
     pub rel_levels: Vec<usize>,
 }
 ```
@@ -109,7 +109,7 @@ To construct `QueryEvalState` from a `RunQuery` and a `QrelsQuery`:
     *   If retrieved document `docno` is found in the qrels: assign its relevance. If `rel >= 0`, increment the corresponding index in `rel_levels`. If `rel < 0`, assign `-2` (unjudged in pool).
     *   If not found: assign `-1` (non-pool).
 5.  **Finish Counting judgments**: Scan remaining unretrieved qrels entries to fully populate `rel_levels` and compute the total `num_rel` (the sum of all `rel_levels[i]` where `i >= config.relevance_level`).
-    *   **Defensive Allocation & Sizing**: The `rel_levels` vector is pre-allocated and initialized with `0`s to a size of `max(max_rel + 1, config.relevance_level + 1)` where `max_rel` is the maximum non-negative relevance score observed in the qrels for that topic.
+    *   **Defensive Allocation & Sizing**: The `rel_levels` vector is pre-allocated and initialized with `0`s to a size of `max(max_rel + 1, min(config.relevance_level, 1,000,000) + 1)` where `max_rel` is the maximum non-negative relevance score observed in the qrels for that topic.
     *   **Infallible Count Retrieval**: Measures must retrieve counts from `rel_levels` using bounds-checked indexing (such as `state.rel_levels.get(j).copied().unwrap_or(0)`) rather than direct indexing (`state.rel_levels[j]`). This ensures absolute panic-free execution even if a metric queries high relevance threshold levels that were never observed in the input file.
 
 ### 3.2 Handling Missing Queries Natively (-c Complete Set Evaluation)
