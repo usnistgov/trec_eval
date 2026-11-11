@@ -126,6 +126,17 @@ struct RawRun {
     line_num: usize,
 }
 
+/// True for the field separators of trec_eval's parsers: C `isspace` in the C locale.
+/// `char::is_whitespace` also matches non-ASCII characters such as U+00A0, which
+/// can occur inside a docno.
+fn is_field_sep(c: char) -> bool {
+    matches!(c, ' ' | '\t' | '\n' | '\x0B' | '\x0C' | '\r')
+}
+
+fn split_fields(line: &str) -> Vec<&str> {
+    line.split(is_field_sep).filter(|field| !field.is_empty()).collect()
+}
+
 /// Parses standard qrels relevance judgments file format.
 pub fn parse_trec_qrels<P: AsRef<Path>>(path: P) -> Result<QrelsData, IOError> {
     let file = File::open(path).map_err(IOError::FileReadError)?;
@@ -137,7 +148,7 @@ pub fn parse_trec_qrels<P: AsRef<Path>>(path: P) -> Result<QrelsData, IOError> {
     for line_res in reader.lines() {
         line_num += 1;
         let line = line_res.map_err(IOError::FileReadError)?;
-        let trimmed = line.trim();
+        let trimmed = line.trim_matches(is_field_sep);
 
         if trimmed.is_empty() {
             continue;
@@ -148,7 +159,7 @@ pub fn parse_trec_qrels<P: AsRef<Path>>(path: P) -> Result<QrelsData, IOError> {
             continue;
         }
 
-        let parts: Vec<&str> = trimmed.split_whitespace().collect();
+        let parts = split_fields(trimmed);
         if parts.len() != 4 {
             return Err(IOError::FormatError(ParseError::InvalidFieldCount {
                 line_num,
@@ -258,7 +269,7 @@ pub fn parse_trec_qrels_jg<P: AsRef<Path>>(path: P) -> Result<QrelsJGData, IOErr
     for line_res in reader.lines() {
         line_num += 1;
         let line = line_res.map_err(IOError::FileReadError)?;
-        let trimmed = line.trim();
+        let trimmed = line.trim_matches(is_field_sep);
 
         if trimmed.is_empty() {
             continue;
@@ -269,7 +280,7 @@ pub fn parse_trec_qrels_jg<P: AsRef<Path>>(path: P) -> Result<QrelsJGData, IOErr
             continue;
         }
 
-        let parts: Vec<&str> = trimmed.split_whitespace().collect();
+        let parts = split_fields(trimmed);
         if parts.len() != 4 {
             return Err(IOError::FormatError(ParseError::InvalidFieldCount {
                 line_num,
@@ -385,7 +396,7 @@ pub fn parse_trec_run<P: AsRef<Path>>(path: P) -> Result<RunData, IOError> {
     for line_res in reader.lines() {
         line_num += 1;
         let line = line_res.map_err(IOError::FileReadError)?;
-        let trimmed = line.trim();
+        let trimmed = line.trim_matches(is_field_sep);
 
         if trimmed.is_empty() {
             continue;
@@ -396,7 +407,7 @@ pub fn parse_trec_run<P: AsRef<Path>>(path: P) -> Result<RunData, IOError> {
             continue;
         }
 
-        let parts: Vec<&str> = trimmed.split_whitespace().collect();
+        let parts = split_fields(trimmed);
         if parts.len() < 6 {
             return Err(IOError::FormatError(ParseError::InvalidFieldCount {
                 line_num,

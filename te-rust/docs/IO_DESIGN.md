@@ -253,8 +253,8 @@ pub enum IOError {
 ### 4.2 Parsing Steps (Example for Qrels)
 1. Read the file line-by-line (using `BufReader` and `.lines()`).
 2. Track the 1-based line number.
-3. Trim leading and trailing whitespace.
-4. If a line begins with `#` (after optional whitespace trimming), strip the leading `#` character and store the remainder of the line in the `comments` vector of our top-level data structure. Then skip to the next line.
+3. Trim leading and trailing ASCII whitespace (the characters of C `isspace`).
+4. If a line begins with `#` (after optional ASCII whitespace trimming), strip the leading `#` character and store the remainder of the line in the `comments` vector of our top-level data structure. Then skip to the next line.
 5. If the line is empty, skip it.
 6. Tokenize the line by splitting on whitespace.
 7. Validate field count:
