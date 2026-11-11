@@ -64,7 +64,7 @@ impl Measure for RbpMeasure {
             &default_gains_config
         };
 
-        let gains = Gains::setup(gains_config, &q_state.rel_levels);
+        let mut gains = Gains::setup(gains_config, &q_state.rel_levels);
 
         // Find min and max gains to normalize if needed
         let mut min_gain = f64::INFINITY;
@@ -78,25 +78,19 @@ impl Measure for RbpMeasure {
             }
         }
 
-        let get_normalized_gain = |rel_level: i64| -> f64 {
-            let raw_gain = gains.get_gain(rel_level);
-            if min_gain < 0.0 || max_gain > 1.0 {
-                let range = max_gain - min_gain;
-                if range > 0.0 {
-                    (raw_gain - min_gain) / range
-                } else {
-                    0.0
-                }
-            } else {
-                raw_gain
+        // Normalise the table, not the lookups: a level the table lacks stays at gain 0.
+        if min_gain < 0.0 || max_gain > 1.0 {
+            let range = max_gain - min_gain;
+            for g in &mut gains.rel_gains {
+                g.gain = if range > 0.0 { (g.gain - min_gain) / range } else { 0.0 };
             }
-        };
+        }
 
         let mut sum = 0.0;
         let mut cur_p = 1.0;
 
         for &rel in &q_state.results_rel_list {
-            let gain = get_normalized_gain(rel);
+            let gain = gains.get_gain(rel);
             if gain != 0.0 {
                 sum += gain * cur_p;
             }
