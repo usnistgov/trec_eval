@@ -116,7 +116,7 @@ To construct `QueryEvalState` from a `RunQuery` and a `QrelsQuery`:
 To maintain 100% score parity with C `trec_eval` under complete set evaluation (`-c` or `average_complete_flag`) while eliminating C's fragile internal `bogus_ranking` ("ceci_nest_pas_un_docno") hack and hardcoded memory override loops:
 
 1.  **Strict Intersection vs. Complete Evaluation**:
-    *   By default, `te-rust` only evaluates queries present in both the relevance judgments and the run results ($Q_{\text{qrels}} \cap Q_{\text{run}}$). If a query exists in the judgments but is missing from the run, it is silently skipped.
+    *   By default, `te-rust` only evaluates queries present in both the relevance judgments and the run results ($Q_{\text{qrels}} \cap Q_{\text{run}}$). If a query exists in the judgments but is missing from the run, it is silently skipped. The CLI fails if that leaves no query to evaluate.
     *   If `config.average_complete_flag` is true, the execution harness evaluates **every** query present in the judgments ($Q_{\text{qrels}}$).
 2.  **Native Empty State Construction**:
     *   For any query present in the judgments but completely absent from the run file, the alignment engine constructs a native empty `QueryEvalState`:
