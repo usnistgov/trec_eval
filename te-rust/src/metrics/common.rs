@@ -135,8 +135,10 @@ impl Gains {
             });
         }
 
-        // 2. Then add all other relevance levels that were NOT specified in custom_gains
-        for i in 0..rel_levels.len() {
+        // 2. Then add all other relevance levels that were NOT specified in custom_gains,
+        // up to the highest level with a judged document. rel_levels can be padded past it.
+        let num_rel_levels = rel_levels.iter().rposition(|&n| n > 0).map_or(0, |top| top + 1);
+        for i in 0..num_rel_levels {
             let rel_level = i as i64;
             if !config.custom_gains.contains_key(&rel_level) {
                 rel_gains.push(RelGain {
