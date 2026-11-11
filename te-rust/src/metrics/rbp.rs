@@ -3,6 +3,7 @@ use crate::metrics::common::{Gains, GainsConfig};
 
 pub struct RbpMeasure {
     p: f64,
+    gains_config: GainsConfig,
     _params_str: String,
     sub_metrics: Vec<String>,
 }
@@ -16,6 +17,7 @@ impl RbpMeasure {
         };
         Self {
             p,
+            gains_config: GainsConfig::parse(params_str),
             _params_str: params_str.to_string(),
             sub_metrics: vec![name],
         }
@@ -57,11 +59,12 @@ impl Measure for RbpMeasure {
             None => return self.initial_values(),
         };
 
-        let default_gains_config = GainsConfig::parse("");
-        let gains_config = if let Some(ref gg) = config.global_gains {
+        let gains_config = if !self.gains_config.custom_gains.is_empty() {
+            &self.gains_config
+        } else if let Some(ref gg) = config.global_gains {
             gg
         } else {
-            &default_gains_config
+            &self.gains_config
         };
 
         let gains = Gains::setup(gains_config, &q_state.rel_levels);

@@ -40,7 +40,7 @@ Upper bound on the potential unobserved score due to unjudged documents:
 $$\text{RBP}_{\text{resid}} = \text{RBP} + p^N$$
 
 - Parameter: `p` (persistence parameter, default `0.9`).
-- Usage: `-m rbp` or `-m rbp.p=0.8`
+- Usage: `-m rbp`, `-m rbp.p=0.8`, or with a gain map as for `ndcg`, `-m rbp.p=0.8,1=1,2=3`.
 - Reference: Moffat, A., & Zobel, J. (2008). "Rank-biased precision for measurement of retrieval effectiveness." *ACM Transactions on Information Systems (TOIS)*, 27(1): Article 2.
 
 ---

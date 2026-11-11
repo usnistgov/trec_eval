@@ -193,7 +193,7 @@ pub fn registry() -> &'static [MeasureSpec] {
         MeasureSpec { name: "ndcg_rel", status: Production, usage: "ndcg_rel[.<rel>=<gain>,...]  optional relevance-to-gain mapping (default: gain = relevance level)", factory: |p| Ok(Box::new(metrics::ndcg_rel::NdcgRelMeasure::new(p))) },
         MeasureSpec { name: "Rndcg", status: Production, usage: "Rndcg[.<rel>=<gain>,...]  optional relevance-to-gain mapping (default: gain = relevance level)", factory: |p| Ok(Box::new(metrics::rndcg::RndcgMeasure::new(p))) },
         MeasureSpec { name: "ndcg_p", status: Production, usage: "ndcg_p[.<rel>=<gain>,...]  optional relevance-to-gain mapping (default: gain = relevance level)", factory: |p| Ok(Box::new(metrics::ndcg_p::NdcgPMeasure::new(p))) },
-        MeasureSpec { name: "rbp", status: Production, usage: "rbp[.p=<float>]  persistence parameter p (default: 0.9)", factory: |p| Ok(Box::new(metrics::rbp::RbpMeasure::new(parse_rbp_p(p)?, p))) },
+        MeasureSpec { name: "rbp", status: Production, usage: "rbp[.p=<float>,<rel>=<gain>,...]  persistence parameter p (default: 0.9) and optional relevance-to-gain mapping (default: gain = relevance level)", factory: |p| Ok(Box::new(metrics::rbp::RbpMeasure::new(parse_rbp_p(p)?, p))) },
         MeasureSpec { name: "rbp_resid", status: Production, usage: "rbp_resid[.p=<float>]  persistence parameter p (default: 0.9)", factory: |p| Ok(Box::new(metrics::rbp_resid::RbpResidMeasure::new(parse_rbp_p(p)?, p))) },
         MeasureSpec { name: "map_avgjg", status: Production, usage: "", factory: |_| Ok(Box::new(metrics::map_avgjg::MapAvgjgMeasure::new())) },
         MeasureSpec {
