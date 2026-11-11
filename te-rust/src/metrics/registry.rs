@@ -309,6 +309,11 @@ fn canonicalize_measure_spec(arg: &str) -> (String, String) {
 }
 
 
+/// `P.`, `P@` and `P_` introduce a parameter list and then give none.
+fn has_empty_param_list(arg: &str) -> bool {
+    arg.ends_with(['@', '_']) || arg.split_once('.').is_some_and(|(_, params)| params.is_empty())
+}
+
 /// Resolve a list of requested measure arguments into constructed measures.
 ///
 /// Each request is either a group name (expanded via [`expand_group`]) or a
@@ -327,6 +332,9 @@ pub fn resolve_measures(requested: &[String]) -> Result<Vec<Box<dyn Measure>>, M
     // 2. Build each measure from its root and parameter string.
     let mut measures: Vec<Box<dyn Measure>> = Vec::with_capacity(expanded.len());
     for arg in &expanded {
+        if has_empty_param_list(arg) {
+            return Err(MeasureParseError::new(format!("empty parameter list in measure '{}'", arg)));
+        }
         let (root, params) = canonicalize_measure_spec(arg);
         let spec = find_spec(&root)
             .ok_or_else(|| MeasureParseError::new(format!("unknown measure '{}'", arg)))?;
