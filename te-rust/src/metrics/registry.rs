@@ -12,6 +12,7 @@ use crate::metrics::common::{
     parse_float_cutoffs, parse_int_cutoffs, parse_key_values, MeasureParseError,
 };
 use crate::metrics::{self, Measure};
+use std::collections::HashSet;
 
 /// Development/support status of a measure (ISSUES #24).
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
@@ -325,6 +326,8 @@ pub fn resolve_measures(requested: &[String]) -> Result<Vec<Box<dyn Measure>>, M
     }
 
     // 2. Build each measure from its root and parameter string.
+    // Rows already requested. A request whose rows are all here adds nothing.
+    let mut printed: HashSet<String> = HashSet::new();
     let mut measures: Vec<Box<dyn Measure>> = Vec::with_capacity(expanded.len());
     for arg in &expanded {
         let (root, params) = canonicalize_measure_spec(arg);
@@ -332,6 +335,11 @@ pub fn resolve_measures(requested: &[String]) -> Result<Vec<Box<dyn Measure>>, M
             .ok_or_else(|| MeasureParseError::new(format!("unknown measure '{}'", arg)))?;
         let measure = (spec.factory)(&params)
             .map_err(|e| MeasureParseError::new(format!("measure '{}': {}", arg, e)))?;
+        let names = measure.sub_metrics();
+        if !names.is_empty() && names.iter().all(|name| printed.contains(name)) {
+            continue;
+        }
+        printed.extend(names);
         measures.push(measure);
     }
     Ok(measures)
@@ -390,7 +398,8 @@ mod tests {
             "mrr".to_string(),
             "recip_rank".to_string(),
         ]).unwrap();
-        assert_eq!(measures.len(), 5);
+        // mrr and recip_rank print the same row, so recip_rank is evaluated once.
+        assert_eq!(measures.len(), 4);
         assert_eq!(measures[0].name(), "ndcg_cut");
         assert_eq!(measures[0].sub_metrics(), vec!["ndcg_cut_10"]);
         assert_eq!(measures[1].name(), "map_cut");
@@ -398,7 +407,6 @@ mod tests {
         assert_eq!(measures[2].name(), "P");
         assert_eq!(measures[2].sub_metrics(), vec!["P_5", "P_10"]);
         assert_eq!(measures[3].name(), "recip_rank");
-        assert_eq!(measures[4].name(), "recip_rank");
     }
 
 
