@@ -51,6 +51,5 @@ jobs:
       - name: Run Rust tests
         run: |
           cargo test --workspace --lib --bins
-          cargo test -p te-rust --test confidence_intervals
           make -C trec_eval_ref -j2
-          TREC_EVAL_DIR=trec_eval_ref cargo test -p te-rust --test regression
+          TREC_EVAL_DIR=trec_eval_ref cargo test -p te-rust --tests
