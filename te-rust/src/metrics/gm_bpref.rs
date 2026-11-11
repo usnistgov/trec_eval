@@ -102,12 +102,6 @@ impl Measure for GMBprefMeasure {
         if denominator > 0 {
             for total in running_totals.iter_mut() {
                 if let MetricValue::Float(t) = total {
-                    if config.average_complete_flag {
-                        let missing = total_qrels_queries as f64 - num_queries_evaluated as f64;
-                        if missing > 0.0 {
-                            *t += missing * (0.00001_f64).ln();
-                        }
-                    }
                     *t = (*t / denominator as f64).exp();
                 }
             }
