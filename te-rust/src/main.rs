@@ -132,7 +132,25 @@ fn handle_help_flags(help_measures: bool, help_measure: Option<&str>) {
     }
 }
 
+// Rust ignores SIGPIPE by default, which turns `te-rust ... | head` into a panic.
+#[cfg(unix)]
+fn restore_default_sigpipe() {
+    extern "C" {
+        fn signal(signum: i32, handler: usize) -> usize;
+    }
+    const SIGPIPE: i32 = 13;
+    const SIG_DFL: usize = 0;
+    unsafe {
+        signal(SIGPIPE, SIG_DFL);
+    }
+}
+
+#[cfg(not(unix))]
+fn restore_default_sigpipe() {}
+
 fn main() {
+    restore_default_sigpipe();
+
     let args = Args::parse();
 
     // 1. Handle help flags if present
