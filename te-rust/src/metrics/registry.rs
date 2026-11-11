@@ -9,7 +9,8 @@
 //! against this table.
 
 use crate::metrics::common::{
-    parse_float_cutoffs, parse_int_cutoffs, parse_key_values, MeasureParseError,
+    parse_float_cutoffs, parse_int_cutoffs, parse_key_values, parse_sorted_float_cutoffs,
+    MeasureParseError,
 };
 use crate::metrics::{self, Measure};
 
@@ -138,13 +139,13 @@ pub fn registry() -> &'static [MeasureSpec] {
             name: "iprec_at_recall",
             status: Production,
             usage: "iprec_at_recall[.<r1,r2,...>]  interpolated precision at recall levels (default: 0.0,0.1,...,1.0)",
-            factory: |p| Ok(Box::new(metrics::iprec_at_recall::IprecAtRecallMeasure::new(parse_float_cutoffs(p, DEFAULT_RECALL_LEVELS)?))),
+            factory: |p| Ok(Box::new(metrics::iprec_at_recall::IprecAtRecallMeasure::new(parse_sorted_float_cutoffs(p, DEFAULT_RECALL_LEVELS)?))),
         },
         MeasureSpec {
             name: "Rprec_mult",
             status: Production,
             usage: "Rprec_mult[.<m1,m2,...>]  R-precision at multiples of R (default: 0.2,0.4,...,2.0)",
-            factory: |p| Ok(Box::new(metrics::rprec_mult::RprecMultMeasure::new(parse_float_cutoffs(p, DEFAULT_RPREC_MULT)?))),
+            factory: |p| Ok(Box::new(metrics::rprec_mult::RprecMultMeasure::new(parse_sorted_float_cutoffs(p, DEFAULT_RPREC_MULT)?))),
         },
         MeasureSpec {
             name: "utility",
@@ -206,7 +207,7 @@ pub fn registry() -> &'static [MeasureSpec] {
             name: "Rprec_mult_avgjg",
             status: Production,
             usage: "Rprec_mult_avgjg[.<m1,m2,...>]  R-precision at multiples of R averaged over JGs (default: 0.2,0.4,...,2.0)",
-            factory: |p| Ok(Box::new(metrics::rprec_mult_avgjg::RprecMultAvgjgMeasure::new(parse_float_cutoffs(p, DEFAULT_RPREC_MULT)?))),
+            factory: |p| Ok(Box::new(metrics::rprec_mult_avgjg::RprecMultAvgjgMeasure::new(parse_sorted_float_cutoffs(p, DEFAULT_RPREC_MULT)?))),
         },
         MeasureSpec { name: "yaap", status: Experimental, usage: "", factory: |_| Ok(Box::new(metrics::yaap::YaapMeasure::new())) },
 

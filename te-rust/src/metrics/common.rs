@@ -22,7 +22,8 @@ impl fmt::Display for MeasureParseError {
 
 impl std::error::Error for MeasureParseError {}
 
-/// Parse a comma-separated list of integer cutoffs (e.g. "5,10,20").
+/// Parse a comma-separated list of integer cutoffs (e.g. "5,10,20") into
+/// ascending order, which the single-pass measures rely on.
 /// An empty string yields the provided defaults.
 pub fn parse_int_cutoffs(params: &str, default: &[usize]) -> Result<Vec<usize>, MeasureParseError> {
     if params.is_empty() {
@@ -36,6 +37,7 @@ pub fn parse_int_cutoffs(params: &str, default: &[usize]) -> Result<Vec<usize>, 
             Err(_) => return Err(MeasureParseError::new(format!("invalid integer cutoff '{}'", tok))),
         }
     }
+    list.sort_unstable();
     Ok(list)
 }
 
@@ -53,6 +55,15 @@ pub fn parse_float_cutoffs(params: &str, default: &[f64]) -> Result<Vec<f64>, Me
             Err(_) => return Err(MeasureParseError::new(format!("invalid float value '{}'", tok))),
         }
     }
+    Ok(list)
+}
+
+/// Parse a comma-separated list of float cutoffs into ascending order, for
+/// measures that walk the list in step with the ranking. Lists whose order
+/// carries meaning (`11pt_avg`, `utility`) use [`parse_float_cutoffs`].
+pub fn parse_sorted_float_cutoffs(params: &str, default: &[f64]) -> Result<Vec<f64>, MeasureParseError> {
+    let mut list = parse_float_cutoffs(params, default)?;
+    list.sort_by(f64::total_cmp);
     Ok(list)
 }
 
