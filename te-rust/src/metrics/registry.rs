@@ -333,11 +333,11 @@ pub fn resolve_measures(requested: &[String]) -> Result<Vec<Box<dyn Measure>>, M
     let mut measures: Vec<Box<dyn Measure>> = Vec::with_capacity(expanded.len());
     for arg in &expanded {
         if has_empty_param_list(arg) {
-            return Err(MeasureParseError::new(format!("empty parameter list in measure '{}'", arg)));
+            return Err(MeasureParseError::illegal_name(format!("empty parameter list in measure '{}'", arg)));
         }
         let (root, params) = canonicalize_measure_spec(arg);
         let spec = find_spec(&root)
-            .ok_or_else(|| MeasureParseError::new(format!("unknown measure '{}'", arg)))?;
+            .ok_or_else(|| MeasureParseError::illegal_name(format!("unknown measure '{}'", arg)))?;
         let measure = (spec.factory)(&params)
             .map_err(|e| MeasureParseError::new(format!("measure '{}': {}", arg, e)))?;
         measures.push(measure);

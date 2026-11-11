@@ -6,11 +6,17 @@ use std::fmt;
 #[derive(Debug, Clone, PartialEq)]
 pub struct MeasureParseError {
     pub message: String,
+    /// The measure name itself is illegal, as opposed to its parameters.
+    pub illegal_name: bool,
 }
 
 impl MeasureParseError {
     pub fn new(message: impl Into<String>) -> Self {
-        Self { message: message.into() }
+        Self { message: message.into(), illegal_name: false }
+    }
+
+    pub fn illegal_name(message: impl Into<String>) -> Self {
+        Self { message: message.into(), illegal_name: true }
     }
 }
 

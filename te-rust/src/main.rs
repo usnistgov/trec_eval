@@ -3,7 +3,7 @@ use std::process;
 
 use te_rust::eval::bootstrap::BootstrapConfig;
 use te_rust::eval::{evaluate_run, evaluate_run_jg};
-use te_rust::io::{parse_trec_qrels, parse_trec_qrels_jg, parse_trec_run};
+use te_rust::io::{parse_trec_qrels, parse_trec_qrels_jg, parse_trec_run, IOError, ParseError};
 use te_rust::metrics::{EvalConfig, MetricValue, ValueFormat};
 use te_rust::metrics;
 
@@ -93,6 +93,19 @@ struct Args {
     global_gains: Option<String>,
 }
 
+// The exit statuses of trec_eval: 1 usage or illegal measure name, 2 unreadable or
+// malformed input or unusable measure parameter, 4 a topic cannot be scored.
+const EXIT_USAGE: i32 = 1;
+const EXIT_INPUT: i32 = 2;
+const EXIT_TOPIC: i32 = 4;
+
+fn input_exit_status(e: &IOError) -> i32 {
+    match e {
+        IOError::FormatError(ParseError::DuplicateDocument { .. }) => EXIT_TOPIC,
+        _ => EXIT_INPUT,
+    }
+}
+
 fn handle_help_flags(help_measures: bool, help_measure: Option<&str>) {
     if help_measures {
         println!("{:<22} {:<13} {}", "Measure", "Status", "Description");
@@ -151,7 +164,11 @@ fn restore_default_sigpipe() {}
 fn main() {
     restore_default_sigpipe();
 
-    let args = Args::parse();
+    let args = Args::try_parse().unwrap_or_else(|e| {
+        let status = if e.use_stderr() { EXIT_USAGE } else { 0 };
+        let _ = e.print();
+        process::exit(status);
+    });
 
     // 1. Handle help flags if present
     if args.help_measures || args.help_measure.is_some() {
@@ -180,7 +197,7 @@ fn main() {
         Ok(data) => data,
         Err(e) => {
             eprintln!("Error parsing run file '{}': {}", run_filename, e);
-            process::exit(1);
+            process::exit(input_exit_status(&e));
         }
     };
 
@@ -200,7 +217,7 @@ fn main() {
         Ok(m) => m,
         Err(e) => {
             eprintln!("te-rust: {}", e);
-            process::exit(1);
+            process::exit(if e.illegal_name { EXIT_USAGE } else { EXIT_INPUT });
         }
     };
 
@@ -235,7 +252,7 @@ fn main() {
                 Ok(data) => data,
                 Err(e) => {
                     eprintln!("Error parsing qrels_jg file '{}': {}", qrels_filename, e);
-                    process::exit(1);
+                    process::exit(EXIT_INPUT);
                 }
             };
             evaluate_run_jg(&qrels_jg_data, &run_data, &active_measures, &config, ci_config.as_ref())
@@ -245,20 +262,20 @@ fn main() {
                 Ok(data) => data,
                 Err(e) => {
                     eprintln!("Error parsing qrels file '{}': {}", qrels_filename, e);
-                    process::exit(1);
+                    process::exit(input_exit_status(&e));
                 }
             };
             evaluate_run(&qrels_data, &run_data, &active_measures, &config, ci_config.as_ref())
         }
         other => {
             eprintln!("te-rust: Unsupported relevance judgments format '{}'", other);
-            process::exit(1);
+            process::exit(EXIT_INPUT);
         }
     };
 
     if !config.average_complete_flag && output.num_queries_evaluated == 0 {
         eprintln!("te-rust: no topic has both results and judgments; -c scores the qrels topics as 0");
-        process::exit(1);
+        process::exit(EXIT_TOPIC);
     }
 
     // 7. Print query results
