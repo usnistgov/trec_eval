@@ -138,7 +138,7 @@ impl Measure for NdcgRelMeasure {
                     sum += ((num_rel - num_rel_ret) as f64) * results_dcg / ideal_dcg;
                 }
 
-                let score = if num_rel > 0 { sum / (num_rel as f64) } else { 0.0 };
+                let score = if num_rel > 0 && sum > 0.0 { sum / (num_rel as f64) } else { 0.0 };
                 vec![MetricValue::Float(score)]
     }
 }
