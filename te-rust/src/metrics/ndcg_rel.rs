@@ -134,8 +134,8 @@ impl Measure for NdcgRelMeasure {
                     i += 1;
                 }
 
-                if num_rel > num_rel_ret && ideal_dcg > 0.0 {
-                    sum += ((num_rel - num_rel_ret) as f64) * results_dcg / ideal_dcg;
+                if ideal_dcg > 0.0 {
+                    sum += (num_rel as f64 - num_rel_ret as f64) * results_dcg / ideal_dcg;
                 }
 
                 let score = if num_rel > 0 { sum / (num_rel as f64) } else { 0.0 };
