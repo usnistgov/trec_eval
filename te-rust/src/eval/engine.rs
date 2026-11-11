@@ -129,7 +129,7 @@ pub fn evaluate_run(
     let mut summary_results = Vec::new();
     let total_qrels_queries = qrels.queries.len();
 
-    if config.summary_flag && num_queries_evaluated > 0 {
+    if config.summary_flag && (num_queries_evaluated > 0 || config.average_complete_flag) {
         for (m_idx, m) in measures.iter().enumerate() {
             if !m.is_summary_enabled() {
                 continue;
@@ -272,7 +272,7 @@ pub fn evaluate_run_jg(
     let mut summary_results = Vec::new();
     let total_qrels_queries = qrels.queries.len();
 
-    if config.summary_flag && num_queries_evaluated > 0 {
+    if config.summary_flag && (num_queries_evaluated > 0 || config.average_complete_flag) {
         for (m_idx, m) in measures.iter().enumerate() {
             if !m.is_summary_enabled() {
                 continue;

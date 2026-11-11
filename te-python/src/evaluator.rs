@@ -360,7 +360,7 @@ fn evaluate_custom_measures(
 
     // Compute aggregate for each custom measure
     let total_qrels_queries = qrels.queries.len();
-    if config.summary_flag && num_queries_evaluated > 0 {
+    if config.summary_flag && (num_queries_evaluated > 0 || config.average_complete_flag) {
         for (m_idx, meas) in custom_measures.iter().enumerate() {
             let meas_name = &custom_names[m_idx];
             let scores = &custom_query_scores[m_idx];

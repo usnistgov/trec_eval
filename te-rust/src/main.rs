@@ -249,7 +249,7 @@ fn main() {
     }
 
     // 8. Print summary results
-    if config.summary_flag && output.num_queries_evaluated > 0 {
+    if config.summary_flag {
         for s_eval in &output.summary_results {
             if let (Some(ci), true) = (&s_eval.ci, args.ci_pretty) {
                 if let MetricValue::Float(f) = &s_eval.value {
