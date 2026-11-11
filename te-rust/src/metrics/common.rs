@@ -38,6 +38,12 @@ pub fn parse_int_cutoffs(params: &str, default: &[usize]) -> Result<Vec<usize>, 
         }
     }
     list.sort_unstable();
+    if list.first() == Some(&0) {
+        return Err(MeasureParseError::new("rank cutoff must be at least 1"));
+    }
+    if list.windows(2).any(|pair| pair[0] == pair[1]) {
+        return Err(MeasureParseError::new("duplicate cutoffs"));
+    }
     Ok(list)
 }
 
@@ -64,6 +70,9 @@ pub fn parse_float_cutoffs(params: &str, default: &[f64]) -> Result<Vec<f64>, Me
 pub fn parse_sorted_float_cutoffs(params: &str, default: &[f64]) -> Result<Vec<f64>, MeasureParseError> {
     let mut list = parse_float_cutoffs(params, default)?;
     list.sort_by(f64::total_cmp);
+    if list.windows(2).any(|pair| pair[0] == pair[1]) {
+        return Err(MeasureParseError::new("duplicate cutoffs"));
+    }
     Ok(list)
 }
 
