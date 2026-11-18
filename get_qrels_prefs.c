@@ -170,7 +170,10 @@ te_get_qrels_prefs(EPI * epi, char *text_prefs_file,
     line_ptr = lines;
     ptr = trec_prefs_buf;
     while (*ptr) {
-  		if (*ptr == '#') {
+        /* Skip blank lines and comment lines */
+        while (*ptr != '\n' && isspace(*ptr))
+            ptr++;
+		if (*ptr == '\n' || *ptr == '#') {
 			ptr = index(ptr, '\n') + 1;
 			continue;
 		}
