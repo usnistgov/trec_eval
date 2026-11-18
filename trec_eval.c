@@ -380,6 +380,28 @@ int main(int argc, char * argv[])
     q_eval.num_values = accum_eval.num_values;
     q_eval.num_queries = 0;
 
+    /* Unless -c is given, every qrels topic must have results.  Check them
+       all before any topic is evaluated, so that a failure prints nothing
+       on standard output. */
+    if (!epi.average_complete_flag) {
+        for (i = 0; i < all_rel_info.num_q_rels; i++) {
+            if (epi.debug_query &&
+                strcmp(epi.debug_query, all_rel_info.rel_info[i].qid))
+                continue;
+            for (j = 0; j < all_results.num_q_results; j++) {
+                if (0 == strcmp(all_results.results[j].qid,
+                                all_rel_info.rel_info[i].qid))
+                    break;
+            }
+            if (j >= all_results.num_q_results) {
+                fprintf(stderr,
+                        "trec_eval: qrels qid '%s' not found in results\n",
+                        all_rel_info.rel_info[i].qid);
+                exit(4);
+            }
+        }
+    }
+
     /* For each topic which has both qrels and top results information,
        calculate, possibly print (if query_flag), and accumulate
        evaluation measures. */
@@ -401,12 +423,6 @@ int main(int argc, char * argv[])
             bogus_ranking.qid = all_rel_info.rel_info[i].qid;
             bogus_ranking.run_id = all_results.results[0].run_id;
             this_result = &bogus_ranking;
-        }
-
-        if (this_result == NULL) {
-            fprintf(stderr, "trec_eval: qrels qid '%s' not found in results\n",
-                    all_rel_info.rel_info[i].qid);
-            exit(4);
         }
 
         /* zero out all measures for new query */
