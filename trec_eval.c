@@ -404,7 +404,7 @@ int main(int argc, char * argv[])
         }
 
         if (this_result == NULL) {
-            fprintf(stderr, "trec_eval: result qid '%s' not found in qrels\n",
+            fprintf(stderr, "trec_eval: qrels qid '%s' not found in results\n",
                     all_rel_info.rel_info[i].qid);
             exit(4);
         }
