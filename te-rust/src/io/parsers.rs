@@ -5,8 +5,11 @@ use std::path::Path;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParseError {
+    /// The file has no lines at all.
     EmptyFile,
-    InvalidFieldCount { line_num: usize, expected: usize, found: usize },
+    /// The file has lines, but each is blank or a comment.
+    NoDataLines,
+    InvalidFieldCount { line_num: usize, expected: FieldCount, found: usize },
     InvalidInteger { line_num: usize, field: String, value: String },
     InvalidFloat { line_num: usize, field: String, value: String },
     DuplicateDocument { line_num: usize, qid: String, docno: String },
@@ -17,8 +20,9 @@ impl std::fmt::Display for ParseError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             ParseError::EmptyFile => write!(f, "File is empty"),
+            ParseError::NoDataLines => write!(f, "No data lines"),
             ParseError::InvalidFieldCount { line_num, expected, found } => {
-                write!(f, "Line {}: expected at least {} fields, found {}", line_num, expected, found)
+                write!(f, "Line {}: expected {} fields, found {}", line_num, expected, found)
             }
             ParseError::InvalidInteger { line_num, field, value } => {
                 write!(f, "Line {}: invalid integer for field '{}': '{}'", line_num, field, value)
@@ -37,6 +41,28 @@ impl std::fmt::Display for ParseError {
 }
 
 impl std::error::Error for ParseError {}
+
+/// The number of fields a line must have: exactly 4 in a qrels file, at least 6 in a run.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FieldCount {
+    Exactly(usize),
+    AtLeast(usize),
+}
+
+impl std::fmt::Display for FieldCount {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            FieldCount::Exactly(n) => write!(f, "{}", n),
+            FieldCount::AtLeast(n) => write!(f, "at least {}", n),
+        }
+    }
+}
+
+/// The error for a file that yielded no records after `line_count` lines.
+fn no_records(line_count: usize) -> IOError {
+    let error = if line_count == 0 { ParseError::EmptyFile } else { ParseError::NoDataLines };
+    IOError::FormatError(error)
+}
 
 #[derive(Debug)]
 pub enum IOError {
@@ -193,7 +219,7 @@ pub fn parse_trec_qrels<P: AsRef<Path>>(path: P) -> Result<QrelsData, IOError> {
         if parts.len() != 4 {
             return Err(IOError::FormatError(ParseError::InvalidFieldCount {
                 line_num,
-                expected: 4,
+                expected: FieldCount::Exactly(4),
                 found: parts.len(),
             }));
         }
@@ -220,7 +246,7 @@ pub fn parse_trec_qrels<P: AsRef<Path>>(path: P) -> Result<QrelsData, IOError> {
     }
 
     if raw_records.is_empty() {
-        return Err(IOError::FormatError(ParseError::EmptyFile));
+        return Err(no_records(line_num));
     }
 
     // Sort by qid first, then docno lexicographically ascending
@@ -310,7 +336,7 @@ pub fn parse_trec_qrels_jg<P: AsRef<Path>>(path: P) -> Result<QrelsJGData, IOErr
         if parts.len() != 4 {
             return Err(IOError::FormatError(ParseError::InvalidFieldCount {
                 line_num,
-                expected: 4,
+                expected: FieldCount::Exactly(4),
                 found: parts.len(),
             }));
         }
@@ -339,7 +365,7 @@ pub fn parse_trec_qrels_jg<P: AsRef<Path>>(path: P) -> Result<QrelsJGData, IOErr
     }
 
     if raw_records.is_empty() {
-        return Err(IOError::FormatError(ParseError::EmptyFile));
+        return Err(no_records(line_num));
     }
 
     // Sort by qid first, then jg, then docno lexicographically ascending
@@ -431,7 +457,7 @@ pub fn parse_trec_run<P: AsRef<Path>>(path: P) -> Result<RunData, IOError> {
         if parts.len() < 6 {
             return Err(IOError::FormatError(ParseError::InvalidFieldCount {
                 line_num,
-                expected: 6,
+                expected: FieldCount::AtLeast(6),
                 found: parts.len(),
             }));
         }
@@ -469,7 +495,7 @@ pub fn parse_trec_run<P: AsRef<Path>>(path: P) -> Result<RunData, IOError> {
     }
 
     if raw_records.is_empty() {
-        return Err(IOError::FormatError(ParseError::EmptyFile));
+        return Err(no_records(line_num));
     }
 
     // Sort raw records by qid first, then docno lexicographically ascending

@@ -236,11 +236,18 @@ In information retrieval, different ranking scores can result in identical simil
 ```rust
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ParseError {
-    EmptyFile,
-    InvalidFieldCount { line_num: usize, expected: usize, found: usize },
+    EmptyFile,   // no lines at all
+    NoDataLines, // only blank or comment lines
+    InvalidFieldCount { line_num: usize, expected: FieldCount, found: usize },
     InvalidInteger { line_num: usize, field: String, value: String },
     InvalidFloat { line_num: usize, field: String, value: String },
     DuplicateDocument { line_num: usize, qid: String, docno: String },
+    RelevanceOutOfBounds { line_num: usize, value: i64 },
+}
+
+pub enum FieldCount {
+    Exactly(usize), // qrels and qrels_jg: "expected 4 fields"
+    AtLeast(usize), // runs: "expected at least 6 fields"
 }
 
 #[derive(Debug)]
