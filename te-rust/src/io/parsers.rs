@@ -180,6 +180,7 @@ pub fn parse_trec_qrels<P: AsRef<Path>>(path: P) -> Result<QrelsData, IOError> {
         let trimmed = line.trim_matches(is_field_sep);
 
         if trimmed.is_empty() {
+            warnings.push(format!("Line {}: blank line skipped", line_num));
             continue;
         }
 
@@ -296,6 +297,7 @@ pub fn parse_trec_qrels_jg<P: AsRef<Path>>(path: P) -> Result<QrelsJGData, IOErr
         let trimmed = line.trim_matches(is_field_sep);
 
         if trimmed.is_empty() {
+            warnings.push(format!("Line {}: blank line skipped", line_num));
             continue;
         }
 

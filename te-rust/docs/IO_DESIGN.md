@@ -255,7 +255,7 @@ pub enum IOError {
 2. Track the 1-based line number.
 3. Trim leading and trailing ASCII whitespace (the characters of C `isspace`).
 4. If a line begins with `#` (after optional ASCII whitespace trimming), strip the leading `#` character and store the remainder of the line in the `comments` vector of our top-level data structure. Then skip to the next line.
-5. If the line is empty, skip it.
+5. If the line is empty, skip it. In a qrels or qrels_jg file, also record a warning that names the line, because `trec_eval` stops at a blank qrels line with "Malformed line" and exits 2. Its run reader skips blank lines without a message, and so does ours.
 6. Tokenize the line by splitting on whitespace.
 7. Validate field count:
     * For Qrels: Must be exactly 4 tokens.

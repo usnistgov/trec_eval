@@ -82,6 +82,8 @@ Example `qrels.txt`:
 302 0 LA010189-0001 1
 ```
 
+Blank lines are skipped with a warning that names the line. `trec_eval` stops at a blank line in a qrels file with "Malformed line" and exits 2.
+
 Lines that start with `#` are comments and are ignored. Comments in qrels files were a trec_eval 10.x feature to support documenting how a qrels file should be use to reproduce published scores.
 
 ### 2. System Run File
