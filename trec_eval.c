@@ -258,7 +258,7 @@ int main(int argc, char * argv[])
                 break;
             case 'N':
                 epi.num_docs_in_coll = str_to_long(optarg, &error);
-                if (error) {
+                if (error || epi.num_docs_in_coll < 0) {
                     fprintf(stderr, "trec_eval: Invalid number of documents in collection '%s'\n",
                             optarg);
                     exit(1);
