@@ -131,6 +131,8 @@ P_10                  	all	0.3980
 
 When `-q` is enabled, per-topic evaluations precede the `all` summary block.
 
+As in `trec_eval`, measures print in the order of `trec_eval`'s measure table, whatever the order of the `-m` options: `-m map -m num_q` prints `num_q` first. Measures that `trec_eval` lacks, such as `ndcg_p`, print after the others.
+
 ### Confidence Interval Output
 
 With `--ci` relational output:

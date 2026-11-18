@@ -10,7 +10,7 @@ When running `trec_eval` and `te-rust` on standard test runs, diff comparisons r
 1. **Missing measures in predefined groups**: `expand_group` in `registry.rs` omitted 18 measures from `all_trec`, 3 measures from `official`, 4 measures from `set`, and `runid`/`num_q` from `qrels_jg`.
 2. **Missing `num_q` measure**: `num_q` was not registered in the metric registry, leaving it missing from summary outputs.
 3. **Ordering in predefined groups**: When predefined groups are expanded, their member lists should follow the canonical C `trec_eval` definition order (`te_trec_measures[]`).
-4. **Command-line flexibility**: Individual `-m` flags passed on the CLI continue to be evaluated in user-specified insertion order.
+4. **Output order**: The CLI prints measures named by individual `-m` flags in the same canonical order, as `trec_eval` does, whatever the order of the flags. Measures that `trec_eval` lacks, such as `ndcg_p`, follow in the order requested.
 
 ---
 

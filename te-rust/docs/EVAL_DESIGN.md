@@ -439,4 +439,4 @@ P_5         030     0.2000
 ```
 
 *   When running with `-q`, per-query outputs are printed sequentially grouped by topic, followed by the `all` summary lines at the end.
-*   The default order of measures follows the order of registration in the active metrics registry, matching standard `trec_eval` layout.
+*   Measures print in the order of `trec_eval`'s measure table (`te_trec_measures` in `measures.c`), whatever the order of the `-m` options. Measures that `trec_eval` lacks print last, in the order requested.
