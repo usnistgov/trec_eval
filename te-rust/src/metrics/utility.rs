@@ -55,22 +55,19 @@ impl Measure for UtilityMeasure {
             None => return self.initial_values(),
         };
 
-        let num_ret = q_state.results_rel_list.len();
-
-        // Count total relevant retrieved
-        let mut num_rel_ret = 0;
-        for &rel in &q_state.results_rel_list {
-            if rel >= config.relevance_level {
-                num_rel_ret += 1;
-            }
-        }
+        // The four cells of the contingency table, in i64 so that no difference can wrap.
+        // num_rel_ret counts judged documents only, as trec_eval's does: at a negative -l,
+        // unjudged documents (RELVALUE_NONPOOL, RELVALUE_UNJUDGED) pass the level too.
+        let num_ret = q_state.results_rel_list.len() as i64;
+        let num_rel_ret = q_state.num_rel_ret as i64;
+        let num_rel = q_state.num_rel as i64;
 
         let a = num_rel_ret as f64;
         let b = (num_ret - num_rel_ret) as f64;
-        let c = (q_state.num_rel - num_rel_ret) as f64;
-        
+        let c = (num_rel - num_rel_ret) as f64;
+
         // d = num_docs_in_coll + num_rel_ret - num_ret - num_rel
-        let d = (config.num_docs_in_coll as i64 + num_rel_ret as i64 - num_ret as i64 - q_state.num_rel as i64) as f64;
+        let d = (config.num_docs_in_coll as i64 + num_rel_ret - num_ret - num_rel) as f64;
 
         let score = self.params[0] * a +
                     self.params[1] * b +
