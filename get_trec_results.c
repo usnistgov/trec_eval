@@ -122,6 +122,12 @@ te_get_trec_results(EPI * epi, char *text_results_file,
         size++;
     }
     trec_results_buf[size] = '\0';
+    if (strlen(trec_results_buf) != size) {
+        fprintf(stderr,
+                "trec_eval.get_results: NUL character in results file '%s'\n",
+                text_results_file);
+        return (UNDEF);
+    }
 
     /* Count number of non-comment lines in file */
     num_lines = 0;

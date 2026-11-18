@@ -144,6 +144,12 @@ te_get_qrels_prefs(EPI * epi, char *text_prefs_file,
         size++;
     }
     trec_prefs_buf[size] = '\0';
+    if (strlen(trec_prefs_buf) != (size_t) size) {
+        fprintf(stderr,
+                "trec_eval.get_qrels_prefs: NUL character in qrels file '%s'\n",
+                text_prefs_file);
+        return (UNDEF);
+    }
 
     /* Count number of non-comment lines in file */
     num_lines = 0;

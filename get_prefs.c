@@ -171,6 +171,12 @@ int te_get_prefs(EPI * epi, char *text_prefs_file, ALL_REL_INFO * all_rel_info)
         size++;
     }
     trec_prefs_buf[size] = '\0';
+    if (strlen(trec_prefs_buf) != (size_t) size) {
+        fprintf(stderr,
+                "trec_eval.get_prefs: NUL character in prefs file '%s'\n",
+                text_prefs_file);
+        return (UNDEF);
+    }
 
     /* Count number of non-comment lines in file */
     num_lines = 0;
