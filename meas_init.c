@@ -403,7 +403,7 @@ static int get_double_params(PARAMS * params, char *param_string)
     return (1);
 }
 
-/* Params are in comma separated form name=double. Eg, -m ndcg_p.1=4.0,2=8.0 */
+/* Params are in comma separated form name=double. Eg, -m ndcg.1=4.0,2=8.0 */
 static int get_param_pairs(PARAMS * params, char *param_string)
 {
     long num_params;
