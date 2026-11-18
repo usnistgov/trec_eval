@@ -2,7 +2,7 @@
 
 `te-rust` is the standalone command-line evaluation tool. It accepts standard TREC relevance judgments (qrels) and system run results files, evaluates requested measures, and prints relational summary outputs.
 
-It is a drop-in replacement for `trec_eval`, supporting the same command-line options and measure specifications. If you find an incompatibilty with trec_eval 10.x, that is a bug on our part
+It is meant as a drop-in replacement for `trec_eval` 10.x: it reads the same files and takes the same short options and measure specifications, with the exceptions listed in [Differences from `trec_eval`](#differences-from-trec_eval). A difference that concerns one measure, one file format or the output is described with it, in the measure pages or in the sections of this page. If you find an incompatibility with trec_eval 10.x that these pages do not describe, that is a bug on our part.
 
 ---
 
@@ -33,8 +33,9 @@ te-rust [OPTIONS] <QRELS_FILE> <RUN_FILE>
 | `-c` | | **Complete set average**: Average over the complete set of queries present in the qrels file rather than the intersection of queries evaluated in the run. Topics missing from the run evaluate to 0.0. | Disabled |
 | `-J` | | **Judged docs only**: Remove all unjudged documents from the retrieved ranking before evaluating. | Disabled |
 | `-M` | `<int>` | Maximum number of retrieved documents per topic to evaluate. | No limit |
-| `-N` | `<int>` | Number of documents in the collection (used for set-based recall and falloff calculations). | `0` |
+| `-N` | `<int>` | Number of documents in the collection. Only `utility` reads it, when its fourth coefficient is not zero. | `0` |
 | `-m` | `<measure>` | Calculate only the indicated measure or measure group (e.g. `-m map`, `-m P.5,10`, `-m official`). Repeatable. | `official` |
+| `-R` | `<format>` | Format of the relevance judgments file: `qrels` or `qrels_jg`. | `qrels` |
 | | `--global-gains <gains>` | Custom global relevance-to-gain mapping (e.g. `--global-gains 1=3.5,2=9.0`). | Default gains |
 
 ### Bootstrap Confidence Interval Options
@@ -146,3 +147,27 @@ map                   	all	0.2543 [0.2180, 0.2915]
 Rprec                 	all	0.2812 [0.2430, 0.3201]
 bpref                 	all	0.2589 [0.2215, 0.2974]
 ```
+
+---
+
+## Differences from `trec_eval`
+
+### `trec_eval` features that `te-rust` lacks
+
+- A run read from standard input. `trec_eval` reads the run from standard input when the run file is `-`; `te-rust` looks for a file named `-`.
+- The options `-T` (results format), `-D` (debug level), `-Z` (z-score file), `-o` (old output format) and `-v` (version). `te-rust` refuses them as unexpected arguments; `-V` prints its version.
+- The long options of `trec_eval`, such as `--Max_retrieved_per_topic=5` and `--complete_rel_info_wanted`, other than `--help` and `--version`. `te-rust` refuses them.
+- The preference measures (`prefs_simp` and the other `prefs_*` measures, and the `prefs` and `all_prefs` groups), and the `prefs` and `qrels_prefs` formats for `-R`. `te-rust` reports an unknown measure or an unsupported format.
+
+### `te-rust` extensions
+
+`trec_eval` refuses each of these with "illegal measure" and exit status 1.
+
+- Cutoffs written after an underscore: `P_5`, and likewise `P_avgjg_5`, `recall_10`, `ndcg_cut_10`, `map_cut_100`, `success_5` and `unj_10`. `P_5` prints the same row as `P.5`.
+- Cutoffs written after `@`: `P@5`, `recall@10`, `success@5`, `unj@10` and `relative_P@5`, and `ndcg@10` and `map@100`, which mean `ndcg_cut.10` and `map_cut.100`.
+- The names `mrr` and `rr` for `recip_rank`, and `precision` for `P`, and measure and group names in any case, such as `MAP`.
+- The measure `ndcg_p`. The `trec_eval` source includes `m_ndcg_p.c`, but `trec_eval` 10.x does not register or build it, so `-m ndcg_p` fails there. If `trec_eval` registers it, `ndcg_p` becomes a shared measure and leaves this list.
+
+`te-rust` also reads the value of a short option after `=`, as in `-l=2`, `-M=100`, `-N=10`, `-m=map` or `-R=qrels`, as if it were a separate argument. `trec_eval` reads the `=` as part of the value. It refuses `-m=map` and `-R=qrels`. `trec_eval` 10.0 reads `-l=2`, `-M=100` and `-N=10` as 0 without a message, and the C code in `trec_eval/` on this branch refuses them.
+
+The confidence-interval options, `--help-measures`, `--help-measure` and `--global-gains` are also `te-rust`'s own.

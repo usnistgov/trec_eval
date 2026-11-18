@@ -26,12 +26,18 @@ where:
 
 ## NDCG Variants
 
-### 1. Exponential Gains (`ndcg_p`)
-Computes NDCG using exponential gains $\text{gain}(r) = 2^r - 1$:
+### 1. Original Discount (`ndcg_p`)
+Computes NDCG with the gains of `ndcg`, the relevance level by default, and the original discount of Järvelin and Kekäläinen (2002): rank 1 is not discounted, and rank $i \ge 2$ is divided by $\log_2 i$.
 
-$$\text{gain}(r) = 2^r - 1$$
+$$\text{DCG}_p = \text{gain}(\text{rel}_1) + \sum_{i=2}^{n} \frac{\text{gain}(\text{rel}_i)}{\log_2 i}$$
 
-- Usage: `-m ndcg_p`
+`ndcg` divides rank $i$ by $\log_2(i + 1)$, so the two differ from rank 2 on. For grades 1, 0, 2 at ranks 1 to 3, the ideal order is 2, 1, 0, and
+
+$$\text{ndcg\_p} = \frac{1 + 2 / \log_2 3}{2 + 1} = 0.7540, \qquad \text{ndcg} = \frac{1 + 2 / \log_2 4}{2 + 1 / \log_2 3} = 0.7602.$$
+
+Gains may be zero or negative, and level 0 may be given a gain. `ndcg_p` is 0 when the run retrieves no relevant document. `trec_eval` 10.x ships `m_ndcg_p.c` but does not register it; see [Differences from `trec_eval`](../cli.md#differences-from-trec_eval).
+
+- Usage: `-m ndcg_p`, or `-m ndcg_p.1=3.5,2=9.0` for custom gains
 
 ### 2. Relative Relevance Level Gains (`ndcg_rel`)
 Maps relevance grades to binary indicators relative to the relevance threshold cutoff $l$:

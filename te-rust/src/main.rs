@@ -77,7 +77,7 @@ struct Args {
     #[arg(long = "help-measure", value_name = "name")]
     help_measure: Option<String>,
 
-    /// Format of the relevance judgments file (e.g. qrels, qrels_jg, prefs, qrels_prefs)
+    /// Format of the relevance judgments file: qrels or qrels_jg
     #[arg(short = 'R', long = "rel-format", default_value = "qrels")]
     rel_format: String,
 
