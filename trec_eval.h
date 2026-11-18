@@ -226,6 +226,10 @@ typedef struct {
 #define RELVALUE_NONPOOL -1
 #define RELVALUE_UNJUDGED -2
 
+/* Range of relevance levels accepted in a qrels file */
+#define MIN_REL_LEVEL -127
+#define MAX_REL_LEVEL 127
+
 
 /* Defined constants - non-important but used in several places */
 #define INIT_NUM_QUERIES 50

@@ -220,6 +220,14 @@ int te_get_qrels(EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
                     lines[i].rel);
             return (UNDEF);
         }
+        if (text_qrels_ptr->rel < MIN_REL_LEVEL ||
+            text_qrels_ptr->rel > MAX_REL_LEVEL) {
+            fprintf(stderr, "trec_eval: Relevance level '%s' of document %s "
+                    "in topic %s is outside %d to %d\n", lines[i].rel,
+                    lines[i].docno, lines[i].qid, MIN_REL_LEVEL,
+                    MAX_REL_LEVEL);
+            return (UNDEF);
+        }
         text_qrels_ptr++;
     }
     /* End last qid */
