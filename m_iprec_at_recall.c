@@ -77,7 +77,10 @@ te_calc_iprec_at_recall(const EPI * epi, const REL_INFO * rel_info,
     /* Loop over all retrieved docs in reverse order.  Needs to be
        reverse order since are calcualting interpolated precision.
        Int_Prec (X) defined to be MAX (Prec (Y)) for all Y >= X. */
-    precis = (double) rr.num_rel_ret / (double) rr.num_ret;
+    if (rr.num_ret)
+        precis = (double) rr.num_rel_ret / (double) rr.num_ret;
+    else
+        precis = 0.0;
     int_precis = precis;
     rel_so_far = rr.num_rel_ret;
     for (i = rr.num_ret; i > 0 && rel_so_far > 0; i--) {
