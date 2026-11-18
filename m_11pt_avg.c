@@ -12,10 +12,12 @@
 #include "functions.h"
 #include "trec_format.h"
 
+static int te_init_11ptavg(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval);
 static int
 te_calc_11ptavg(const EPI * epi, const REL_INFO * rel_info,
                 const RESULTS * results, const TREC_MEAS * tm,
                 TREC_EVAL * eval);
+static int comp_double(const void *ptr1, const void *ptr2);
 static double double_cutoff_array[] = {
     0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0
 };
@@ -39,7 +41,7 @@ TREC_MEAS te_meas_11pt_avg = { "11pt_avg",
     To get 3-pt_avg as in trec_eval version 8 and earlier, use\n\
       trec_eval -m 11-pt_avg.0.2,0.5,0.8 ...\n\
     Default usage: -m 11-pt_avg.0.0,.1,.2,.3,.4,.5,.6,.7,.8..9,1.0\n",
-    te_init_meas_s_double_p_double,
+    te_init_11ptavg,
     te_calc_11ptavg,
     te_acc_meas_s,
     te_calc_avg_meas_s,
@@ -47,6 +49,16 @@ TREC_MEAS te_meas_11pt_avg = { "11pt_avg",
     te_print_final_meas_s_double_p,
     &default_11ptavg_cutoffs, -1
 };
+
+/* te_calc_11ptavg needs the recall points in increasing order */
+static int te_init_11ptavg(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
+{
+    if (UNDEF == te_init_meas_s_double_p_double(epi, tm, eval))
+        return (UNDEF);
+    qsort(tm->meas_params->param_values, tm->meas_params->num_params,
+          sizeof(double), comp_double);
+    return (1);
+}
 
 static int
 te_calc_11ptavg(const EPI * epi, const REL_INFO * rel_info,
@@ -113,4 +125,13 @@ te_calc_11ptavg(const EPI * epi, const REL_INFO * rel_info,
     (void) Free(cutoffs);
 
     return (1);
+}
+
+static int comp_double(const void *ptr1, const void *ptr2)
+{
+    if (*((double *) ptr1) < *((double *) ptr2))
+        return (-1);
+    if (*((double *) ptr1) > *((double *) ptr2))
+        return (1);
+    return (0);
 }
