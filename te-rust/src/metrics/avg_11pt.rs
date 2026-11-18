@@ -6,7 +6,10 @@ pub struct Avg11PtMeasure {
 }
 
 impl Avg11PtMeasure {
-    pub fn new(cutoffs: Vec<f64>, params_str: &str) -> Self {
+    /// `calc` walks the recall levels from the highest down, so they are sorted here.
+    /// A level may repeat, and then counts once for each time it is given.
+    pub fn new(mut cutoffs: Vec<f64>, params_str: &str) -> Self {
+        cutoffs.sort_by(f64::total_cmp);
         let name = if params_str.is_empty() {
             "11pt_avg".to_string()
         } else {

@@ -55,7 +55,7 @@ Interpolated precision at recall level $r$:
 
 $$P_{\text{interp}}(r) = \max_{r' \ge r} P(r')$$
 
-- `11pt_avg`: Arithmetic mean of the 11 interpolated precision levels.
+- `11pt_avg`: Arithmetic mean of the 11 interpolated precision levels. Levels given as parameters, as in `-m 11pt_avg.1.0,0.5`, are sorted first. `trec_eval` 10.x keeps their order, and its value then depends on that order.
 - `iprec_at_recall`: Reports the 11 individual interpolated precision scores.
 - Usage: `-m 11pt_avg` or `-m iprec_at_recall`
 

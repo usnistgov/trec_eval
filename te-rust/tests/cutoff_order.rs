@@ -161,13 +161,28 @@ fn utility_coefficients_keep_their_positions() {
 }
 
 #[test]
-fn eleven_pt_avg_keeps_list_order_like_trec_eval() {
-    // trec_eval reads 11pt_avg with get_double_params, which does not sort,
-    // and walks the list from its last entry, so both tools depend on the order.
+fn eleven_pt_avg_does_not_depend_on_list_order() {
+    // Relevant documents at ranks 1 and 4 of 4. Interpolated precision is 1 at recall 0.5
+    // and 2/4 at recall 1.0, so the average is 0.75 in either order. trec_eval reads 11pt_avg
+    // with get_double_params, which does not sort, and walks the list from its last entry,
+    // so it prints 1.0000 for the descending list.
     let qrels = fixture("two-relevant.qrels");
     let run = fixture("two-relevant.run");
     let ascending = te_rust(&["-m", "11pt_avg.0.5,1.0", &qrels, &run]);
     let descending = te_rust(&["-m", "11pt_avg.1.0,0.5", &qrels, &run]);
     assert_eq!(rows(&ascending)[0].2, "0.7500");
-    assert_eq!(rows(&descending)[0].2, "1.0000");
+    assert_eq!(rows(&descending)[0].2, "0.7500");
+    // The row name keeps the levels as given, as in trec_eval.
+    assert_eq!(rows(&descending)[0].0, "11pt_avg_1.0,0.5");
+}
+
+#[test]
+fn eleven_pt_avg_counts_a_repeated_level_each_time() {
+    // (1 + 1 + 0.5) / 3, whatever the order.
+    let qrels = fixture("two-relevant.qrels");
+    let run = fixture("two-relevant.run");
+    for levels in ["0.5,0.5,1.0", "0.5,1.0,0.5", "1.0,0.5,0.5"] {
+        let out = te_rust(&["-m", &format!("11pt_avg.{levels}"), &qrels, &run]);
+        assert_eq!(rows(&out)[0].2, "0.8333", "{levels}");
+    }
 }
