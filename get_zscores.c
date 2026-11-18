@@ -99,6 +99,16 @@ te_get_zscores(const EPI * epi, const char *zscores_file,
         size++;
     }
     trec_zscores_buf[size] = '\0';
+    for (ptr = trec_zscores_buf, i = 1; *ptr; ptr++) {
+        if (*ptr == '\n')
+            i++;
+        else if (*ptr == '\r' && ptr[1] != '\n') {
+            fprintf(stderr, "trec_eval.get_zscores: CR character "
+                    "without LF in line %ld of zscores file '%s'\n",
+                    i, zscores_file);
+            return (UNDEF);
+        }
+    }
 
     /* Count number of lines in file */
     num_lines = 0;

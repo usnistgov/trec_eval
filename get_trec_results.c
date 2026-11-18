@@ -128,6 +128,16 @@ te_get_trec_results(EPI * epi, char *text_results_file,
                 text_results_file);
         return (UNDEF);
     }
+    for (ptr = trec_results_buf, i = 1; *ptr; ptr++) {
+        if (*ptr == '\n')
+            i++;
+        else if (*ptr == '\r' && ptr[1] != '\n') {
+            fprintf(stderr, "trec_eval.get_results: CR character "
+                    "without LF in line %ld of results file '%s'\n",
+                    i, text_results_file);
+            return (UNDEF);
+        }
+    }
 
     /* Count number of non-comment lines in file */
     num_lines = 0;

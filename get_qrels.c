@@ -139,6 +139,16 @@ int te_get_qrels(EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
                 text_qrels_file);
         return (UNDEF);
     }
+    for (ptr = trec_qrels_buf, i = 1; *ptr; ptr++) {
+        if (*ptr == '\n')
+            i++;
+        else if (*ptr == '\r' && ptr[1] != '\n') {
+            fprintf(stderr, "trec_eval.get_qrels: CR character "
+                    "without LF in line %ld of qrels file '%s'\n",
+                    i, text_qrels_file);
+            return (UNDEF);
+        }
+    }
 
     /* Count number of non-comment lines in file */
     num_lines = 0;
