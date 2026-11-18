@@ -637,7 +637,7 @@ static void get_debug_level_query(EPI * epi, char *optarg)
         *ptr++ = '\0';
         epi->debug_query = ptr;
     }
-    epi->debug_level = str_to_long(optarg, &error);
+    epi->debug_level = str_to_long_ctx(optarg, &error, "option -D");
     if (error) {
         fprintf(stderr, "trec_eval: Illegal debug level '%s'\n", optarg);
         exit(1);

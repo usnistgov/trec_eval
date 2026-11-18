@@ -10,6 +10,7 @@
 #include "trec_eval.h"
 #include "functions.h"
 #include <errno.h>
+#include <stdarg.h>
 
 /* Procedures for initialization of several default formats of measure values.
    Used in init_meas procedure description of TREC_MEAS in trec_eval.h:
@@ -25,11 +26,15 @@
 */
 
 /* Static utility functions defined later */
-static int get_long_cutoffs(PARAMS * params, char *param_string);
-static int get_double_cutoffs(PARAMS * params, char *param_string);
-static int get_double_params(PARAMS * params, char *param_string);
+static int get_long_cutoffs(PARAMS * params, char *param_string,
+                            const char *measure);
+static int get_double_cutoffs(PARAMS * params, char *param_string,
+                              const char *measure);
+static int get_double_params(PARAMS * params, char *param_string,
+                             const char *measure);
 static int get_param_pairs(PARAMS * params, char *param_string);
-static double str_to_double(const char *str, int *error);
+static double str_to_double(const char *str, int *error, const char *fmt,
+                            ...);
 static int comp_long(const void * ptr1, const void * ptr2);
 static int comp_double(const void * ptr1, const void * ptr2);
 static char *append_long(char *name, long value);
@@ -95,7 +100,8 @@ int te_init_meas_a_double_cut_long(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
         while (meas_arg_ptr->measure_name) {
             if (0 == strcmp(meas_arg_ptr->measure_name, tm->name)) {
                 if (UNDEF == get_long_cutoffs(tm->meas_params,
-                                              meas_arg_ptr->parameters))
+                                              meas_arg_ptr->parameters,
+                                              tm->name))
                     return (UNDEF);
                 break;
             }
@@ -138,7 +144,8 @@ int te_init_meas_a_double_cut_double(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval
         while (meas_arg_ptr->measure_name) {
             if (0 == strcmp(meas_arg_ptr->measure_name, tm->name)) {
                 if (UNDEF == get_double_cutoffs(tm->meas_params,
-                                               meas_arg_ptr->parameters))
+                                               meas_arg_ptr->parameters,
+                                               tm->name))
                     return (UNDEF);
                 break;
             }
@@ -184,7 +191,8 @@ int te_init_meas_s_double_p_double(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
         while (meas_arg_ptr->measure_name) {
             if (0 == strcmp(meas_arg_ptr->measure_name, tm->name)) {
                 if (UNDEF == get_double_params(tm->meas_params,
-                                              meas_arg_ptr->parameters))
+                                              meas_arg_ptr->parameters,
+                                              tm->name))
                     return (UNDEF);
                 break;
             }
@@ -255,7 +263,8 @@ int te_init_meas_s_double_p_pair(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
 
 
 /* ----------------- Utility procedures for initialization -------------- */
-static int get_long_cutoffs(PARAMS * params, char *param_string)
+static int get_long_cutoffs(PARAMS * params, char *param_string,
+                            const char *measure)
 {
     long num_cutoffs;
     char *ptr, *start_ptr;
@@ -285,7 +294,9 @@ static int get_long_cutoffs(PARAMS * params, char *param_string)
     for (ptr = param_string; *ptr; ptr++) {
         if (*ptr == ',') {
             *ptr = '\0';
-            cutoffs[num_cutoffs++] = str_to_long(start_ptr, &error);
+            cutoffs[num_cutoffs++] =
+                str_to_long_ctx(start_ptr, &error, "cutoff of measure '%s'",
+                                measure);
             if (error) {
                 fprintf(stderr, "trec_eval: Illegal cutoff '%s'\n",
                         start_ptr);
@@ -294,7 +305,8 @@ static int get_long_cutoffs(PARAMS * params, char *param_string)
             start_ptr = ptr + 1;
         }
     }
-    cutoffs[num_cutoffs++] = str_to_long(start_ptr, &error);
+    cutoffs[num_cutoffs++] =
+        str_to_long_ctx(start_ptr, &error, "cutoff of measure '%s'", measure);
     if (error) {
         fprintf(stderr, "trec_eval: Illegal cutoff '%s'\n",
                 start_ptr);
@@ -319,7 +331,8 @@ static int get_long_cutoffs(PARAMS * params, char *param_string)
     return (1);
 }
 
-static int get_double_cutoffs(PARAMS * params, char *param_string)
+static int get_double_cutoffs(PARAMS * params, char *param_string,
+                              const char *measure)
 {
     long num_cutoffs;
     char *ptr, *start_ptr;
@@ -349,7 +362,9 @@ static int get_double_cutoffs(PARAMS * params, char *param_string)
     for (ptr = param_string; *ptr; ptr++) {
         if (*ptr == ',') {
             *ptr = '\0';
-            cutoffs[num_cutoffs++] = str_to_double(start_ptr, &error);
+            cutoffs[num_cutoffs++] =
+                str_to_double(start_ptr, &error, "cutoff of measure '%s'",
+                              measure);
             if (error) {
                 fprintf(stderr, "trec_eval: Illegal cutoff '%s'\n",
                         start_ptr);
@@ -358,7 +373,8 @@ static int get_double_cutoffs(PARAMS * params, char *param_string)
             start_ptr = ptr + 1;
         }
     }
-    cutoffs[num_cutoffs++] = str_to_double(start_ptr, &error);
+    cutoffs[num_cutoffs++] =
+        str_to_double(start_ptr, &error, "cutoff of measure '%s'", measure);
     if (error) {
         fprintf(stderr, "trec_eval: Illegal cutoff '%s'\n",
                 start_ptr);
@@ -379,7 +395,8 @@ static int get_double_cutoffs(PARAMS * params, char *param_string)
     return (1);
 }
 
-static int get_double_params(PARAMS * params, char *param_string)
+static int get_double_params(PARAMS * params, char *param_string,
+                             const char *measure)
 {
     long num_params;
     char *ptr, *start_ptr;
@@ -407,7 +424,9 @@ static int get_double_params(PARAMS * params, char *param_string)
     for (ptr = param_string; *ptr; ptr++) {
         if (*ptr == ',') {
             *ptr = '\0';
-            values[num_params++] = str_to_double(start_ptr, &error);
+            values[num_params++] =
+                str_to_double(start_ptr, &error, "parameter of measure '%s'",
+                              measure);
             if (error) {
                 fprintf(stderr, "trec_eval: Illegal parameter '%s'\n",
                         start_ptr);
@@ -416,7 +435,8 @@ static int get_double_params(PARAMS * params, char *param_string)
             start_ptr = ptr + 1;
         }
     }
-    values[num_params++] = str_to_double(start_ptr, &error);
+    values[num_params++] =
+        str_to_double(start_ptr, &error, "parameter of measure '%s'", measure);
     if (error) {
         fprintf(stderr, "trec_eval: Illegal parameter '%s'\n",
                 start_ptr);
@@ -478,7 +498,11 @@ static int get_param_pairs(PARAMS * params, char *param_string)
             start_ptr = ptr + 1;
         } else if (*ptr == ',') {
             *ptr = '\0';
-            values[num_params++].value = str_to_double(start_ptr, &error);
+            values[num_params].value =
+                str_to_double(start_ptr, &error, "value of '%s' in '%s'",
+                              values[num_params].name,
+                              params->printable_params);
+            num_params++;
             if (error) {
                 fprintf(stderr, "trec_eval: Illegal parameter value '%s'\n",
                         start_ptr);
@@ -487,7 +511,10 @@ static int get_param_pairs(PARAMS * params, char *param_string)
             start_ptr = ptr + 1;
         }
     }
-    values[num_params++].value = str_to_double(start_ptr, &error);
+    values[num_params].value =
+        str_to_double(start_ptr, &error, "value of '%s' in '%s'",
+                      values[num_params].name, params->printable_params);
+    num_params++;
     if (error) {
         fprintf(stderr, "trec_eval: Illegal parameter value '%s'\n",
                 start_ptr);
@@ -501,28 +528,38 @@ static int get_param_pairs(PARAMS * params, char *param_string)
 }
 
 /* Convert a string to a finite double, with the error checking of
-   str_to_long */
-static double str_to_double(const char *str, int *error)
+   str_to_long_ctx: an error or warning ends with fmt and the arguments
+   after it, in parentheses, to say where the value comes from */
+static double str_to_double(const char *str, int *error, const char *fmt,
+                            ...)
 {
     char *endptr = NULL;
     double value;
+    va_list ap;
 
     errno = 0;
     *error = 0;
     value = strtod(str, &endptr);
     if (errno == ERANGE) {
-        fprintf(stderr, "Error: value `%s' out of range.\n", str);
+        fprintf(stderr, "Error: value `%s' out of range", str);
         *error = 1;
     } else if (endptr == str) {
-        fprintf(stderr, "Error: value `%s' could not be parsed.\n", str);
+        fprintf(stderr, "Error: value `%s' could not be parsed", str);
         *error = 1;
     } else if (!isfinite(value)) {
-        fprintf(stderr, "Error: value `%s' is not a finite number.\n", str);
+        fprintf(stderr, "Error: value `%s' is not a finite number", str);
         *error = 1;
     } else if (*endptr != '\0') {
-        fprintf(stderr, "Warning, value `%s' partially read as `%.*s'.\n",
+        fprintf(stderr, "Warning, value `%s' partially read as `%.*s'",
                 str, (int) (endptr - str), str);
+    } else {
+        return value;
     }
+    va_start(ap, fmt);
+    fputs(" (", stderr);
+    vfprintf(stderr, fmt, ap);
+    fputs(").\n", stderr);
+    va_end(ap);
     return value;
 }
 

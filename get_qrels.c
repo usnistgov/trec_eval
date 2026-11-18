@@ -11,28 +11,46 @@
 #include "trec_format.h"
 #include <ctype.h>
 #include <errno.h>
+#include <stdarg.h>
 
 /*
- * Convert a string to a long, with error checking.
+ * Convert a string to a long, with error checking. Unless fmt is NULL, an
+ * error or warning ends with fmt and the arguments after it, formatted as
+ * by printf, in parentheses: they say where the value comes from.
  */
-long str_to_long(const char * str, int * error) {
+long str_to_long_ctx(const char * str, int * error, const char * fmt, ...) {
     char *endptr = NULL;
+    va_list ap;
     errno = 0;
 
     *error = 0;
     long value = strtol(str, &endptr, 10);
     if (errno == ERANGE) {
         /* value is 0 */
-        fprintf(stderr, "Error: value `%s' out of range.\n", str);
+        fprintf(stderr, "Error: value `%s' out of range", str);
         *error = 1;
     } else if (endptr == str) {
         /* value is 0 */
-        fprintf(stderr, "Error: value `%s' could not be parsed.\n", str);
+        fprintf(stderr, "Error: value `%s' could not be parsed", str);
         *error = 1;
     } else if (*endptr != '\0') {
-        fprintf(stderr, "Warning, value `%s' partially read as `%ld'.\n", str, value);
+        fprintf(stderr, "Warning, value `%s' partially read as `%ld'", str, value);
+    } else {
+        return value;
     }
+    if (fmt != NULL) {
+        va_start(ap, fmt);
+        fputs(" (", stderr);
+        vfprintf(stderr, fmt, ap);
+        fputc(')', stderr);
+        va_end(ap);
+    }
+    fputs(".\n", stderr);
     return value;
+}
+
+long str_to_long(const char * str, int * error) {
+    return str_to_long_ctx(str, error, NULL);
 }
 
 /* Read all relevance information from text_qrels_file.
@@ -214,7 +232,10 @@ int te_get_qrels(EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
                 current_qid, "qrels", text_info_ptr};
         }
         text_qrels_ptr->docno = lines[i].docno;
-        text_qrels_ptr->rel = str_to_long(lines[i].rel, &error);
+        text_qrels_ptr->rel =
+            str_to_long_ctx(lines[i].rel, &error,
+                            "qrels file '%s', topic %s, document %s",
+                            text_qrels_file, lines[i].qid, lines[i].docno);
         if (error) {
             fprintf(stderr, "trec_eval: Unusable relevance level '%s'\n",
                     lines[i].rel);

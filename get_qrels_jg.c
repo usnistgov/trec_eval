@@ -225,7 +225,11 @@ te_get_qrels_jg(EPI * epi, char *text_qrels_file, ALL_REL_INFO * all_rel_info)
             text_jg_ptr->text_qrels = text_qrels_ptr;
         }
         text_qrels_ptr->docno = lines[i].docno;
-        text_qrels_ptr->rel = str_to_long(lines[i].rel, &error);
+        text_qrels_ptr->rel =
+            str_to_long_ctx(lines[i].rel, &error,
+                            "qrels file '%s', topic %s, jg %s, document %s",
+                            text_qrels_file, lines[i].qid, lines[i].jg,
+                            lines[i].docno);
         if (error) {
             fprintf(stderr, "trec_eval: Unusable relevance level '%s'\n",
                     lines[i].rel);
