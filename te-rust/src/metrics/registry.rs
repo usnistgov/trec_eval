@@ -315,6 +315,7 @@ fn canonicalize_measure_spec(arg: &str) -> (String, String) {
 /// `root[.params]` (or alias like `root@cutoff`) measure specification.
 /// Parameters are passed to the measure's factory. Errors carry the offending argument.
 pub fn resolve_measures(requested: &[String]) -> Result<Vec<Box<dyn Measure>>, MeasureParseError> {
+    metrics::common::take_parse_warnings();
     // 1. Expand any groups into concrete measure argument strings.
     let mut expanded: Vec<String> = Vec::new();
     for req in requested {

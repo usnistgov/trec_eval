@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use pyo3::exceptions::{PyTypeError, PyValueError};
+use pyo3::exceptions::{PyTypeError, PyUserWarning, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyList, PySequence, PySet, PyString};
 use te_rust::eval::alignment::align_query;
@@ -63,6 +63,10 @@ impl Evaluator {
             resolve_measures(&measure_names).map_err(|e| {
                 PyValueError::new_err(format!("Invalid measure configuration: {}", e))
             })?;
+            let category = qrels.py().get_type_bound::<PyUserWarning>();
+            for warning in te_rust::metrics::common::take_parse_warnings() {
+                PyErr::warn_bound(qrels.py(), category.as_any(), &warning, 1)?;
+            }
         }
 
         let parsed_gains = global_gains

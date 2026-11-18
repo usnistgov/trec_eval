@@ -29,12 +29,12 @@ te-rust [OPTIONS] <QRELS_FILE> <RUN_FILE>
 | :--- | :--- | :--- | :--- |
 | `-q` | | Print evaluations for each individual query/topic in addition to the summary averages. | Disabled |
 | `-n` | | Suppress printing of the summary averages/totals at the end. | Disabled |
-| `-l` | `<int>` | Minimum relevance level at which a document is considered relevant. Documents with judgments $< l$ are considered non-relevant. | `1` |
+| `-l` | `<int>` | Minimum relevance level at which a document is considered relevant. Documents with judgments $< l$ are considered non-relevant. As in `trec_eval`, a value such as `1.5` is read as its leading integer, 1, with a warning. | `1` |
 | `-c` | | **Complete set average**: Average over the complete set of queries present in the qrels file rather than the intersection of queries evaluated in the run. Topics missing from the run evaluate to 0.0. | Disabled |
 | `-J` | | **Judged docs only**: Remove all unjudged documents from the retrieved ranking before evaluating. | Disabled |
-| `-M` | `<int>` | Maximum number of retrieved documents per topic to evaluate. | No limit |
-| `-N` | `<int>` | Number of documents in the collection (used for set-based recall and falloff calculations). | `0` |
-| `-m` | `<measure>` | Calculate only the indicated measure or measure group (e.g. `-m map`, `-m P.5,10`, `-m official`). Repeatable. | `official` |
+| `-M` | `<int>` | Maximum number of retrieved documents per topic to evaluate. Read as `-l` is. | No limit |
+| `-N` | `<int>` | Number of documents in the collection (used for set-based recall and falloff calculations). Read as `-l` is. | `0` |
+| `-m` | `<measure>` | Calculate only the indicated measure or measure group (e.g. `-m map`, `-m P.5,10`, `-m official`). Repeatable. An integer cutoff is read as `-l` is, so `-m P.5x` gives `P_5` with a warning. | `official` |
 | | `--global-gains <gains>` | Custom global relevance-to-gain mapping (e.g. `--global-gains 1=3.5,2=9.0`). | Default gains |
 
 ### Bootstrap Confidence Interval Options

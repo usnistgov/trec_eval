@@ -55,25 +55,40 @@ impl std::fmt::Display for IOError {
 
 impl std::error::Error for IOError {}
 
+/// Reads the leading integer of `value` as `trec_eval`'s `str_to_long` (`get_qrels.c:18`) does:
+/// an optional sign, then decimal digits. Returns the integer and whether characters follow it,
+/// so `1.5` reads as `(1, true)`. A value with no leading digit is `InvalidDigit`, and an integer
+/// that does not fit in an `i64` is `PosOverflow` or `NegOverflow`.
+pub fn read_leading_integer(value: &str) -> Result<(i64, bool), std::num::IntErrorKind> {
+    let start = usize::from(value.starts_with(['+', '-']));
+    let digits = value[start..].bytes().take_while(u8::is_ascii_digit).count();
+    if digits == 0 {
+        return Err(std::num::IntErrorKind::InvalidDigit);
+    }
+    let end = start + digits;
+    // A sign and digits can fail to parse only by overflowing.
+    let integer = value[..end].parse::<i64>().map_err(|_| {
+        if value.starts_with('-') {
+            std::num::IntErrorKind::NegOverflow
+        } else {
+            std::num::IntErrorKind::PosOverflow
+        }
+    })?;
+    Ok((integer, end < value.len()))
+}
+
 /// Reads a grade as `trec_eval`'s `str_to_long` does (`get_qrels.c:18`): the leading integer, with
 /// a warning when characters follow it, so `1.5` reads as 1 and `0.9` as 0. A value with no leading
 /// integer, or one that does not fit in an `i64`, is an error.
 fn parse_grade(value: &str, line_num: usize, warnings: &mut Vec<String>) -> Result<i64, IOError> {
-    let invalid = || {
+    let (rel, partial) = read_leading_integer(value).map_err(|_| {
         IOError::FormatError(ParseError::InvalidInteger {
             line_num,
             field: "rel".to_string(),
             value: value.to_string(),
         })
-    };
-    let start = usize::from(value.starts_with(['+', '-']));
-    let digits = value[start..].bytes().take_while(u8::is_ascii_digit).count();
-    if digits == 0 {
-        return Err(invalid());
-    }
-    let end = start + digits;
-    let rel = value[..end].parse::<i64>().map_err(|_| invalid())?;
-    if end < value.len() {
+    })?;
+    if partial {
         warnings.push(format!("Line {}: value '{}' partially read as '{}'", line_num, value, rel));
     }
     Ok(rel)
