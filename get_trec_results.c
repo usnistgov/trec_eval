@@ -74,7 +74,7 @@ te_get_trec_results(EPI * epi, char *text_results_file,
     TEXT_RESULTS *text_results_ptr;
 
     /* mmap entire file into memory and copy it into writable memory */
-    if (text_results_file[0] != '-') {
+    if (0 != strcmp(text_results_file, "-")) {
         if (-1 == (fd = open(text_results_file, 0)) ||
             0 >= (size = lseek(fd, 0L, 2)) ||
             (char *) -1 == (orig_buf = (char *) mmap(0,
