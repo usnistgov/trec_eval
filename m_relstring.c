@@ -48,8 +48,10 @@ TREC_MEAS te_meas_relstring = { "relstring",
 
 int
 clear_relstr() {
-    current_string = strdup("");
-    string_len = strlen(current_string);
+    if (NULL == (current_string =
+                 te_chk_and_malloc(current_string, &string_len, 1, 1)))
+        return (UNDEF);
+    current_string[0] = '\0';
     return 1;
 }
 
