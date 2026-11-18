@@ -123,9 +123,13 @@ te_get_trec_results(EPI * epi, char *text_results_file,
     }
     trec_results_buf[size] = '\0';
     if (strlen(trec_results_buf) != size) {
+        long line = 1;
+        for (ptr = trec_results_buf; *ptr; ptr++)
+            if (*ptr == '\n')
+                line++;
         fprintf(stderr,
-                "trec_eval.get_results: NUL character in results file '%s'\n",
-                text_results_file);
+                "trec_eval.get_results: NUL character in results file '%s' at line %ld\n",
+                text_results_file, line);
         return (UNDEF);
     }
 

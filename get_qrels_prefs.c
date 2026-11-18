@@ -145,9 +145,13 @@ te_get_qrels_prefs(EPI * epi, char *text_prefs_file,
     }
     trec_prefs_buf[size] = '\0';
     if (strlen(trec_prefs_buf) != (size_t) size) {
+        long line = 1;
+        for (ptr = trec_prefs_buf; *ptr; ptr++)
+            if (*ptr == '\n')
+                line++;
         fprintf(stderr,
-                "trec_eval.get_qrels_prefs: NUL character in qrels file '%s'\n",
-                text_prefs_file);
+                "trec_eval.get_qrels_prefs: NUL character in qrels file '%s' at line %ld\n",
+                text_prefs_file, line);
         return (UNDEF);
     }
 

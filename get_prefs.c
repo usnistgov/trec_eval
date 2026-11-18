@@ -172,9 +172,13 @@ int te_get_prefs(EPI * epi, char *text_prefs_file, ALL_REL_INFO * all_rel_info)
     }
     trec_prefs_buf[size] = '\0';
     if (strlen(trec_prefs_buf) != (size_t) size) {
+        long line = 1;
+        for (ptr = trec_prefs_buf; *ptr; ptr++)
+            if (*ptr == '\n')
+                line++;
         fprintf(stderr,
-                "trec_eval.get_prefs: NUL character in prefs file '%s'\n",
-                text_prefs_file);
+                "trec_eval.get_prefs: NUL character in prefs file '%s' at line %ld\n",
+                text_prefs_file, line);
         return (UNDEF);
     }
 

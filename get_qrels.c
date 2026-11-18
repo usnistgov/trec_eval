@@ -134,9 +134,13 @@ int te_get_qrels(EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
     }
     trec_qrels_buf[size] = '\0';
     if (strlen(trec_qrels_buf) != (size_t) size) {
+        long line = 1;
+        for (ptr = trec_qrels_buf; *ptr; ptr++)
+            if (*ptr == '\n')
+                line++;
         fprintf(stderr,
-                "trec_eval.get_qrels: NUL character in qrels file '%s'\n",
-                text_qrels_file);
+                "trec_eval.get_qrels: NUL character in qrels file '%s' at line %ld\n",
+                text_qrels_file, line);
         return (UNDEF);
     }
 
