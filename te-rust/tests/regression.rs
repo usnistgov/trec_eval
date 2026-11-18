@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::path::PathBuf;
 use std::process::Command;
 
@@ -34,40 +34,94 @@ enum Val {
     Str(String),
 }
 
-fn parse_output(output_str: &str) -> HashMap<(String, String), Val> {
-    let mut results = HashMap::new();
-    for line in output_str.lines() {
-        let trimmed = line.trim();
-        if trimmed.is_empty() {
-            continue;
-        }
-        let parts: Vec<&str> = trimmed.split_whitespace().collect();
-        if parts.len() < 3 {
-            continue;
-        }
-        let measure = parts[0].to_string();
-        let qid = parts[1].to_string();
-        let val_str = parts[2];
+type Row = (String, String, Val);
 
-        let val = if let Ok(i) = val_str.parse::<i64>() {
-            Val::Int(i)
-        } else if let Ok(f) = val_str.parse::<f64>() {
-            Val::Float(f)
-        } else {
-            Val::Str(val_str.to_string())
-        };
-
-        results.insert((measure, qid), val);
-    }
-    results
+/// The printed rows as (measure, topic, value), in output order.
+fn parse_output(output_str: &str) -> Vec<Row> {
+    output_str
+        .lines()
+        .filter(|line| !line.trim().is_empty())
+        .map(|line| {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            let [measure, qid, val_str] = parts[..] else {
+                panic!("output line without three fields: {line:?}");
+            };
+            let val = if let Ok(i) = val_str.parse::<i64>() {
+                Val::Int(i)
+            } else if let Ok(f) = val_str.parse::<f64>() {
+                Val::Float(f)
+            } else {
+                Val::Str(val_str.to_string())
+            };
+            (measure.to_string(), qid.to_string(), val)
+        })
+        .collect()
 }
 
-fn compare_outputs(
-    rust_args: &[&str],
-    c_args: &[&str],
-    qrels_name: &str,
-    results_name: &str,
-) {
+fn values_match(c_val: &Val, rust_val: &Val) -> bool {
+    match (c_val, rust_val) {
+        (Val::Float(c_f), Val::Float(r_f)) => (c_f - r_f).abs() < 1e-4,
+        _ => c_val == rust_val,
+    }
+}
+
+/// Every difference between the two outputs, with C as the reference.
+fn output_differences(c_rows: &[Row], rust_rows: &[Row]) -> Vec<String> {
+    let key = |(measure, qid, _): &Row| (measure.clone(), qid.clone());
+    let mut differences = Vec::new();
+    for (label, rows) in [("C", c_rows), ("te-rust", rust_rows)] {
+        let mut counts: HashMap<(String, String), usize> = HashMap::new();
+        for row in rows {
+            *counts.entry(key(row)).or_default() += 1;
+        }
+        let mut repeated: Vec<_> = counts.into_iter().filter(|(_, n)| *n > 1).collect();
+        repeated.sort();
+        for ((measure, qid), n) in repeated {
+            differences.push(format!("{label} prints {measure} {qid} {n} times"));
+        }
+    }
+    let c_keys: HashSet<_> = c_rows.iter().map(key).collect();
+    let rust_keys: HashSet<_> = rust_rows.iter().map(key).collect();
+    for (measure, qid, _) in c_rows.iter().filter(|row| !rust_keys.contains(&key(row))) {
+        differences.push(format!("te-rust lacks {measure} {qid}"));
+    }
+    for (measure, qid, _) in rust_rows.iter().filter(|row| !c_keys.contains(&key(row))) {
+        differences.push(format!("te-rust adds {measure} {qid}"));
+    }
+    let rust_values: HashMap<_, _> = rust_rows.iter().map(|row| (key(row), &row.2)).collect();
+    for row in c_rows {
+        if let Some(rust_val) = rust_values.get(&key(row)) {
+            if !values_match(&row.2, rust_val) {
+                differences.push(format!(
+                    "{} {}: C {:?}, te-rust {:?}",
+                    row.0, row.1, row.2, rust_val
+                ));
+            }
+        }
+    }
+    // The order of the rows that both tools print.
+    let c_order: Vec<_> = c_rows
+        .iter()
+        .map(key)
+        .filter(|k| rust_keys.contains(k))
+        .collect();
+    let rust_order: Vec<_> = rust_rows
+        .iter()
+        .map(key)
+        .filter(|k| c_keys.contains(k))
+        .collect();
+    if let Some(i) = c_order.iter().zip(&rust_order).position(|(c, r)| c != r) {
+        differences.push(format!(
+            "row order differs at shared row {}: C {:?}, te-rust {:?}",
+            i + 1,
+            c_order[i],
+            rust_order[i]
+        ));
+    }
+    differences
+}
+
+fn compare_outputs(rust_args: &[&str], c_args: &[&str], qrels_name: &str, results_name: &str) {
     let qrels_path = get_test_file_path(qrels_name);
     let results_path = get_test_file_path(results_name);
 
@@ -87,7 +141,7 @@ fn compare_outputs(
         String::from_utf8_lossy(&rust_output.stderr)
     );
     let rust_str = String::from_utf8_lossy(&rust_output.stdout);
-    let rust_map = parse_output(&rust_str);
+    let rust_rows = parse_output(&rust_str);
 
     // 2. Run C trec_eval
     let c_bin = get_trec_eval_bin();
@@ -105,54 +159,57 @@ fn compare_outputs(
         String::from_utf8_lossy(&c_output.stderr)
     );
     let c_str = String::from_utf8_lossy(&c_output.stdout);
-    let c_map = parse_output(&c_str);
+    let c_rows = parse_output(&c_str);
 
-    // 3. Compare common keys
-    let epsilon = 1e-4;
-    let mut matched_count = 0;
-
-    for (key, c_val) in &c_map {
-        // Since we only implement all_trec standard measures, we check if rust_map contains it
-        if let Some(rust_val) = rust_map.get(key) {
-            matched_count += 1;
-            match (c_val, rust_val) {
-                (Val::Float(c_f), Val::Float(r_f)) => {
-                    assert!(
-                        (c_f - r_f).abs() < epsilon,
-                        "Mismatch for {:?}: C value {}, Rust value {}",
-                        key,
-                        c_f,
-                        r_f
-                    );
-                }
-                (Val::Int(c_i), Val::Int(r_i)) => {
-                    assert_eq!(
-                        c_i, r_i,
-                        "Mismatch for {:?}: C value {}, Rust value {}",
-                        key, c_i, r_i
-                    );
-                }
-                (Val::Str(c_s), Val::Str(r_s)) => {
-                    assert_eq!(
-                        c_s, r_s,
-                        "Mismatch for {:?}: C value '{}', Rust value '{}'",
-                        key, c_s, r_s
-                    );
-                }
-                _ => {
-                    panic!(
-                        "Type mismatch for {:?}: C value {:?}, Rust value {:?}",
-                        key, c_val, rust_val
-                    );
-                }
-            }
-        }
-    }
-
+    // 3. Both tools print the same rows in the same order, with values within 1e-4.
+    assert!(!c_rows.is_empty(), "C trec_eval printed no rows");
+    let differences = output_differences(&c_rows, &rust_rows);
     assert!(
-        matched_count > 0,
-        "No matching metrics found between C and Rust output!"
+        differences.is_empty(),
+        "te-rust {:?} differs from C trec_eval {:?}:\n{}",
+        rust_args,
+        c_args,
+        differences.join("\n")
     );
+}
+
+#[test]
+fn harness_reports_every_kind_of_difference() {
+    let c = parse_output("num_q\tall\t2\nmap\tall\t0.5000\nP_5\tall\t0.2000\n");
+    assert!(output_differences(&c, &c).is_empty());
+    let within_tolerance = parse_output("num_q\tall\t2\nmap\tall\t0.50004\nP_5\tall\t0.2000\n");
+    assert!(output_differences(&c, &within_tolerance).is_empty());
+
+    let cases = [
+        ("num_q\tall\t2\nmap\tall\t0.5000\n", "te-rust lacks P_5 all"),
+        (
+            "num_q\tall\t2\nmap\tall\t0.5000\nmap\tall\t0.5000\nP_5\tall\t0.2000\n",
+            "te-rust prints map all 2 times",
+        ),
+        (
+            "num_q\tall\t2\nmap\tall\t0.5000\nP_5\tall\t0.2000\nP_10\tall\t0.1000\n",
+            "te-rust adds P_10 all",
+        ),
+        (
+            "map\tall\t0.5000\nnum_q\tall\t2\nP_5\tall\t0.2000\n",
+            "row order differs at shared row 1",
+        ),
+        (
+            "num_q\tall\t2\nmap\tall\t0.5002\nP_5\tall\t0.2000\n",
+            "map all: C Float(0.5), te-rust Float(0.5002)",
+        ),
+        (
+            "num_q\tall\t2.0000\nmap\tall\t0.5000\nP_5\tall\t0.2000\n",
+            "num_q all: C Int(2), te-rust Float(2.0)",
+        ),
+    ];
+    for (rust, expected) in cases {
+        let differences = output_differences(&c, &parse_output(rust));
+        assert!(
+            differences.iter().any(|d| d.starts_with(expected)),
+            "{expected:?} not in {differences:?}"
+        );
+    }
 }
 
 #[test]
