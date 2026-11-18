@@ -29,11 +29,13 @@ void *te_chk_and_malloc(void *ptr, long *current_bound,
 {
     if (*current_bound < 0)
         return (NULL);
-    if (needed <= *current_bound)
+    if (needed <= *current_bound && *current_bound > 0)
         return (ptr);
     if (*current_bound > 0)
         Free(ptr);
-    *current_bound += needed;
+    /* Allocate at least one element, so that a first request for
+       nothing, such as an empty ranking, gets a buffer */
+    *current_bound += needed > 0 ? needed : 1;
     return ((void *) malloc(*current_bound * size));
 }
 
@@ -42,10 +44,10 @@ void *te_chk_and_realloc(void *ptr, long *current_bound,
 {
     if (*current_bound < 0)
         return (NULL);
-    if (needed <= *current_bound)
+    if (needed <= *current_bound && *current_bound > 0)
         return (ptr);
     if (*current_bound == 0) {
-        *current_bound += needed;
+        *current_bound += needed > 0 ? needed : 1;
         return ((void *) malloc(*current_bound * size));
     }
     *current_bound += needed;

@@ -152,7 +152,7 @@ int main(int argc, char * argv[])
 
     /* Bogus results for a missing topic */
     TEXT_RESULTS bogus_result = { "ceci_nest_pas_un_docno", 1.0 };
-    TEXT_RESULTS_INFO bogus_info = { 1, 1, &bogus_result };
+    TEXT_RESULTS_INFO bogus_info = { 0, 1, &bogus_result };
     RESULTS bogus_ranking = { NULL, NULL, "trec_results", &bogus_info };
     RESULTS *this_result;
 
@@ -426,23 +426,6 @@ int main(int argc, char * argv[])
                     fprintf(stderr, "trec_eval: Can't calculate measure '%s'\n",
                             te_trec_measures[m]->name);
                     exit(4);
-                }
-            }
-        }
-
-        if (this_result == &bogus_ranking) {
-            /* clean up leftovers */
-            for (m = 0; m < q_eval.num_values; m++) {
-                if (0 == strcmp(q_eval.values[m].name, "num_ret")) {
-                    q_eval.values[m].value = 0;
-                } else if (0 == strcmp(q_eval.values[m].name, "utility")) {
-                    q_eval.values[m].value = 0.0;
-                } else  if (0 == strcmp(q_eval.values[m].name, "relstring")) {
-                    clear_relstr();
-                } else if (0 == strncmp(q_eval.values[m].name, "unj", 3)) {
-                    q_eval.values[m].value = 0.0;
-                } else if (0 == strcmp(q_eval.values[m].name, "rbp_resid")) {
-                    q_eval.values[m].value = 0.0;
                 }
             }
         }
