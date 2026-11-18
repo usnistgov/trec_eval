@@ -266,7 +266,7 @@ int main(int argc, char * argv[])
                 break;
             case 'M':
                 epi.max_num_docs_per_topic = str_to_long(optarg, &error);
-                if (error) {
+                if (error || epi.max_num_docs_per_topic < 0) {
                     fprintf(stderr, "trec_eval: Invalid maximum number of documents per topic '%s'\n",
                             optarg);
                     exit(1);
