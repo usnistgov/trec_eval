@@ -232,6 +232,7 @@ te_form_res_rels(const EPI * epi, const REL_INFO * rel_info,
         saved_res_rels.num_ret = num_results;
     }
     saved_res_rels.num_rel = 0;
+    saved_res_rels.num_rel_levels = 0;
     for (i = 0; i <= max_rel; i++) {
         if (saved_res_rels.rel_levels[i]) {
             saved_res_rels.num_rel_levels = i + 1;
