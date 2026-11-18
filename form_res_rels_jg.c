@@ -137,7 +137,7 @@ te_form_res_rels_jg(const EPI * epi, const REL_INFO * rel_info,
     /* Error checking for duplicates */
     for (i = 1; i < num_results; i++) {
         if (0 == strcmp(docno_info[i].docno, docno_info[i - 1].docno)) {
-            fprintf(stderr, "trec_eval.form_res_qrels: duplicate docs %s",
+            fprintf(stderr, "trec_eval.form_res_qrels: duplicate docs %s\n",
                     docno_info[i].docno);
             return (UNDEF);
         }

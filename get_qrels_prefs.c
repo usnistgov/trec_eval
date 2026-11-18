@@ -144,6 +144,12 @@ te_get_qrels_prefs(EPI * epi, char *text_prefs_file,
         size++;
     }
     trec_prefs_buf[size] = '\0';
+    if (strlen(trec_prefs_buf) != (size_t) size) {
+        fprintf(stderr,
+                "trec_eval.get_qrels_prefs: NUL character in qrels file '%s'\n",
+                text_prefs_file);
+        return (UNDEF);
+    }
 
     /* Count number of non-comment lines in file */
     num_lines = 0;
@@ -172,6 +178,7 @@ te_get_qrels_prefs(EPI * epi, char *text_prefs_file,
     while (*ptr) {
   		if (*ptr == '#') {
 			ptr = index(ptr, '\n') + 1;
+			continue;
 		}
 
         if (UNDEF == parse_qrels_prefs_line(&ptr, &line_ptr->qid, &line_ptr->jg,
@@ -183,6 +190,12 @@ te_get_qrels_prefs(EPI * epi, char *text_prefs_file,
         line_ptr++;
     }
     num_lines = line_ptr - lines;
+    if (num_lines == 0) {
+        fprintf(stderr,
+                "trec_eval.get_qrels_prefs: No data lines in qrels file '%s'\n",
+                text_prefs_file);
+        return (UNDEF);
+    }
 
     /* Sort all lines by qid, then docno */
     qsort((char *) lines, (int) num_lines, sizeof(LINES), comp_lines_qid_docno);
