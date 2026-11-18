@@ -10,6 +10,7 @@
 #include "trec_eval.h"
 #include "trec_format.h"
 #include <ctype.h>
+#include <errno.h>
 #include <sys/types.h>
 
 #define MAXLINE 10000
@@ -160,6 +161,7 @@ te_get_trec_results(EPI * epi, char *text_results_file,
                     line_num + 1);
             return (UNDEF);
         }
+        errno = 0;
         line_ptr->sim = strtod(sim_ptr, &end_ptr);
         if (end_ptr == sim_ptr || isnan(line_ptr->sim)) {
             fprintf(stderr,
@@ -167,6 +169,12 @@ te_get_trec_results(EPI * epi, char *text_results_file,
                     sim_ptr, line_num + 1);
             return (UNDEF);
         }
+        /* Warn for overflow to +-inf or underflow to +-0, not for a
+           subnormal result */
+        if (errno == ERANGE && (isinf(line_ptr->sim) || line_ptr->sim == 0.0))
+            fprintf(stderr, "trec_eval.get_results: Warning, score '%s' in "
+                    "line %ld out of range, read as %g\n",
+                    sim_ptr, line_num + 1, line_ptr->sim);
         if (*end_ptr != '\0')
             fprintf(stderr, "trec_eval.get_results: Warning, score '%s' in "
                     "line %ld partially read as '%.*s'\n",
