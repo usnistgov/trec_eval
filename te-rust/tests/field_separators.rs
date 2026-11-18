@@ -173,7 +173,8 @@ fn trailing_nbsp_is_part_of_the_grade() {
 
 #[test]
 fn every_ascii_separator_still_splits() {
-    // Vertical tab, form feed, tab, a CRLF ending and a bare CR between fields.
+    // Vertical tab, form feed, tab and a CRLF ending. A CR without LF is refused, because it
+    // ends the lines of a file with CR line endings (line_bytes.rs).
     let out = te_rust(&[
         "-m",
         "map",

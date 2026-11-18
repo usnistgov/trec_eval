@@ -9,6 +9,12 @@ pub enum ParseError {
     EmptyFile,
     /// The file has lines, but each is blank or a comment.
     NoDataLines,
+    /// A line holds a NUL byte.
+    NulCharacter { line_num: usize },
+    /// A line holds a CR that is not followed by LF, as in a file with CR line endings.
+    CarriageReturn { line_num: usize },
+    /// A data line is not UTF-8; `column` is the 1-based offset of the first bad byte.
+    InvalidUtf8 { line_num: usize, column: usize },
     InvalidFieldCount { line_num: usize, expected: FieldCount, found: usize },
     InvalidInteger { line_num: usize, field: String, value: String },
     InvalidFloat { line_num: usize, field: String, value: String },
@@ -21,6 +27,11 @@ impl std::fmt::Display for ParseError {
         match self {
             ParseError::EmptyFile => write!(f, "File is empty"),
             ParseError::NoDataLines => write!(f, "No data lines"),
+            ParseError::NulCharacter { line_num } => write!(f, "Line {}: NUL character", line_num),
+            ParseError::CarriageReturn { line_num } => write!(f, "Line {}: CR character without LF", line_num),
+            ParseError::InvalidUtf8 { line_num, column } => {
+                write!(f, "Line {}: invalid UTF-8 at byte {}", line_num, column)
+            }
             ParseError::InvalidFieldCount { line_num, expected, found } => {
                 write!(f, "Line {}: expected {} fields, found {}", line_num, expected, found)
             }
@@ -191,6 +202,49 @@ fn split_fields(line: &str) -> Vec<&str> {
     line.split(is_field_sep).filter(|field| !field.is_empty()).collect()
 }
 
+/// Reads lines as `BufRead::lines` does, and checks each line's bytes with `decode_line`.
+fn read_lines(mut reader: impl BufRead) -> impl Iterator<Item = Result<String, IOError>> {
+    let mut line_num = 0;
+    std::iter::from_fn(move || {
+        let mut bytes = Vec::new();
+        match reader.read_until(b'\n', &mut bytes) {
+            Ok(0) => None,
+            Ok(_) => {
+                line_num += 1;
+                Some(decode_line(bytes, line_num))
+            }
+            Err(e) => Some(Err(IOError::FileReadError(e))),
+        }
+    })
+}
+
+/// Removes the line ending (LF, CRLF, or a CR that ends the file) and refuses bytes that would make
+/// the line's fields wrong: a NUL, which trec_eval refuses too (#126), and any other CR, which
+/// would join the lines of a file with CR line endings. A data line must be UTF-8. A comment
+/// is never compared, so its invalid bytes are replaced rather than refused.
+fn decode_line(mut bytes: Vec<u8>, line_num: usize) -> Result<String, IOError> {
+    if bytes.ends_with(b"\n") {
+        bytes.pop();
+    }
+    if bytes.ends_with(b"\r") {
+        bytes.pop();
+    }
+    if bytes.contains(&0) {
+        return Err(IOError::FormatError(ParseError::NulCharacter { line_num }));
+    }
+    if bytes.contains(&b'\r') {
+        return Err(IOError::FormatError(ParseError::CarriageReturn { line_num }));
+    }
+    let start = bytes.iter().position(|&b| !is_field_sep(char::from(b))).unwrap_or(bytes.len());
+    if bytes[start..].starts_with(b"#") {
+        return Ok(String::from_utf8_lossy(&bytes).into_owned());
+    }
+    String::from_utf8(bytes).map_err(|e| {
+        let column = e.utf8_error().valid_up_to() + 1;
+        IOError::FormatError(ParseError::InvalidUtf8 { line_num, column })
+    })
+}
+
 /// Parses standard qrels relevance judgments file format.
 pub fn parse_trec_qrels<P: AsRef<Path>>(path: P) -> Result<QrelsData, IOError> {
     let file = File::open(path).map_err(IOError::FileReadError)?;
@@ -200,9 +254,9 @@ pub fn parse_trec_qrels<P: AsRef<Path>>(path: P) -> Result<QrelsData, IOError> {
     let mut line_num = 0;
     let mut warnings = Vec::new();
 
-    for line_res in reader.lines() {
+    for line_res in read_lines(reader) {
         line_num += 1;
-        let line = line_res.map_err(IOError::FileReadError)?;
+        let line = line_res?;
         let trimmed = line.trim_matches(is_field_sep);
 
         if trimmed.is_empty() {
@@ -317,9 +371,9 @@ pub fn parse_trec_qrels_jg<P: AsRef<Path>>(path: P) -> Result<QrelsJGData, IOErr
     let mut line_num = 0;
     let mut warnings = Vec::new();
 
-    for line_res in reader.lines() {
+    for line_res in read_lines(reader) {
         line_num += 1;
-        let line = line_res.map_err(IOError::FileReadError)?;
+        let line = line_res?;
         let trimmed = line.trim_matches(is_field_sep);
 
         if trimmed.is_empty() {
@@ -439,9 +493,9 @@ pub fn parse_trec_run<P: AsRef<Path>>(path: P) -> Result<RunData, IOError> {
     let mut line_num = 0;
     let mut last_run_id = String::new();
 
-    for line_res in reader.lines() {
+    for line_res in read_lines(reader) {
         line_num += 1;
-        let line = line_res.map_err(IOError::FileReadError)?;
+        let line = line_res?;
         let trimmed = line.trim_matches(is_field_sep);
 
         if trimmed.is_empty() {
