@@ -161,6 +161,7 @@ int te_get_qrels(EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
     while (*ptr) {
 		if (*ptr == '#') {
 			ptr = index(ptr, '\n') + 1;
+			continue;
 		}
 		if (UNDEF == parse_qrels_line (&ptr, &line_ptr->qid,
 									   &line_ptr->docno, &line_ptr->rel)) {
@@ -171,6 +172,12 @@ int te_get_qrels(EPI *epi, char *text_qrels_file, ALL_REL_INFO *all_rel_info)
 		line_ptr++;
     }
     num_lines = line_ptr - lines;
+    if (num_lines == 0) {
+        fprintf(stderr,
+                "trec_eval.get_qrels: No data lines in qrels file '%s'\n",
+                text_qrels_file);
+        return (UNDEF);
+    }
 
     /* Sort all lines by qid, then docno */
     qsort((char *)lines, (int)num_lines, sizeof(LINES), comp_lines_qid_docno);

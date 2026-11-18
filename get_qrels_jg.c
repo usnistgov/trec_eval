@@ -148,6 +148,7 @@ te_get_qrels_jg(EPI * epi, char *text_qrels_file, ALL_REL_INFO * all_rel_info)
     while (*ptr) {
 		if (*ptr == '#') {
 			ptr = index(ptr, '\n') + 1;
+			continue;
 		}
         if (UNDEF == parse_qrels_line(&ptr, &line_ptr->qid, &line_ptr->jg,
                                       &line_ptr->docno, &line_ptr->rel)) {
@@ -158,6 +159,12 @@ te_get_qrels_jg(EPI * epi, char *text_qrels_file, ALL_REL_INFO * all_rel_info)
         line_ptr++;
     }
     num_lines = line_ptr - lines;
+    if (num_lines == 0) {
+        fprintf(stderr,
+                "trec_eval.get_qrels_jg: No data lines in qrels file '%s'\n",
+                text_qrels_file);
+        return (UNDEF);
+    }
 
     /* Sort all lines by qid, then jg, then docno */
     qsort((char *) lines,
