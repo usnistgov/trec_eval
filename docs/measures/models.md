@@ -57,7 +57,7 @@ $$P_{\text{interp}}(r) = \max_{r' \ge r} P(r')$$
 
 - `11pt_avg`: Arithmetic mean of the 11 interpolated precision levels.
 - `iprec_at_recall`: Reports the 11 individual interpolated precision scores.
-- Usage: `-m 11pt_avg` or `-m iprec_at_recall`
+- Usage: `-m 11pt_avg` or `-m iprec_at_recall`, or with recall levels, `-m iprec_at_recall.0.25,0.5`. Each level must lie in $[0, 1]$.
 
 ---
 

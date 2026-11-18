@@ -62,6 +62,7 @@ Evaluates precision at rank $\lfloor c \cdot R + 0.5 \rfloor$ for multiplier $c$
 $$\text{Rprec\_mult}@c = \frac{\text{relevant documents in top } \lfloor c \cdot R + 0.5 \rfloor}{R}$$
 
 - Default multipliers: $0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0$.
+- Each multiplier must be a positive number, as in `-m Rprec_mult.0.5,2`.
 
 ---
 

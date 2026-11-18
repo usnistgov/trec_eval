@@ -68,6 +68,22 @@ fn parse_rbp_p(params: &str) -> Result<f64, MeasureParseError> {
     Ok(p)
 }
 
+/// Refuse recall levels outside [0, 1], for `iprec_at_recall` and `11pt_avg`.
+fn recall_levels(levels: Vec<f64>) -> Result<Vec<f64>, MeasureParseError> {
+    match levels.iter().find(|level| !(0.0..=1.0).contains(*level)) {
+        Some(level) => Err(MeasureParseError::new(format!("recall level {} is outside [0, 1]", level))),
+        None => Ok(levels),
+    }
+}
+
+/// Refuse multiples of R that are not positive and finite, for `Rprec_mult` and `Rprec_mult_avgjg`.
+fn r_multiples(multiples: Vec<f64>) -> Result<Vec<f64>, MeasureParseError> {
+    match multiples.iter().find(|m| !(**m > 0.0 && m.is_finite())) {
+        Some(m) => Err(MeasureParseError::new(format!("multiple of R {} is not a positive number", m))),
+        None => Ok(multiples),
+    }
+}
+
 /// The full measure registry table.
 pub fn registry() -> &'static [MeasureSpec] {
     use MeasureStatus::*;
@@ -131,19 +147,19 @@ pub fn registry() -> &'static [MeasureSpec] {
             name: "11pt_avg",
             status: Production,
             usage: "11pt_avg[.<r1,r2,...>]  interpolated precision at recall levels (default: 0.0,0.1,...,1.0)",
-            factory: |p| Ok(Box::new(metrics::avg_11pt::Avg11PtMeasure::new(parse_float_cutoffs(p, DEFAULT_RECALL_LEVELS)?, p))),
+            factory: |p| Ok(Box::new(metrics::avg_11pt::Avg11PtMeasure::new(recall_levels(parse_float_cutoffs(p, DEFAULT_RECALL_LEVELS)?)?, p))),
         },
         MeasureSpec {
             name: "iprec_at_recall",
             status: Production,
             usage: "iprec_at_recall[.<r1,r2,...>]  interpolated precision at recall levels (default: 0.0,0.1,...,1.0)",
-            factory: |p| Ok(Box::new(metrics::iprec_at_recall::IprecAtRecallMeasure::new(parse_sorted_float_cutoffs(p, DEFAULT_RECALL_LEVELS)?))),
+            factory: |p| Ok(Box::new(metrics::iprec_at_recall::IprecAtRecallMeasure::new(recall_levels(parse_sorted_float_cutoffs(p, DEFAULT_RECALL_LEVELS)?)?))),
         },
         MeasureSpec {
             name: "Rprec_mult",
             status: Production,
             usage: "Rprec_mult[.<m1,m2,...>]  R-precision at multiples of R (default: 0.2,0.4,...,2.0)",
-            factory: |p| Ok(Box::new(metrics::rprec_mult::RprecMultMeasure::new(parse_sorted_float_cutoffs(p, DEFAULT_RPREC_MULT)?))),
+            factory: |p| Ok(Box::new(metrics::rprec_mult::RprecMultMeasure::new(r_multiples(parse_sorted_float_cutoffs(p, DEFAULT_RPREC_MULT)?)?))),
         },
         MeasureSpec {
             name: "utility",
@@ -205,7 +221,7 @@ pub fn registry() -> &'static [MeasureSpec] {
             name: "Rprec_mult_avgjg",
             status: Production,
             usage: "Rprec_mult_avgjg[.<m1,m2,...>]  R-precision at multiples of R averaged over JGs (default: 0.2,0.4,...,2.0)",
-            factory: |p| Ok(Box::new(metrics::rprec_mult_avgjg::RprecMultAvgjgMeasure::new(parse_sorted_float_cutoffs(p, DEFAULT_RPREC_MULT)?))),
+            factory: |p| Ok(Box::new(metrics::rprec_mult_avgjg::RprecMultAvgjgMeasure::new(r_multiples(parse_sorted_float_cutoffs(p, DEFAULT_RPREC_MULT)?)?))),
         },
         MeasureSpec { name: "yaap", status: Experimental, usage: "", factory: |_| Ok(Box::new(metrics::yaap::YaapMeasure::new())) },
 
