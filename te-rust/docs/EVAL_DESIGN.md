@@ -419,7 +419,7 @@ Standard floating-point operations can introduce differences due to precision an
     *   Rather than assuming a universal fallback of `0.0`, the correct score in these undefined or zero-division states is **measure-dependent** and must match the exact behavioral specifications of the corresponding metric in `trec_eval` (for example, some utility metrics or cost-benefit measures may default to a baseline cost constant rather than `0.0`).
     *   Each individual `Measure` implementation is responsible for explicitly checking for its own mathematical boundary cases and returning its specific defined safe fallback value to prevent corrupt non-finite floats from propagating into the accumulation/averaging phase.
 2.  **Infallible Float Sorting and Parsing Constraints**:
-    *   During parsing, the ingestion engine strictly validates and rejects non-finite floating-point strings (`NaN`, `Infinity`, `inf`) to prevent corrupt values from entering the evaluation pipeline.
+    *   During parsing, the ingestion engine rejects `NaN` similarity scores, which have no place in the ranking. Infinite scores are accepted, as `trec_eval` accepts them; they only order documents and never enter a measure's arithmetic.
     *   The alignment engine sorts document similarity scores descending using `f64::total_cmp` (stabilized in Rust 1.62). This compiles to branchless, high-performance bit-level instructions, eliminates the need for `.partial_cmp().unwrap()`, and guarantees deterministic tie-breaking even if un-validated float representations are encountered in memory.
 3.  **Geometric Mean Underflow**:
     *   Always use `1e-5` (`MIN_GEO_MEAN`) as the floor for log calculation to prevent $\ln(0)$ running into negative infinity.

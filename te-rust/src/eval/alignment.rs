@@ -113,7 +113,7 @@ pub fn align_query(
                 b.docno.cmp(&a.docno)
             }
             Some(other) => other,
-            None => std::cmp::Ordering::Equal, // Parser guarantees finite numbers, so None won't happen
+            None => std::cmp::Ordering::Equal, // The parsers refuse NaN, so None won't happen
         }
     });
 

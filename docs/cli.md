@@ -97,6 +97,7 @@ qid  iter  docno  rank  sim  run_id
 - `docno`: Unique document identifier (`str`).
 - `rank`: Rank position (recomputed during score sorting).
 - `sim`: Floating-point retrieval score / similarity (`float`).
+  `trec_eval` reads the score with `atof` (`trec_eval/get_trec_results.c:210`), which parses as `strtod` does. As in `trec_eval`, `inf`, `-inf` and hexadecimal values such as `0x1p3` are scores. A score outside the range of a double is read as `strtod` reads it, `1e400` as inf and `1e-400` as 0, with a warning on stderr. A score with characters after the number, such as `1.5x`, is read as its leading number, 1.5, with a warning on stderr. NaN, or a score with no leading number, is an error. `trec_eval` 10.x reads a score with no leading number as 0, and it ranks a NaN score in an undefined order.
 - `run_id`: System run label (`str`).
 
 Example `run.txt`:

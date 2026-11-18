@@ -67,7 +67,7 @@ This document outlines the detailed design of the Input/Output (I/O) and parsing
     *   `sim`: Similarity score (`f64`).
     *   `run_id`: Run identifier (`String`).
 *   **Comments & Blank Lines**: Skipped. Comments start with `#` in the first column.
-*   **Strictness**: Must have at least 6 fields. Extra fields beyond `run_id` are allowed and ignored. `sim` must be a valid finite float (no `NaN` or `Infinity`).
+*   **Strictness**: Must have at least 6 fields. Extra fields beyond `run_id` are allowed and ignored. `sim` is read as `trec_eval`'s `strtod` reads it: infinities and hexadecimal values are scores, a score outside the range of an `f64` is kept as ±inf or ±0 with a warning, and a score with characters after the number is read as that number with a warning. `NaN`, or a score with no leading number, is an error.
 *   **Run ID**: The global run ID is assigned from the `run_id` of the **last** parsed content line of the file.
 
 ---
@@ -224,7 +224,7 @@ In information retrieval, different ranking scores can result in identical simil
 
 > [!WARNING]
 > **Rust Floating-Point Sorting (`f64`)**:
-> In Rust, standard floating-point numbers (`f64`) do not implement `Ord` (only `PartialOrd`) because `NaN` values cannot be ordered. Since `NaN` values are invalid as similarity scores in standard evaluations, we must handle this safely. Standard methods like `.sort_by()` with `partial_cmp().unwrap()` are safe *only* if the parser strictly validates that similarity scores are valid finite numbers (i.e. rejecting `NaN` and potentially `Infinity` values during parsing).
+> In Rust, standard floating-point numbers (`f64`) do not implement `Ord` (only `PartialOrd`) because `NaN` values cannot be ordered. Since `NaN` values are invalid as similarity scores in standard evaluations, we must handle this safely. Standard methods like `.sort_by()` with `partial_cmp().unwrap()` are safe *only* if the parser rejects `NaN` similarity scores. Infinite scores are ordered by `partial_cmp`, so the parser accepts them, as `trec_eval` does.
 
 ---
 
@@ -260,7 +260,7 @@ pub enum IOError {
 7. Validate field count:
     * For Qrels: Must be exactly 4 tokens.
     * For Run/Results: Must be at least 6 tokens.
-8. Parse `rel` with `parse_grade`, which reads the leading integer as `trec_eval`'s `str_to_long` does and warns when characters follow it. Parse other integers and floats with `.parse::<i64>()` and `.parse::<f64>()`. For relevance values (`rel`), validate that they fall within a generous and safe range of `-1,000,000` to `1,000,000` to support modern preference-based dense scales while permanently preventing excessive vector allocations.
+8. Parse `rel` with `parse_grade`, which reads the leading integer as `trec_eval`'s `str_to_long` does and warns when characters follow it. Parse `sim` with `parse_score`, which reads the leading number as `trec_eval`'s `strtod` does and warns when characters follow it. For relevance values (`rel`), validate that they fall within a generous and safe range of `-1,000,000` to `1,000,000` to support modern preference-based dense scales while permanently preventing excessive vector allocations.
 9. Store records sequentially.
 10. Populate the `QrelsData` or `RunData` structures, sorting internal lists if necessary or leaving sorting as an explicit post-processing step before metric calculations. Keep all comments preserved in the `comments` field.
 
@@ -279,7 +279,7 @@ We will implement a thorough suite of unit and integration tests to enforce form
     *   Relevance values with no leading integer (e.g. `abc`, `.5`). A value such as `2.5` reads as 2 with a warning.
 *   **Malformed Runs**:
     *   Fewer than 6 fields.
-    *   Non-float similarity score (e.g. `high`, `NaN`).
+    *   Similarity score with no leading number (e.g. `high`), or `NaN`. A score such as `1.5x` reads as 1.5 with a warning.
 *   **Comments & Empty Lines**: Mixed comments, blank lines, trailing/leading blank lines, CRLF vs LF line endings.
 
 ### 5.2 Edge Cases

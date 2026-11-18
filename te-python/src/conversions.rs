@@ -263,15 +263,34 @@ fn extract_qrel_item(item: &Bound<'_, PyAny>) -> PyResult<(String, String, i64)>
     Ok((qid, docno, rel))
 }
 
+/// Refuses a NaN score, as the run file parser does, because NaN has no place in the ranking.
+fn refuse_nan_scores(grouped: &BTreeMap<String, Vec<RunRecord>>) -> PyResult<()> {
+    for (qid, records) in grouped {
+        if let Some(record) = records.iter().find(|r| r.sim.is_nan()) {
+            return Err(PyValueError::new_err(format!(
+                "Score of document '{}' for query '{}' is NaN",
+                record.docno, qid
+            )));
+        }
+    }
+    Ok(())
+}
+
 /// Ingest run results from a Python object (file path, dict, DataFrame, or iterable).
 pub fn ingest_run(obj: &Bound<'_, PyAny>, mapping: Option<&ColumnMapping>) -> PyResult<RunData> {
     // 1. File path / PathLike
     if let Some(path_str) = extract_path_string(obj) {
         let path = Path::new(&path_str);
         if path.is_file() {
-            return parse_trec_run(path).map_err(|e| {
+            let run = parse_trec_run(path).map_err(|e| {
                 PyValueError::new_err(format!("Failed to parse run file '{}': {}", path_str, e))
-            });
+            })?;
+            let category = obj.py().get_type_bound::<PyUserWarning>();
+            for warning in &run.warnings {
+                let message = format!("run file '{}': {}", path_str, warning);
+                PyErr::warn_bound(obj.py(), category.as_any(), &message, 1)?;
+            }
+            return Ok(run);
         }
         return Err(PyFileNotFoundError::new_err(format!(
             "Run file not found: '{}'",
@@ -305,6 +324,7 @@ pub fn ingest_run(obj: &Bound<'_, PyAny>, mapping: Option<&ColumnMapping>) -> Py
             }
         }
 
+        refuse_nan_scores(&grouped)?;
         let queries = grouped
             .into_iter()
             .map(|(qid, records)| RunQuery { qid, records })
@@ -314,6 +334,7 @@ pub fn ingest_run(obj: &Bound<'_, PyAny>, mapping: Option<&ColumnMapping>) -> Py
             run_id: "trec_eval".to_string(),
             queries,
             comments: Vec::new(),
+            warnings: Vec::new(),
         });
     }
 
@@ -357,6 +378,7 @@ pub fn ingest_run(obj: &Bound<'_, PyAny>, mapping: Option<&ColumnMapping>) -> Py
             grouped.entry(qid).or_default().push(RunRecord { docno, sim });
         }
 
+        refuse_nan_scores(&grouped)?;
         let queries = grouped
             .into_iter()
             .map(|(qid, records)| RunQuery { qid, records })
@@ -366,6 +388,7 @@ pub fn ingest_run(obj: &Bound<'_, PyAny>, mapping: Option<&ColumnMapping>) -> Py
             run_id: "trec_eval".to_string(),
             queries,
             comments: Vec::new(),
+            warnings: Vec::new(),
         });
     }
 
@@ -398,6 +421,7 @@ pub fn ingest_run_arrays(
         grouped.entry(qid).or_default().push(RunRecord { docno, sim });
     }
 
+    refuse_nan_scores(&grouped)?;
     let queries = grouped
         .into_iter()
         .map(|(qid, records)| RunQuery { qid, records })
@@ -407,6 +431,7 @@ pub fn ingest_run_arrays(
         run_id: "trec_eval".to_string(),
         queries,
         comments: Vec::new(),
+        warnings: Vec::new(),
     })
 }
 
@@ -420,6 +445,7 @@ fn ingest_run_from_iter(iter: Bound<'_, PyIterator>) -> PyResult<RunData> {
         grouped.entry(qid).or_default().push(RunRecord { docno, sim });
     }
 
+    refuse_nan_scores(&grouped)?;
     let queries = grouped
         .into_iter()
         .map(|(qid, records)| RunQuery { qid, records })
@@ -429,6 +455,7 @@ fn ingest_run_from_iter(iter: Bound<'_, PyIterator>) -> PyResult<RunData> {
         run_id: "trec_eval".to_string(),
         queries,
         comments: Vec::new(),
+        warnings: Vec::new(),
     })
 }
 

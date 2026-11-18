@@ -79,7 +79,7 @@ This document tracks active design questions, structural decisions, and implemen
 ### 4. Sorting non-Ord floats (`f64`) in Rust
 *   **Type**: Design
 *   **Status**: Resolved (Option A)
-*   **Description**: Resolved to explicitly validate during parsing that all similarity scores are valid finite numbers (rejecting `NaN` and `Infinity` with an error). This guarantees that `.partial_cmp().unwrap()` is entirely safe and infallible for sorting without needing third-party wrapper dependencies.
+*   **Description**: Resolved to explicitly validate during parsing that all similarity scores are valid finite numbers (rejecting `NaN` and `Infinity` with an error). This guarantees that `.partial_cmp().unwrap()` is entirely safe and infallible for sorting without needing third-party wrapper dependencies. Revised later: only `NaN` breaks that guarantee, so the parser now accepts infinite scores, as `trec_eval`'s `strtod` reads them.
 
 ### 5. Configuration Metadata in Comments
 *   **Type**: Design/Future Feature
@@ -135,7 +135,7 @@ This document tracks active design questions, structural decisions, and implemen
 ### 20. Infallible Float Sorting and Determinism
 *   **Type**: Design
 *   **Status**: Resolved (total_cmp & Measure-Dependent guards)
-*   **Description**: Resolved to incorporate `f64::total_cmp` for high-performance, branchless, and crash-safe document sorting within the alignment engine, coupled with strict fail-fast validation in the parser to reject `NaN` and `Infinity` float inputs. Furthermore, recognized that "correct fallback score" under undefined states is measure-dependent (e.g., 0.0 vs utility offsets); resolved that each individual metric `Measure` implementation must defensively evaluate its own specific mathematical boundaries and return its designated standard fallback rather than propagating raw floating-point `NaN` or `Infinity` values.
+*   **Description**: Resolved to incorporate `f64::total_cmp` for high-performance, branchless, and crash-safe document sorting within the alignment engine, coupled with strict fail-fast validation in the parser to reject `NaN` float inputs (`Infinity` was also rejected until the parser was aligned with `trec_eval`'s `strtod`). Furthermore, recognized that "correct fallback score" under undefined states is measure-dependent (e.g., 0.0 vs utility offsets); resolved that each individual metric `Measure` implementation must defensively evaluate its own specific mathematical boundaries and return its designated standard fallback rather than propagating raw floating-point `NaN` or `Infinity` values.
 
 ### 18. Asymmetric Comment Handling
 *   **Type**: Design
