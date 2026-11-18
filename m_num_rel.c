@@ -66,7 +66,7 @@ te_calc_avg_num_rel(const EPI * epi, const TREC_MEAS * tm,
             trec_qrels =
                 (TEXT_QRELS_INFO *) all_rel_info->rel_info[i].q_rel_info;
             for (j = 0; j < trec_qrels->num_text_qrels; j++) {
-                if (trec_qrels->text_qrels[j].rel > 0)
+                if (trec_qrels->text_qrels[j].rel >= epi->relevance_level)
                     num_rel++;
             }
         } else if (0 ==
@@ -77,7 +77,8 @@ te_calc_avg_num_rel(const EPI * epi, const TREC_MEAS * tm,
             for (j = 0; j < trec_qrels->num_text_qrels_jg; j++) {
                 for (k = 0; k < trec_qrels->text_qrels_jg[j].num_text_qrels;
                      k++) {
-                    if (trec_qrels->text_qrels_jg[j].text_qrels[k].rel > 0)
+                    if (trec_qrels->text_qrels_jg[j].text_qrels[k].rel >=
+                        epi->relevance_level)
                         num_rel++;
                 }
             }
