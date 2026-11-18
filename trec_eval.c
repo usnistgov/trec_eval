@@ -60,8 +60,8 @@ normally ever used.   \n\
      form <num>.<qid> and only qid will be evaluated with debug info printed.\n\
      Default is 0.\n\
  --Number_docs_in_coll num:\n\
- -N <num>: Number of docs in collection Default is MAX_LONG \n\
- -Max_retrieved_per_topic num:\n\
+ -N <num>: Number of docs in collection. Default is 0.\n\
+ --Max_retrieved_per_topic num:\n\
  -M <num>: Max number of docs per topic to use in evaluation (discard rest). \n\
       Default is MAX_LONG.\n\
  --Judged_docs_only:\n\
