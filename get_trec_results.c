@@ -64,7 +64,7 @@ te_get_trec_results(EPI * epi, char *text_results_file,
     LINES *lines;
     LINES *line_ptr;
     size_t num_lines;
-    long current_column;
+    long line_num = 0;
     long num_qid;
     char *run_id_ptr = NULL;
     char *sim_ptr, *end_ptr;
@@ -130,24 +130,11 @@ te_get_trec_results(EPI * epi, char *text_results_file,
         return (UNDEF);
     }
 
-    /* Count number of non-comment lines in file */
+    /* Count number of lines in file */
     num_lines = 0;
-    current_column = 0;
-	ptr = trec_results_buf;
-	do {
-		if (*ptr == '\n') {
-			num_lines++;
-            current_column = 0;
-        }
-        else if (current_column == 0 && *ptr == '#') {
-			/* skip to end of line */
-			ptr = index(ptr, '\n');
-		}
-		if (*ptr != '\0') {
-			ptr++;
-            current_column++;
-        }
-	} while (*ptr != '\0');
+    for (ptr = trec_results_buf; *ptr; ptr++)
+        if (*ptr == '\n')
+            num_lines++;
 
     /* Get all lines */
     if (NULL == (lines = Malloc(num_lines, LINES)))
@@ -161,6 +148,7 @@ te_get_trec_results(EPI * epi, char *text_results_file,
             ptr++;
         if (*ptr == '\n') {
             ptr++;
+            line_num++;
             continue;
         } else if (*ptr == '#') {
             ptr = index(ptr, '\n');
@@ -169,22 +157,23 @@ te_get_trec_results(EPI * epi, char *text_results_file,
         if (UNDEF == parse_results_line(&ptr, &line_ptr->qid, &line_ptr->docno,
                                         &sim_ptr, &run_id_ptr)) {
             fprintf(stderr, "trec_eval.get_results: Malformed line %ld\n",
-                    (long) (line_ptr - lines + 1));
+                    line_num + 1);
             return (UNDEF);
         }
         line_ptr->sim = strtod(sim_ptr, &end_ptr);
         if (end_ptr == sim_ptr || isnan(line_ptr->sim)) {
             fprintf(stderr,
                     "trec_eval.get_results: Unusable score '%s' in line %ld\n",
-                    sim_ptr, (long) (line_ptr - lines + 1));
+                    sim_ptr, line_num + 1);
             return (UNDEF);
         }
         if (*end_ptr != '\0')
             fprintf(stderr, "trec_eval.get_results: Warning, score '%s' in "
                     "line %ld partially read as '%.*s'\n",
-                    sim_ptr, (long) (line_ptr - lines + 1),
+                    sim_ptr, line_num + 1,
                     (int) (end_ptr - sim_ptr), sim_ptr);
         line_ptr++;
+        line_num++;
     }
     num_lines = line_ptr - lines;
 
