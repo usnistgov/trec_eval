@@ -1,0 +1,4 @@
+iprec_at_recall_0.10  	all	0.3885
+iprec_at_recall_0.11  	all	0.3858
+Rprec_mult_0.99       	all	0.2176
+Rprec_mult_1.00       	all	0.2150

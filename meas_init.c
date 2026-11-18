@@ -168,6 +168,16 @@ int te_init_meas_a_double_cut_double(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval
         append_double(tm->name, cutoffs[i]), 0.0};
         if (NULL == eval->values[eval->num_values + i].name)
             return (UNDEF);
+        /* A name shows the cutoff to two decimals, so neighbouring
+           cutoffs in the sorted list can give the same name */
+        if (i > 0 && 0 == strcmp(eval->values[eval->num_values + i].name,
+                                 eval->values[eval->num_values + i - 1].name)) {
+            fprintf(stderr,
+                    "trec_eval: cutoffs %.15g and %.15g both give the name '%s'\n",
+                    cutoffs[i - 1], cutoffs[i],
+                    eval->values[eval->num_values + i].name);
+            return (UNDEF);
+        }
     }
 
     /* Set location of value of measure, and increment space used for values */
