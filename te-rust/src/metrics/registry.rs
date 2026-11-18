@@ -189,6 +189,8 @@ pub fn registry() -> &'static [MeasureSpec] {
         MeasureSpec { name: "set_relative_P", status: Production, usage: "", factory: |_| Ok(Box::new(metrics::set_relative_p::SetRelativePMeasure::new())) },
         MeasureSpec { name: "set_map", status: Production, usage: "", factory: |_| Ok(Box::new(metrics::set_map::SetMapMeasure::new())) },
         MeasureSpec { name: "G", status: Production, usage: "G[.<rel>=<gain>,...]  optional relevance-to-gain mapping (default: gain = relevance level)", factory: |p| Ok(Box::new(metrics::g::GMeasure::new(p)?)) },
+        MeasureSpec { name: "dcg", status: Production, usage: "dcg[.<rel>=<gain>,...]  optional relevance-to-gain mapping (default: gain = relevance level)", factory: |p| Ok(Box::new(metrics::ndcg::DcgMeasure::new(p)?)) },
+        MeasureSpec { name: "ideal_dcg", status: Production, usage: "ideal_dcg[.<rel>=<gain>,...]  optional relevance-to-gain mapping (default: gain = relevance level)", factory: |p| Ok(Box::new(metrics::ndcg::IdealDcgMeasure::new(p)?)) },
         MeasureSpec { name: "ndcg", status: Production, usage: "ndcg[.<rel>=<gain>,...]  optional relevance-to-gain mapping (default: gain = relevance level)", factory: |p| Ok(Box::new(metrics::ndcg::NdcgMeasure::new(p)?)) },
         MeasureSpec { name: "ndcg_rel", status: Production, usage: "ndcg_rel[.<rel>=<gain>,...]  optional relevance-to-gain mapping (default: gain = relevance level)", factory: |p| Ok(Box::new(metrics::ndcg_rel::NdcgRelMeasure::new(p)?)) },
         MeasureSpec { name: "Rndcg", status: Production, usage: "Rndcg[.<rel>=<gain>,...]  optional relevance-to-gain mapping (default: gain = relevance level)", factory: |p| Ok(Box::new(metrics::rndcg::RndcgMeasure::new(p)?)) },

@@ -23,6 +23,8 @@ Measures based on cumulated relevance grade gains, including non-standard NDCG v
 - [x] **`ndcg_rel`** (`m_ndcg_rel.c`): Graded NDCG relative (normalizes by ideal gain achievable by retrieved set size, rather than the entire corpus relevance pool).
 - [x] **`Rndcg`** (`m_Rndcg.c`): NDCG evaluated at rank $R$ (number of relevant documents).
 - [x] **`ndcg_p`** (`m_ndcg_p.c`): NDCG parameter-based / custom gain version.
+- [x] **`dcg`** (`m_ndcg.c`): DCG of the whole ranking, the numerator of `ndcg`, with the same gain map.
+- [x] **`ideal_dcg`** (`m_ndcg.c`): DCG of the ideal ranking, the denominator of `ndcg`, with the same gain map.
 
 ---
 
