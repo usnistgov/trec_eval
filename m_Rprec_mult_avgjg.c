@@ -89,9 +89,12 @@ te_calc_Rprec_mult_avgjg(const EPI * epi, const REL_INFO * rel_info,
          return (UNDEF);
 
     for (jg = 0; jg < rr.num_jgs; jg++) {
-        for (i = 0; i < tm->meas_params->num_params; i++)
-            cutoffs[i] = (long) (cutoff_percents[i]
-                                 * rr.jgs[jg].num_rel + 0.9);
+        for (i = 0; i < tm->meas_params->num_params; i++) {
+            double cut = cutoff_percents[i] * rr.jgs[jg].num_rel + 0.9;
+            /* Saturate a count beyond the range of long; NaN gives LONG_MIN */
+            cutoffs[i] = cut >= (double) LONG_MAX ? LONG_MAX
+                : cut > (double) LONG_MIN ? (long) cut : LONG_MIN;
+        }
         precis = (double) rr.jgs[jg].num_rel_ret / (double) rr.jgs[jg].num_ret;
         int_precis = precis;
 

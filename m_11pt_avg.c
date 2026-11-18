@@ -102,8 +102,12 @@ te_calc_11ptavg(const EPI * epi, const REL_INFO * rel_info,
        MAP implementations (eg, old trec_eval)" */
     if (NULL == (cutoffs = Malloc(tm->meas_params->num_params, long)))
          return (UNDEF);
-    for (i = 0; i < tm->meas_params->num_params; i++)
-        cutoffs[i] = lround(cutoff_percents[i] * rr.num_rel);
+    for (i = 0; i < tm->meas_params->num_params; i++) {
+        double cut = cutoff_percents[i] * rr.num_rel;
+        /* Saturate a count beyond the range of long; NaN gives LONG_MIN */
+        cutoffs[i] = cut >= (double) LONG_MAX ? LONG_MAX
+            : cut > (double) LONG_MIN ? lround(cut) : LONG_MIN;
+    }
 
     current_cut = tm->meas_params->num_params - 1;
     while (current_cut >= 0 && cutoffs[current_cut] > rr.num_rel_ret)
