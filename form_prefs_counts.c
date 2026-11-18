@@ -824,7 +824,7 @@ static int form_prefs_and_ranks(const EPI * epi,
     /* Error checking for duplicates */
     for (i = 1; i < num_results; i++) {
         if (0 == strcmp(docno_results[i].docno, docno_results[i - 1].docno)) {
-            fprintf(stderr, "trec_eval.form_prefs_counts: duplicate docs %s",
+            fprintf(stderr, "trec_eval.form_prefs_counts: duplicate docs %s\n",
                     docno_results[i].docno);
             return (UNDEF);
         }
