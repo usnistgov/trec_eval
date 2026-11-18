@@ -35,9 +35,11 @@ where $\text{rel}(k) \in [0, 1]$ is the normalized relevance grade ($\text{rel}(
 
 ### RBP Residual (`rbp_resid`)
 
-Upper bound on the potential unobserved score due to unjudged documents:
+For a ranking of $N$ retrieved documents that holds an unjudged document, the amount by which RBP could still rise if every unjudged retrieved document, and every rank after $N$, were fully relevant. With $U$ the set of ranks that hold an unjudged document:
 
-$$\text{RBP}_{\text{resid}} = \text{RBP} + p^N$$
+$$\text{RBP}_{\text{resid}} = (1 - p) \sum_{k \in U} p^{k-1} + p^N \quad \text{for } U \neq \emptyset, \text{ and } 0 \text{ otherwise}$$
+
+The first term is the RBP that the unjudged documents would add, and $p^N$ is the weight of the ranks after $N$. This is the formula of `trec_eval`'s `m_rbp_resid.c`. Moffat and Zobel include $p^N$ for every ranking, also one without an unjudged document.
 
 - Parameter: `p` (persistence parameter, default `0.9`).
 - Usage: `-m rbp` or `-m rbp.p=0.8`

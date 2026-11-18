@@ -22,7 +22,7 @@ Cutoffs and parameters are specified following a period:
 - `-m ndcg_cut.10,20,100` (nDCG at cutoffs 10, 20, 100)
 - `-m map_cut.1000` (MAP computed up to rank 1000)
 - `-m rbp.p=0.85` (Rank-Biased Precision with persistence $p = 0.85$)
-- `-m set_F.0.5` (`set_F` with weight 0.5)
+- `-m set_F.0.25` ($F_\beta$-measure with $\beta = 0.5$; the parameter is $\beta^2$)
 
 ### 3. Cutoff Aliases (`@cutoff`)
 For cutoff measures, `@` syntax is supported as an alias:

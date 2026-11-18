@@ -35,9 +35,11 @@ $$\text{set\_map} = \text{set\_P} \cdot \text{set\_recall} = \frac{(\text{num\_r
 
 ## Set $F_\beta$-Measure (`set_F`)
 
-Weighted harmonic mean of set precision and set recall, parameterized by $\beta$:
+Weighted harmonic mean of set precision and set recall. `set_F.x` uses the parameter $x$ itself, as `trec_eval`'s `m_set_F.c` does:
 
-$$F_\beta = \frac{(1 + \beta^2) \cdot \text{set\_P} \cdot \text{set\_recall}}{\beta^2 \cdot \text{set\_P} + \text{set\_recall}}$$
+$$\text{set\_F}_x = \frac{(x + 1) \cdot \text{set\_P} \cdot \text{set\_recall}}{x \cdot \text{set\_P} + \text{set\_recall}}$$
 
-- Parameter: `beta` (default `1.0` for balanced $F_1$).
-- Usage: `-m set_F` ($F_1$) or `-m set_F.0.5` (weight 0.5). The weight must be 0 or more, and `set_F.0` gives `set_P`.
+The parameter $x$ is $\beta^2$ of the usual $F_\beta$, so `set_F.0.25` is $F_{0.5}$ and `set_F.4` is $F_2$.
+
+- Parameter: $x$, the weight of recall against precision (default `1.0`, which gives $F_1$). It must be 0 or more, and `set_F.0` gives `set_P`.
+- Usage: `-m set_F` ($F_1$), `-m set_F.0.25` ($F_{0.5}$, emphasizing precision) or `-m set_F.4` ($F_2$, emphasizing recall).

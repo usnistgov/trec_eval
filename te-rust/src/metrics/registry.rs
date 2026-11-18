@@ -179,7 +179,7 @@ pub fn registry() -> &'static [MeasureSpec] {
         MeasureSpec {
             name: "set_F",
             status: Production,
-            usage: "set_F[.<beta>]  F-measure beta weighting (default: 1.0)",
+            usage: "set_F[.<x>]  weight x of recall against precision, beta^2 of F_beta (default: 1.0)",
             factory: |p| {
                 let beta = if p.is_empty() {
                     1.0
