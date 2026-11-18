@@ -192,14 +192,15 @@ fn main() {
         }
     };
 
-    // 3. Ingest run results
-    let run_data = match parse_trec_run(&run_filename) {
+    // 3. Read the run only when the evaluation below dereferences it, so that
+    // problems are reported in trec_eval's order: measures, qrels, then run.
+    let run_data = std::cell::LazyCell::new(|| match parse_trec_run(&run_filename) {
         Ok(data) => data,
         Err(e) => {
             eprintln!("Error parsing run file '{}': {}", run_filename, e);
             process::exit(input_exit_status(&e));
         }
-    };
+    });
 
     // 4. Resolve measures (groups + parameters) via the central registry.
     let default_group = match args.rel_format.to_ascii_lowercase().as_str() {
@@ -261,6 +262,11 @@ fn main() {
             let qrels_data = match parse_trec_qrels(&qrels_filename) {
                 Ok(data) => data,
                 Err(e) => {
+                    // trec_eval finds a repeated document only while it scores,
+                    // after it has read the run.
+                    if input_exit_status(&e) == EXIT_TOPIC {
+                        std::cell::LazyCell::force(&run_data);
+                    }
                     eprintln!("Error parsing qrels file '{}': {}", qrels_filename, e);
                     process::exit(input_exit_status(&e));
                 }
