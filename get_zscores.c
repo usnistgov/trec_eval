@@ -68,7 +68,7 @@ te_get_zscores(const EPI * epi, const char *zscores_file,
                ALL_ZSCORES * all_zscores)
 {
     FILE* fd;
-    int size = 0;
+    long size = 0;
     char *ptr;
     char *current_qid;
     long i;
@@ -83,9 +83,9 @@ te_get_zscores(const EPI * epi, const char *zscores_file,
     /* Read entire file into memory */
     if (!(fd = fopen (zscores_file, "rb")) ||
         fseek (fd, 0L, SEEK_END) != 0 || 0 >= (size = ftell(fd)) ||
-        NULL == (trec_zscores_buf = malloc ((unsigned) size+2)) ||
+        NULL == (trec_zscores_buf = malloc ((size_t) size + 2)) ||
         -1 == fseek (fd, 0L, SEEK_SET) ||
-        size != fread (trec_zscores_buf, 1, size, fd) ||
+        (size_t) size != fread (trec_zscores_buf, 1, (size_t) size, fd) ||
         -1 == fclose (fd)) {
         fprintf (stderr,
 		 "trec_eval.get_zscores: Cannot read zscores file '%s'\n",

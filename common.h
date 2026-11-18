@@ -28,10 +28,16 @@
 /*
  * Some useful macros for making malloc et al easier to use.
  * Macros handle the casting and the like that's needed.
+ * Malloc and Realloc return NULL, without allocating, if n * sizeof(type)
+ * does not fit in a size_t. They evaluate n twice.
  */
-#define Malloc(n,type) (type *) malloc( (unsigned) ((n)*sizeof(type)))
-#define Realloc(loc,n,type) (type *) realloc( (char *)(loc), \
-                                              (unsigned) ((n)*sizeof(type)))
+#define TE_SIZE_FITS(n,type) ((size_t) (n) <= ((size_t) -1) / sizeof(type))
+#define Malloc(n,type) (type *) (TE_SIZE_FITS(n,type) ? \
+                                 malloc((size_t) (n) * sizeof(type)) : NULL)
+#define Realloc(loc,n,type) (type *) (TE_SIZE_FITS(n,type) ? \
+                                      realloc((char *)(loc), \
+                                              (size_t) (n) * sizeof(type)) : \
+                                      NULL)
 #define Free(loc) (void) free( (char *)(loc) )
 
 #endif                          /* COMMONH */
