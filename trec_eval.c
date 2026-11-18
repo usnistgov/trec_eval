@@ -41,6 +41,10 @@ normally ever used.   \n\
                    results and rel_info format files.\n\
        'set': subset of all_trec that calculates unranked values.\n\
        'prefs': Measures not in all_trec that calculate preference measures.\n\
+       'qrels_jg': Measures that average over the judgment groups of\n\
+                   a qrels_jg rel_info file (-R qrels_jg).\n\
+    With no -m, the measures are 'official', or 'qrels_jg' with\n\
+    -R qrels_jg, or 'prefs' with -R prefs or -R qrels_prefs.\n\
  --complete_rel_info_wanted:\n\
  -c: Average over the complete set of queries in the relevance judgements  \n\
      instead of the queries in the intersection of relevance judgements \n\
@@ -351,9 +355,18 @@ int main(int argc, char * argv[])
 
     /* Initialize all marked measures (possibly using command line info) */
     if (0 == measure_marked_flag) {
-        /* If no measures designated on command line, first mark "official" */
-        if (UNDEF == mark_measure(&epi, "official")) {
-            fprintf(stderr, "trec_eval: illegal measure 'official'\n");
+        /* If no measures designated on command line, mark the default
+           set for the rel_info format. The "official" measures need
+           qrels. */
+        char *default_measures = "official";
+        if (0 == strcmp(epi.rel_info_format, "qrels_jg"))
+            default_measures = "qrels_jg";
+        else if (0 == strcmp(epi.rel_info_format, "prefs") ||
+                 0 == strcmp(epi.rel_info_format, "qrels_prefs"))
+            default_measures = "prefs";
+        if (UNDEF == mark_measure(&epi, default_measures)) {
+            fprintf(stderr, "trec_eval: illegal measure '%s'\n",
+                    default_measures);
             exit(1);
         }
     }

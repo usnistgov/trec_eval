@@ -1,0 +1,8 @@
+runid                 	all	r
+num_q                 	all	2
+prefs_num_prefs_poss  	all	2
+prefs_num_prefs_ful   	all	1
+prefs_num_prefs_ful_ret	all	1
+prefs_simp            	all	0.5000
+prefs_pair            	all	0.5000
+prefs_avgjg           	all	0.5000
