@@ -29,9 +29,14 @@ impl std::fmt::Display for ParseError {
             ParseError::DuplicateDocument { line_num, qid, docno } => {
                 write!(f, "Line {}: duplicate document '{}' for query '{}'", line_num, docno, qid)
             }
-            ParseError::RelevanceOutOfBounds { line_num, value } => {
-                write!(f, "Line {}: relevance score {} out of bounds (-1,000,000..1,000,000)", line_num, value)
-            }
+            ParseError::RelevanceOutOfBounds { line_num, value } => write!(
+                f,
+                "Line {}: relevance level {} is outside {} to {}",
+                line_num,
+                value,
+                REL_LEVELS.start(),
+                REL_LEVELS.end()
+            ),
         }
     }
 }
@@ -54,6 +59,11 @@ impl std::fmt::Display for IOError {
 }
 
 impl std::error::Error for IOError {}
+
+/// The relevance levels a qrels or qrels_jg file may use. `get_qrels.c:43` documents -127 to 127,
+/// and `trec_eval` refuses other levels with #123. The highest level of a topic sizes its table of
+/// grade counts, so the upper bound also limits that allocation.
+pub const REL_LEVELS: std::ops::RangeInclusive<i64> = -127..=127;
 
 /// Reads a grade as `trec_eval`'s `str_to_long` does (`get_qrels.c:18`): the leading integer, with
 /// a warning when characters follow it, so `1.5` reads as 1 and `0.9` as 0. A value with no leading
@@ -203,7 +213,7 @@ pub fn parse_trec_qrels<P: AsRef<Path>>(path: P) -> Result<QrelsData, IOError> {
 
         let rel = parse_grade(rel_str, line_num, &mut warnings)?;
 
-        if rel < -1_000_000 || rel > 1_000_000 {
+        if !REL_LEVELS.contains(&rel) {
             return Err(IOError::FormatError(ParseError::RelevanceOutOfBounds {
                 line_num,
                 value: rel,
@@ -320,7 +330,7 @@ pub fn parse_trec_qrels_jg<P: AsRef<Path>>(path: P) -> Result<QrelsJGData, IOErr
 
         let rel = parse_grade(rel_str, line_num, &mut warnings)?;
 
-        if rel < -1_000_000 || rel > 1_000_000 {
+        if !REL_LEVELS.contains(&rel) {
             return Err(IOError::FormatError(ParseError::RelevanceOutOfBounds {
                 line_num,
                 value: rel,

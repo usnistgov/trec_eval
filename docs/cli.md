@@ -71,7 +71,7 @@ qid  iter  docno  rel
 - `qid`: Unique query/topic identifier (`str`).
 - `iter`: Iteration/judgment tag (traditionally `0` or accessor ID; ignored during scoring).
 - `docno`: Unique document identifier (`str`).
-- `rel`: Integer relevance grade ($\ge 0$ for judged grades; negative integers reserved for unjudged pool sentinels).
+- `rel`: Integer relevance grade from -127 to 127 ($\ge 0$ for judged grades; negative integers reserved for unjudged pool sentinels). A grade outside that range is an error. `trec_eval` 10.x accepts such grades.
   As in `trec_eval`, a grade such as `1.5` is read as its leading integer, 1, with a warning on stderr. A grade with no leading integer, such as `.5`, is an error.
 
 Example `qrels.txt`:

@@ -14,7 +14,7 @@ This document outlines the detailed design of the Input/Output (I/O) and parsing
     *   `qid`: Query/topic ID (`String`).
     *   `iter`: Query iteration/context (`String`, ignored).
     *   `docno`: Document ID (`String`).
-    *   `rel`: Relevance judgment (`i64` between -1,000,000 and 1,000,000). As in `trec_eval`, the leading integer is read, with a warning when characters follow it: `1.5` reads as 1 and `0.9` as 0.
+    *   `rel`: Relevance judgment (`i64` between -127 and 127, the range of `REL_LEVELS`). As in `trec_eval`, the leading integer is read, with a warning when characters follow it: `1.5` reads as 1 and `0.9` as 0.
 *   **Comments & Blank Lines**: Skipped. Comments start with `#` in the first column.
 *   **Strictness**: Must have exactly 4 fields. Extra non-whitespace trailing characters are rejected as malformed.
 
@@ -26,7 +26,7 @@ This document outlines the detailed design of the Input/Output (I/O) and parsing
     *   `qid`: Query/topic ID (`String`).
     *   `ujg`: User judgment group (`String`).
     *   `docno`: Document ID (`String`).
-    *   `rel`: Relevance judgment (`i64` between -1,000,000 and 1,000,000). As in `trec_eval`, the leading integer is read, with a warning when characters follow it: `1.5` reads as 1 and `0.9` as 0.
+    *   `rel`: Relevance judgment (`i64` between -127 and 127, the range of `REL_LEVELS`). As in `trec_eval`, the leading integer is read, with a warning when characters follow it: `1.5` reads as 1 and `0.9` as 0.
 *   **Comments & Blank Lines**: Skipped. Comments start with `#` in the first column.
 *   **Strictness**: Must have exactly 4 fields. Extra non-whitespace trailing characters are rejected as malformed.
 
@@ -260,7 +260,7 @@ pub enum IOError {
 7. Validate field count:
     * For Qrels: Must be exactly 4 tokens.
     * For Run/Results: Must be at least 6 tokens.
-8. Parse `rel` with `parse_grade`, which reads the leading integer as `trec_eval`'s `str_to_long` does and warns when characters follow it. Parse other integers and floats with `.parse::<i64>()` and `.parse::<f64>()`. For relevance values (`rel`), validate that they fall within a generous and safe range of `-1,000,000` to `1,000,000` to support modern preference-based dense scales while permanently preventing excessive vector allocations.
+8. Parse `rel` with `parse_grade`, which reads the leading integer as `trec_eval`'s `str_to_long` does and warns when characters follow it. Parse other integers and floats with `.parse::<i64>()` and `.parse::<f64>()`. For relevance values (`rel`), validate that they fall within `REL_LEVELS`, -127 to 127, the range that `trec_eval` documents (`get_qrels.c:43`). The bound also prevents excessive vector allocations.
 9. Store records sequentially.
 10. Populate the `QrelsData` or `RunData` structures, sorting internal lists if necessary or leaving sorting as an explicit post-processing step before metric calculations. Keep all comments preserved in the `comments` field.
 
