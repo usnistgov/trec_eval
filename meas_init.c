@@ -467,7 +467,11 @@ static int get_param_pairs(PARAMS * params, char *param_string)
 
 static int comp_long(const void *ptr1, const void *ptr2)
 {
-    return (*((long *) ptr1) - *((long *) ptr2));
+    if (*((long *) ptr1) < *((long *) ptr2))
+        return (-1);
+    if (*((long *) ptr1) > *((long *) ptr2))
+        return (1);
+    return (0);
 }
 
 static int comp_double(const void *ptr1, const void *ptr2)
