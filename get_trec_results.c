@@ -116,6 +116,12 @@ te_get_trec_results(EPI * epi, char *text_results_file,
         trec_results_buf[size] = '\0';
     }
 
+    /* Skip a UTF-8 byte-order mark at the start of the file */
+    if (size > 3 && 0 == memcmp(trec_results_buf, "\357\273\277", 3)) {
+        size -= 3;
+        memmove(trec_results_buf, trec_results_buf + 3, size);
+    }
+
     /* Append ending newline if not present, Append NULL terminator */
     if (trec_results_buf[size - 1] != '\n') {
         trec_results_buf[size] = '\n';

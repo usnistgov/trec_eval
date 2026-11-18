@@ -114,6 +114,12 @@ te_get_qrels_jg(EPI * epi, char *text_qrels_file, ALL_REL_INFO * all_rel_info)
         return (UNDEF);
     }
 
+    /* Skip a UTF-8 byte-order mark at the start of the file */
+    if (size > 3 && 0 == memcmp(trec_qrels_buf, "\357\273\277", 3)) {
+        size -= 3;
+        memmove(trec_qrels_buf, trec_qrels_buf + 3, size);
+    }
+
     /* Append ending newline if not present, Append NULL terminator */
     if (trec_qrels_buf[size - 1] != '\n') {
         trec_qrels_buf[size] = '\n';

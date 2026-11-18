@@ -138,6 +138,12 @@ te_get_qrels_prefs(EPI * epi, char *text_prefs_file,
         return (UNDEF);
     }
 
+    /* Skip a UTF-8 byte-order mark at the start of the file */
+    if (size > 3 && 0 == memcmp(trec_prefs_buf, "\357\273\277", 3)) {
+        size -= 3;
+        memmove(trec_prefs_buf, trec_prefs_buf + 3, size);
+    }
+
     /* Append ending newline if not present, Append NULL terminator */
     if (trec_prefs_buf[size - 1] != '\n') {
         trec_prefs_buf[size] = '\n';

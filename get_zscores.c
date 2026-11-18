@@ -93,6 +93,12 @@ te_get_zscores(const EPI * epi, const char *zscores_file,
         return (UNDEF);
     }
 
+    /* Skip a UTF-8 byte-order mark at the start of the file */
+    if (size > 3 && 0 == memcmp(trec_zscores_buf, "\357\273\277", 3)) {
+        size -= 3;
+        memmove(trec_zscores_buf, trec_zscores_buf + 3, size);
+    }
+
     /* Append ending newline if not present, Append NULL terminator */
     if (trec_zscores_buf[size - 1] != '\n') {
         trec_zscores_buf[size] = '\n';
