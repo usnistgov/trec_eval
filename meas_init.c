@@ -239,15 +239,24 @@ static int level_of_name(const char *name, long *level)
     return (*end == '\0' && errno != ERANGE);
 }
 
-/* Refuse two pairs with the same name, or with names that give the same
-   relevance level, as in -m ndcg.1=2,01=5 */
+/* Refuse a name that is not a relevance level, apart from the persistence
+   p of rbp and rbp_resid. Refuse two pairs with the same name, or with
+   names that give the same relevance level, as in -m ndcg.1=2,01=5 */
 static int check_pair_names(const TREC_MEAS * tm)
 {
     DOUBLE_PARAM_PAIR *pairs =
         (DOUBLE_PARAM_PAIR *) tm->meas_params->param_values;
     long i, j, level_i, level_j;
 
-    for (i = 1; i < tm->meas_params->num_params; i++) {
+    for (i = 0; i < tm->meas_params->num_params; i++) {
+        if (!level_of_name(pairs[i].name, &level_i) &&
+            !(0 == strcmp(pairs[i].name, "p") &&
+              (0 == strcmp(tm->name, "rbp") ||
+               0 == strcmp(tm->name, "rbp_resid")))) {
+            fprintf(stderr, "trec_eval: Unusable relevance level '%s'\n",
+                    pairs[i].name);
+            return (UNDEF);
+        }
         for (j = 0; j < i; j++) {
             if (level_of_name(pairs[i].name, &level_i) &&
                 level_of_name(pairs[j].name, &level_j)) {
