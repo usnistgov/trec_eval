@@ -10,6 +10,7 @@
 #include "functions.h"
 #include "trec_format.h"
 
+static int te_init_utility(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval);
 static int
 te_calc_utility(const EPI * epi, const REL_INFO * rel_info,
                 const RESULTS * results, const TREC_MEAS * tm,
@@ -41,7 +42,7 @@ TREC_MEAS te_meas_utility = { "utility",
     Warning: Current version summary evaluation averages over all topics;\n\
     it could be argued that simply summing is more useful (but not backward\n\
     compatible)\n",
-    te_init_meas_s_double_p_double,
+    te_init_utility,
     te_calc_utility,
     te_acc_meas_s,
     te_calc_avg_meas_s,
@@ -49,6 +50,19 @@ TREC_MEAS te_meas_utility = { "utility",
     te_print_final_meas_s_double_p,
     (void *) &default_utility_params, -1
 };
+
+static int te_init_utility(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
+{
+    if (UNDEF == te_init_meas_s_double_p_double(epi, tm, eval))
+        return (UNDEF);
+    if (tm->meas_params->num_params != 4) {
+        fprintf(stderr, "trec_eval.init_utility: improper number of "
+                "coefficients: %ld given, 4 needed\n",
+                tm->meas_params->num_params);
+        return (UNDEF);
+    }
+    return (1);
+}
 
 static int
 te_calc_utility(const EPI * epi, const REL_INFO * rel_info,
@@ -59,12 +73,6 @@ te_calc_utility(const EPI * epi, const REL_INFO * rel_info,
 
     if (UNDEF == te_form_res_rels(epi, rel_info, results, &rr))
         return (UNDEF);
-
-    if (tm->meas_params->num_params != 4) {
-        fprintf(stderr,
-                "trec_eval.calc_utility: improper number of coefficients\n");
-        return (UNDEF);
-    }
 
     eval->values[tm->eval_index].value =
         params[0] * rr.num_rel_ret +
