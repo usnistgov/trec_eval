@@ -491,7 +491,8 @@ static char *append_long(char *name, long value)
 
 static char *append_double(char *name, double value)
 {
-    long length_required = strlen(name) + 8 + 2;
+    long length_required =
+        strlen(name) + snprintf(NULL, 0, "%3.2f", value) + 2;
     char *full_name;
     if (NULL == (full_name = Malloc(length_required, char)))
          return (NULL);
