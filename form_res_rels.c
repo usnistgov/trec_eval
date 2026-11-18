@@ -138,7 +138,7 @@ te_form_res_rels(const EPI * epi, const REL_INFO * rel_info,
     /* Check for duplicate docnos. */
     qrels_ptr = trec_qrels->text_qrels;
     end_qrels = &trec_qrels->text_qrels[trec_qrels->num_text_qrels];
-    max_rel = qrels_ptr->rel;
+    max_rel = MAX(0, qrels_ptr->rel);
     qrels_ptr++;
     while (qrels_ptr < end_qrels) {
         if (max_rel < qrels_ptr->rel)
