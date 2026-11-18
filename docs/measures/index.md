@@ -37,6 +37,7 @@ For cutoff measures, `@` syntax is supported as an alias:
 - a float parameter that is not a finite number, such as `set_F.nan`, `rbp.p=inf` or `iprec_at_recall.1e400`
 - an integer cutoff above 9223372036854775807, the largest `i64`, such as `P.9223372036854775808`
 - a recall level outside $[0, 1]$ for `iprec_at_recall` and `11pt_avg`, and a multiple of R of 0 or less for `Rprec_mult` and `Rprec_mult_avgjg`
+- two cutoffs of `iprec_at_recall`, `Rprec_mult` or `Rprec_mult_avgjg` that print the same row name, such as `Rprec_mult.0.999,1.001`
 
 
 ---

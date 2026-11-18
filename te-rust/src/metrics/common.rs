@@ -89,6 +89,17 @@ pub fn parse_sorted_float_cutoffs(params: &str, default: &[f64]) -> Result<Vec<f
     if list.windows(2).any(|pair| pair[0] == pair[1]) {
         return Err(MeasureParseError::new("duplicate cutoffs"));
     }
+    // Each row is named with the cutoff to two decimals (`Rprec_mult_1.00`). Rounding is
+    // monotone, so in the sorted list two cutoffs that print the same name are neighbours.
+    let label = |cutoff: f64| format!("{:.2}", cutoff);
+    if let Some(pair) = list.windows(2).find(|pair| label(pair[0]) == label(pair[1])) {
+        return Err(MeasureParseError::new(format!(
+            "cutoffs {} and {} both print as {}",
+            pair[0],
+            pair[1],
+            label(pair[0])
+        )));
+    }
     Ok(list)
 }
 
@@ -265,6 +276,17 @@ mod parser_tests {
     #[test]
     fn float_cutoffs_parses_and_trims() {
         assert_eq!(parse_float_cutoffs("0.0, 0.5 ,1.0", &[]).unwrap(), vec![0.0, 0.5, 1.0]);
+    }
+
+    #[test]
+    fn sorted_float_cutoffs_refuse_names_that_collide() {
+        for bad in ["0.999,1.001", "0.101,0.104", "0.005,0.01", "1.0,0.996"] {
+            let err = parse_sorted_float_cutoffs(bad, &[]).unwrap_err();
+            assert!(err.message.contains("both print as"), "{bad}: {}", err.message);
+        }
+        // 0.105 is stored just below 0.105 and prints as 0.10, 0.106 as 0.11.
+        let distinct = parse_sorted_float_cutoffs("0.106,0.105", &[]).unwrap();
+        assert_eq!(distinct, vec![0.105, 0.106]);
     }
 
     #[test]
