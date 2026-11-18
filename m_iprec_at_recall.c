@@ -11,6 +11,7 @@
 #include "functions.h"
 #include "trec_format.h"
 
+static int te_init_iprec_at_recall(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval);
 static int
 te_calc_iprec_at_recall(const EPI * epi, const REL_INFO * rel_info,
                         const RESULTS * results, const TREC_MEAS * tm,
@@ -34,7 +35,7 @@ TREC_MEAS te_meas_iprec_at_recall = { "iprec_at_recall",
     interpolation used here is\n\
       Int_Prec (rankX) == MAX (Prec (rankY)) for all Y >= X.\n\
     Default usage: -m iprec_at_recall.0,.1,.2,.3,.4,.5,.6,.7,.8,.9,1 ...\n",
-    te_init_meas_a_double_cut_double,
+    te_init_iprec_at_recall,
     te_calc_iprec_at_recall,
     te_acc_meas_a_cut,
     te_calc_avg_meas_a_cut,
@@ -42,6 +43,27 @@ TREC_MEAS te_meas_iprec_at_recall = { "iprec_at_recall",
     te_print_final_meas_a_cut,
     (void *) &default_iprec_at_recall_cutoffs, -1
 };
+
+/* Recall levels must be between 0 and 1 */
+static int
+te_init_iprec_at_recall(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
+{
+    double *levels;
+    long i;
+
+    if (UNDEF == te_init_meas_a_double_cut_double(epi, tm, eval))
+        return (UNDEF);
+    levels = (double *) tm->meas_params->param_values;
+    for (i = 0; i < tm->meas_params->num_params; i++) {
+        if (!(levels[i] >= 0.0 && levels[i] <= 1.0)) {
+            fprintf(stderr,
+                    "trec_eval: recall level %g of measure '%s' is not in [0, 1]\n",
+                    levels[i], tm->name);
+            return (UNDEF);
+        }
+    }
+    return (1);
+}
 
 static int
 te_calc_iprec_at_recall(const EPI * epi, const REL_INFO * rel_info,

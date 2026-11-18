@@ -11,6 +11,7 @@
 #include "functions.h"
 #include "trec_format.h"
 
+static int te_init_Rprec_mult_avgjg(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval);
 static int
 te_calc_Rprec_mult_avgjg(const EPI * epi, const REL_INFO * rel_info,
                          const RESULTS * results, const TREC_MEAS * tm,
@@ -36,7 +37,7 @@ TREC_MEAS te_meas_Rprec_mult_avgjg = { "Rprec_mult_avgjg",
     of a user), then the measure is averaged over those jgs.\n\
     Default param: \n\
     trec_eval -m Rprec_mult_avgjg.0.2,0.4,0.6,0.8,1.0,1.2,1.4,1.6,1.8,2.0  ...\n",
-    te_init_meas_a_double_cut_double,
+    te_init_Rprec_mult_avgjg,
     te_calc_Rprec_mult_avgjg,
     te_acc_meas_a_cut,
     te_calc_avg_meas_a_cut,
@@ -44,6 +45,27 @@ TREC_MEAS te_meas_Rprec_mult_avgjg = { "Rprec_mult_avgjg",
     te_print_final_meas_a_cut,
     (void *) &default_Rprec_avgjg_cutoffs, -1
 };
+
+/* Multiples of R must be positive */
+static int
+te_init_Rprec_mult_avgjg(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
+{
+    double *mults;
+    long i;
+
+    if (UNDEF == te_init_meas_a_double_cut_double(epi, tm, eval))
+        return (UNDEF);
+    mults = (double *) tm->meas_params->param_values;
+    for (i = 0; i < tm->meas_params->num_params; i++) {
+        if (!(mults[i] > 0.0)) {
+            fprintf(stderr,
+                    "trec_eval: multiple %g of R for measure '%s' is not positive\n",
+                    mults[i], tm->name);
+            return (UNDEF);
+        }
+    }
+    return (1);
+}
 
 static int
 te_calc_Rprec_mult_avgjg(const EPI * epi, const REL_INFO * rel_info,

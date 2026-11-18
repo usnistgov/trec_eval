@@ -9,6 +9,7 @@
 #include "functions.h"
 #include "trec_format.h"
 
+static int te_init_rbp_resid(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval);
 static int
 te_calc_rbp_resid(const EPI * epi, const REL_INFO * rel_info,
                   const RESULTS * results, const TREC_MEAS * tm,
@@ -32,7 +33,7 @@ TREC_MEAS te_meas_rbp_resid = { "rbp_resid",
     Measurement of Retrieval Effectiveness.\"  ACM Transactions on\n\
     Information Systems, vol. 27, no. 1, article 2, publication date\n\
     December, 2008.  http://doi.acm.org/10.1145/1416950.1416952\n",
-    te_init_meas_s_double_p_pair,
+    te_init_rbp_resid,
     te_calc_rbp_resid,
     te_acc_meas_s,
     te_calc_avg_meas_s,
@@ -40,6 +41,28 @@ TREC_MEAS te_meas_rbp_resid = { "rbp_resid",
     te_print_final_meas_s_double_p,
     &default_rbp_params, -1
 };
+
+/* The persistence p must be at least 0 and less than 1 */
+static int
+te_init_rbp_resid(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
+{
+    DOUBLE_PARAM_PAIR *pairs;
+    long i;
+
+    if (UNDEF == te_init_meas_s_double_p_pair(epi, tm, eval))
+        return (UNDEF);
+    pairs = (DOUBLE_PARAM_PAIR *) tm->meas_params->param_values;
+    for (i = 0; i < tm->meas_params->num_params; i++) {
+        if (0 == strcmp(pairs[i].name, "p") &&
+            !(pairs[i].value >= 0.0 && pairs[i].value < 1.0)) {
+            fprintf(stderr,
+                    "trec_eval: persistence p=%g of measure '%s' is not in [0, 1)\n",
+                    pairs[i].value, tm->name);
+            return (UNDEF);
+        }
+    }
+    return (1);
+}
 
 static int
 te_calc_rbp_resid(const EPI * epi, const REL_INFO * rel_info,

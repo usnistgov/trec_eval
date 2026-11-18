@@ -11,6 +11,7 @@
 #include "functions.h"
 #include "trec_format.h"
 
+static int te_init_set_F(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval);
 static int
 te_calc_set_F(const EPI * epi, const REL_INFO * rel_info,
               const RESULTS * results, const TREC_MEAS * tm, TREC_EVAL * eval);
@@ -29,7 +30,7 @@ TREC_MEAS te_meas_set_F = { "set_F",
     Default usage: trec_eval -m set_F.1.0 ...\n\
     Cite: Variant of van Rijsbergen's E measure ('Information Retrieval',\n\
     Butterworths, 1979).\n",
-    te_init_meas_s_double_p_double,
+    te_init_set_F,
     te_calc_set_F,
     te_acc_meas_s,
     te_calc_avg_meas_s,
@@ -37,6 +38,27 @@ TREC_MEAS te_meas_set_F = { "set_F",
     te_print_final_meas_s_double_p,
     (void *) &default_set_F_params, -1
 };
+
+/* The relative importance of R to P must not be negative */
+static int
+te_init_set_F(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
+{
+    double *weights;
+    long i;
+
+    if (UNDEF == te_init_meas_s_double_p_double(epi, tm, eval))
+        return (UNDEF);
+    weights = (double *) tm->meas_params->param_values;
+    for (i = 0; i < tm->meas_params->num_params; i++) {
+        if (!(weights[i] >= 0.0)) {
+            fprintf(stderr,
+                    "trec_eval: weight %g of R for measure '%s' is not 0 or more\n",
+                    weights[i], tm->name);
+            return (UNDEF);
+        }
+    }
+    return (1);
+}
 
 static int
 te_calc_set_F(const EPI * epi, const REL_INFO * rel_info,
