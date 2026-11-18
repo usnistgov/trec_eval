@@ -215,6 +215,38 @@ impl Gains {
     }
 }
 
+/// Sorts the rank cutoffs given to a measure constructor, as [`parse_int_cutoffs`] does.
+///
+/// # Panics
+///
+/// Panics on a cutoff of 0 or a repeated cutoff, which [`parse_int_cutoffs`] refuses.
+pub(crate) fn sorted_rank_cutoffs(mut cutoffs: Vec<usize>) -> Vec<usize> {
+    cutoffs.sort_unstable();
+    assert!(cutoffs.first() != Some(&0), "rank cutoff must be at least 1");
+    assert!(
+        cutoffs.windows(2).all(|pair| pair[0] != pair[1]),
+        "duplicate cutoffs in {:?}",
+        cutoffs
+    );
+    cutoffs
+}
+
+/// Sorts the float cutoffs given to a measure constructor, as [`parse_sorted_float_cutoffs`]
+/// does.
+///
+/// # Panics
+///
+/// Panics on a repeated cutoff, which [`parse_sorted_float_cutoffs`] refuses.
+pub(crate) fn sorted_float_cutoffs(mut cutoffs: Vec<f64>) -> Vec<f64> {
+    cutoffs.sort_by(f64::total_cmp);
+    assert!(
+        cutoffs.windows(2).all(|pair| pair[0] != pair[1]),
+        "duplicate cutoffs in {:?}",
+        cutoffs
+    );
+    cutoffs
+}
+
 #[cfg(test)]
 pub(crate) fn make_mock_state(results_rel_list: Vec<i64>, num_rel: i64) -> crate::eval::alignment::QueryEvalState {
     let num_ret = results_rel_list.len();

@@ -8,7 +8,9 @@ pub struct NdcgCutMeasure {
 }
 
 impl NdcgCutMeasure {
+    /// Sorts `cutoffs`, and panics on a cutoff of 0 or a repeated cutoff.
     pub fn new(cutoffs: Vec<usize>) -> Self {
+        let cutoffs = crate::metrics::common::sorted_rank_cutoffs(cutoffs);
         let sub_metrics = cutoffs.iter().map(|c| format!("ndcg_cut_{}", c)).collect();
         Self {
             cutoffs,
