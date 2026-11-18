@@ -262,7 +262,7 @@ pub enum IOError {
     * For Run/Results: Must be at least 6 tokens.
 8. Parse integers and floats safely using standard `.parse::<i64>()` and `.parse::<f64>()`. For relevance values (`rel`), validate that they fall within a generous and safe range of `-1,000,000` to `1,000,000` to support modern preference-based dense scales while permanently preventing excessive vector allocations.
 9. Store records sequentially.
-10. Populate the `QrelsData` or `RunData` structures, sorting internal lists if necessary or leaving sorting as an explicit post-processing step before metric calculations. Keep all comments preserved in the `comments` field.
+10. Populate the `QrelsData` or `RunData` structures, sorting internal lists if necessary or leaving sorting as an explicit post-processing step before metric calculations. Keep all comments preserved in the `comments` field. Keep a document that repeats within a topic of a qrels or run file: `eval::find_scored_duplicate` refuses it before evaluation if the topic is scored, as `trec_eval` does. The qrels_jg parser refuses a repeat when it reads the file, as `trec_eval`'s `get_qrels_jg` does.
 
 ---
 

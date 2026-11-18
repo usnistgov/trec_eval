@@ -3,9 +3,12 @@ use pyo3::exceptions::{PyTypeError, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyList, PySequence, PySet, PyString};
 use te_rust::eval::alignment::align_query;
-use te_rust::eval::{evaluate_run, EvaluationOutput, QueryEvaluation, SummaryEvaluation};
+use te_rust::eval::{
+    evaluate_run, find_scored_duplicate, EvaluationOutput, QueryEvaluation, ScoredDuplicate,
+    SummaryEvaluation,
+};
 use te_rust::io::{QrelsData, QrelsQuery, RunData, RunQuery};
-use te_rust::metrics::{registry::resolve_measures, EvalConfig, MetricValue, ValueFormat};
+use te_rust::metrics::{registry::resolve_measures, EvalConfig, Measure, MetricValue, ValueFormat};
 
 use crate::conversions::{ingest_qrels, ingest_run, ingest_run_arrays, ColumnMapping};
 use crate::query_state::QueryState;
@@ -114,6 +117,8 @@ impl Evaluator {
             Vec::new()
         };
 
+        self.refuse_scored_duplicate(&run_data, &active_measures)?;
+
         let qrels_ref = &self.qrels;
         let config_ref = &self.config;
 
@@ -156,6 +161,8 @@ impl Evaluator {
             Vec::new()
         };
 
+        self.refuse_scored_duplicate(&run_data, &active_measures)?;
+
         let qrels_ref = &self.qrels;
         let config_ref = &self.config;
 
@@ -176,6 +183,28 @@ impl Evaluator {
         }
 
         Ok(EvalResult::from_output(output))
+    }
+}
+
+impl Evaluator {
+    /// Refuses a repeated document where the CLI and trec_eval refuse it: in a topic that is
+    /// scored, within `max_docs_per_topic`, when a measure reads the ranking. Custom measures
+    /// read it.
+    fn refuse_scored_duplicate(&self, run: &RunData, measures: &[Box<dyn Measure>]) -> PyResult<()> {
+        let reads_ranking =
+            !self.custom_measures.is_empty() || measures.iter().any(|m| m.reads_ranking());
+        if !reads_ranking {
+            return Ok(());
+        }
+        match find_scored_duplicate(&self.qrels, run, &self.config) {
+            Some(duplicate @ ScoredDuplicate::Qrels { .. }) => {
+                Err(PyValueError::new_err(format!("qrels: {}", duplicate)))
+            }
+            Some(duplicate @ ScoredDuplicate::Run { .. }) => {
+                Err(PyValueError::new_err(format!("run: {}", duplicate)))
+            }
+            None => Ok(()),
+        }
     }
 }
 

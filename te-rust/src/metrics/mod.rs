@@ -149,6 +149,13 @@ pub trait Measure: Send + Sync {
         true
     }
 
+    /// Whether `calc` reads the topic's ranking and judgments. `trec_eval` checks a topic for
+    /// repeated documents only when a measure forms them, so a request for measures that
+    /// return false here, such as `num_q`, is never refused for a repeat.
+    fn reads_ranking(&self) -> bool {
+        true
+    }
+
     /// The invariants this measure claims to uphold (self-documentation,
     /// verified by the uniform invariant test). Defaults to the standard
     /// unit-interval bundle for normalized ranking measures; measures whose

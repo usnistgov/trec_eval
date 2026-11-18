@@ -196,16 +196,7 @@ pub fn parse_trec_qrels<P: AsRef<Path>>(path: P) -> Result<QrelsData, IOError> {
         }
     });
 
-    // Validate duplicate documents under same query
-    for i in 1..raw_records.len() {
-        if raw_records[i].qid == raw_records[i - 1].qid && raw_records[i].docno == raw_records[i - 1].docno {
-            return Err(IOError::FormatError(ParseError::DuplicateDocument {
-                line_num: raw_records[i].line_num,
-                qid: raw_records[i].qid.clone(),
-                docno: raw_records[i].docno.clone(),
-            }));
-        }
-    }
+    // A repeated document stays: `eval::find_scored_duplicate` refuses it where trec_eval would.
 
     // Group into QrelsQuery records in a linear pass
     let mut queries = Vec::new();
@@ -449,16 +440,7 @@ pub fn parse_trec_run<P: AsRef<Path>>(path: P) -> Result<RunData, IOError> {
         }
     });
 
-    // Validate duplicate documents under same query
-    for i in 1..raw_records.len() {
-        if raw_records[i].qid == raw_records[i - 1].qid && raw_records[i].docno == raw_records[i - 1].docno {
-            return Err(IOError::FormatError(ParseError::DuplicateDocument {
-                line_num: raw_records[i].line_num,
-                qid: raw_records[i].qid.clone(),
-                docno: raw_records[i].docno.clone(),
-            }));
-        }
-    }
+    // A repeated document stays: `eval::find_scored_duplicate` refuses it where trec_eval would.
 
     // Group into RunQuery records in a linear pass
     let mut queries = Vec::new();

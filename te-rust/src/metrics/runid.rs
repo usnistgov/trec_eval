@@ -41,6 +41,10 @@ impl Measure for RunIdMeasure {
         true
     }
 
+    fn reads_ranking(&self) -> bool {
+        false
+    }
+
     fn invariants(&self) -> &'static [crate::metrics::invariants::Invariant] {
         crate::metrics::invariants::NONE
     }

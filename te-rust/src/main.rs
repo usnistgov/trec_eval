@@ -2,8 +2,8 @@ use clap::Parser;
 use std::process;
 
 use te_rust::eval::bootstrap::BootstrapConfig;
-use te_rust::eval::{evaluate_run, evaluate_run_jg};
-use te_rust::io::{parse_trec_qrels, parse_trec_qrels_jg, parse_trec_run, IOError, ParseError};
+use te_rust::eval::{evaluate_run, evaluate_run_jg, find_scored_duplicate, find_scored_duplicate_jg, ScoredDuplicate};
+use te_rust::io::{parse_trec_qrels, parse_trec_qrels_jg, parse_trec_run};
 use te_rust::metrics::{EvalConfig, MetricValue, ValueFormat};
 use te_rust::metrics;
 
@@ -99,10 +99,15 @@ const EXIT_USAGE: i32 = 1;
 const EXIT_INPUT: i32 = 2;
 const EXIT_TOPIC: i32 = 4;
 
-fn input_exit_status(e: &IOError) -> i32 {
-    match e {
-        IOError::FormatError(ParseError::DuplicateDocument { .. }) => EXIT_TOPIC,
-        _ => EXIT_INPUT,
+/// Refuses a repeated document in a topic that will be scored, as trec_eval does with exit 4.
+fn refuse_duplicate(duplicate: Option<ScoredDuplicate>, qrels_kind: &str, qrels_file: &str, run_file: &str) {
+    if let Some(duplicate) = duplicate {
+        let (kind, file) = match duplicate {
+            ScoredDuplicate::Qrels { .. } => (qrels_kind, qrels_file),
+            ScoredDuplicate::Run { .. } => ("run", run_file),
+        };
+        eprintln!("Error in {} file '{}': {}", kind, file, duplicate);
+        process::exit(EXIT_TOPIC);
     }
 }
 
@@ -197,7 +202,7 @@ fn main() {
         Ok(data) => data,
         Err(e) => {
             eprintln!("Error parsing run file '{}': {}", run_filename, e);
-            process::exit(input_exit_status(&e));
+            process::exit(EXIT_INPUT);
         }
     };
 
@@ -245,6 +250,9 @@ fn main() {
         None
     };
 
+    // A repeated document is refused only in a topic that a requested measure ranks.
+    let reads_ranking = active_measures.iter().any(|m| m.reads_ranking());
+
     // 6. Run evaluation engine based on relevance judgment format
     let output = match args.rel_format.to_ascii_lowercase().as_str() {
         "qrels_jg" => {
@@ -255,6 +263,10 @@ fn main() {
                     process::exit(EXIT_INPUT);
                 }
             };
+            if reads_ranking {
+                let duplicate = find_scored_duplicate_jg(&qrels_jg_data, &run_data, &config);
+                refuse_duplicate(duplicate, "qrels_jg", &qrels_filename, &run_filename);
+            }
             evaluate_run_jg(&qrels_jg_data, &run_data, &active_measures, &config, ci_config.as_ref())
         }
         "qrels" => {
@@ -262,9 +274,13 @@ fn main() {
                 Ok(data) => data,
                 Err(e) => {
                     eprintln!("Error parsing qrels file '{}': {}", qrels_filename, e);
-                    process::exit(input_exit_status(&e));
+                    process::exit(EXIT_INPUT);
                 }
             };
+            if reads_ranking {
+                let duplicate = find_scored_duplicate(&qrels_data, &run_data, &config);
+                refuse_duplicate(duplicate, "qrels", &qrels_filename, &run_filename);
+            }
             evaluate_run(&qrels_data, &run_data, &active_measures, &config, ci_config.as_ref())
         }
         other => {
