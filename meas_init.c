@@ -9,6 +9,7 @@
 #include "sysfunc.h"
 #include "trec_eval.h"
 #include "functions.h"
+#include <errno.h>
 
 /* Procedures for initialization of several default formats of measure values.
    Used in init_meas procedure description of TREC_MEAS in trec_eval.h:
@@ -28,6 +29,7 @@ static int get_long_cutoffs(PARAMS * params, char *param_string);
 static int get_double_cutoffs(PARAMS * params, char *param_string);
 static int get_double_params(PARAMS * params, char *param_string);
 static int get_param_pairs(PARAMS * params, char *param_string);
+static double str_to_double(const char *str, int *error);
 static int comp_long(const void * ptr1, const void * ptr2);
 static int comp_double(const void * ptr1, const void * ptr2);
 static char *append_long(char *name, long value);
@@ -323,6 +325,7 @@ static int get_double_cutoffs(PARAMS * params, char *param_string)
     char *ptr, *start_ptr;
     double *cutoffs;
     long i;
+    int error = 0;
 
     /* Count number of parameters in param_string (comma separated) */
     num_cutoffs = 1;
@@ -346,11 +349,21 @@ static int get_double_cutoffs(PARAMS * params, char *param_string)
     for (ptr = param_string; *ptr; ptr++) {
         if (*ptr == ',') {
             *ptr = '\0';
-            cutoffs[num_cutoffs++] = atof(start_ptr);
+            cutoffs[num_cutoffs++] = str_to_double(start_ptr, &error);
+            if (error) {
+                fprintf(stderr, "trec_eval: Illegal cutoff '%s'\n",
+                        start_ptr);
+                return (UNDEF);
+            }
             start_ptr = ptr + 1;
         }
     }
-    cutoffs[num_cutoffs++] = atof(start_ptr);
+    cutoffs[num_cutoffs++] = str_to_double(start_ptr, &error);
+    if (error) {
+        fprintf(stderr, "trec_eval: Illegal cutoff '%s'\n",
+                start_ptr);
+        return (UNDEF);
+    }
 
     /* Sort cutoffs in increasing order */
     qsort((char *) cutoffs, (int) num_cutoffs, sizeof(double), comp_double);
@@ -371,6 +384,7 @@ static int get_double_params(PARAMS * params, char *param_string)
     long num_params;
     char *ptr, *start_ptr;
     double *values;
+    int error = 0;
 
     /* Count number of parameters in param_string (comma separated) */
     num_params = 1;
@@ -393,11 +407,21 @@ static int get_double_params(PARAMS * params, char *param_string)
     for (ptr = param_string; *ptr; ptr++) {
         if (*ptr == ',') {
             *ptr = '\0';
-            values[num_params++] = atof(start_ptr);
+            values[num_params++] = str_to_double(start_ptr, &error);
+            if (error) {
+                fprintf(stderr, "trec_eval: Illegal parameter '%s'\n",
+                        start_ptr);
+                return (UNDEF);
+            }
             start_ptr = ptr + 1;
         }
     }
-    values[num_params++] = atof(start_ptr);
+    values[num_params++] = str_to_double(start_ptr, &error);
+    if (error) {
+        fprintf(stderr, "trec_eval: Illegal parameter '%s'\n",
+                start_ptr);
+        return (UNDEF);
+    }
     params->param_values = values;
     params->num_params = num_params;
     return (1);
@@ -410,6 +434,7 @@ static int get_param_pairs(PARAMS * params, char *param_string)
     char last_seen;
     char *ptr, *start_ptr;
     DOUBLE_PARAM_PAIR *values;
+    int error = 0;
 
     /* Count number of parameters in param_string (comma separated), all
        of form name=value.  Return error if not of right form */
@@ -453,16 +478,48 @@ static int get_param_pairs(PARAMS * params, char *param_string)
             start_ptr = ptr + 1;
         } else if (*ptr == ',') {
             *ptr = '\0';
-            values[num_params++].value = atof(start_ptr);
+            values[num_params++].value = str_to_double(start_ptr, &error);
+            if (error) {
+                fprintf(stderr, "trec_eval: Illegal parameter value '%s'\n",
+                        start_ptr);
+                return (UNDEF);
+            }
             start_ptr = ptr + 1;
         }
     }
-    values[num_params++].value = atof(start_ptr);
+    values[num_params++].value = str_to_double(start_ptr, &error);
+    if (error) {
+        fprintf(stderr, "trec_eval: Illegal parameter value '%s'\n",
+                start_ptr);
+        return (UNDEF);
+    }
 
     params->param_values = values;
     params->num_params = num_params;
 
     return (1);
+}
+
+/* Convert a string to a double, with the error checking of str_to_long */
+static double str_to_double(const char *str, int *error)
+{
+    char *endptr = NULL;
+    double value;
+
+    errno = 0;
+    *error = 0;
+    value = strtod(str, &endptr);
+    if (errno == ERANGE) {
+        fprintf(stderr, "Error: value `%s' out of range.\n", str);
+        *error = 1;
+    } else if (endptr == str) {
+        fprintf(stderr, "Error: value `%s' could not be parsed.\n", str);
+        *error = 1;
+    } else if (*endptr != '\0') {
+        fprintf(stderr, "Warning, value `%s' partially read as `%.*s'.\n",
+                str, (int) (endptr - str), str);
+    }
+    return value;
 }
 
 static int comp_long(const void *ptr1, const void *ptr2)

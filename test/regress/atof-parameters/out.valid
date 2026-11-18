@@ -1,0 +1,8 @@
+iprec_at_recall_0.25  	all	1.0000
+iprec_at_recall_0.50  	all	1.0000
+iprec_at_recall_1.00  	all	0.8333
+Rprec_mult_0.50       	all	1.0000
+Rprec_mult_1.00       	all	0.7500
+11pt_avg_0.5,1.       	all	0.9167
+ndcg_1=3,2=9,4=4.5    	all	0.8443
+set_F_0.5             	all	0.6750
