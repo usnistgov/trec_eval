@@ -13,7 +13,6 @@
 #include <errno.h>
 #include <sys/types.h>
 
-#define MAXLINE 10000
 /* Read all retrieved results information from trec_results_file.
 Read text tuples from trec_results_file of the form
      030  Q0  ZF08-175-870  0   4238   prise1
@@ -101,21 +100,39 @@ te_get_trec_results(EPI * epi, char *text_results_file,
             return (UNDEF);
         }
     } else {
+        /* Read standard input into a growing buffer, keeping two bytes
+           free for the newline and NUL terminator appended below */
         size_t capacity = 4096;
-        size = 0; 
-        trec_results_buf = malloc(capacity * sizeof (char));
-        char lineBuffer[MAXLINE];
-        while (fgets(lineBuffer,MAXLINE,stdin) != NULL) {
-            for (int i = 0; i < strlen(lineBuffer); i++) {
-                trec_results_buf[size] = lineBuffer[i];
-                if (++size == capacity) {
-                    long newcap = (capacity *= 2) * sizeof (char);
-                    trec_results_buf = realloc(trec_results_buf, newcap);
-                }
-            }
+        size_t num_read;
+        char *new_buf;
+
+        size = 0;
+        if (NULL == (trec_results_buf = malloc(capacity))) {
+            fprintf(stderr,
+                    "trec_eval.get_results: Cannot copy results file '%s'\n",
+                    text_results_file);
+            return (UNDEF);
         }
-        trec_results_buf = realloc(trec_results_buf, (size + 3) * sizeof (char));
-        trec_results_buf[size] = '\0';
+        while (0 < (num_read = fread(trec_results_buf + size, 1,
+                                     capacity - 2 - size, stdin))) {
+            size += num_read;
+            if (size < capacity - 2)
+                continue;
+            if (NULL == (new_buf = realloc(trec_results_buf, 2 * capacity))) {
+                fprintf(stderr,
+                        "trec_eval.get_results: Cannot copy results file '%s'\n",
+                        text_results_file);
+                return (UNDEF);
+            }
+            trec_results_buf = new_buf;
+            capacity *= 2;
+        }
+        if (ferror(stdin)) {
+            fprintf(stderr,
+                    "trec_eval.get_results: Cannot read results file '%s'\n",
+                    text_results_file);
+            return (UNDEF);
+        }
     }
 
     /* Append ending newline if not present, Append NULL terminator */

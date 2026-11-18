@@ -33,6 +33,7 @@ for v in nul-line nul-field; do
     check $D/qrels $T/run.$v -m num_ret
 done
 
-# Results read from standard input are not checked, and still evaluate.
+# Results read from standard input still evaluate; test_stdin-results.sh
+# checks them for a NUL byte.
 expect_output test/out.test test/qrels.test - < test/results.test
 exit 0
