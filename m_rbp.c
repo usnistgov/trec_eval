@@ -41,7 +41,7 @@ te_calc_rbp(const EPI * epi, const REL_INFO * rel_info, const RESULTS * results,
             const TREC_MEAS * tm, TREC_EVAL * eval)
 {
     RES_RELS res_rels;
-    double sum, min, max;
+    double sum, min = 0.0, max = 0.0;
     double p = 0.9;             /* default value, settable with param */
     double cur_p;
     double gain;
