@@ -26,6 +26,7 @@ run = {
 evaluator = pytrec_eval.RelevanceEvaluator(qrel, {'map', 'ndcg'})
 
 # Returns exact nested dictionary format matching pytrec_eval
+# (an empty dict when the run shares no topic with qrel, as in pytrec_eval)
 results = evaluator.evaluate(run)
 # {
 #     'q1': {'map': 0.3333333333333333, 'ndcg': 0.5},

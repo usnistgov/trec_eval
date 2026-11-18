@@ -9,6 +9,7 @@ import trec_eval.compat.pytrec_eval as pytrec_eval
 
 import collections
 import io
+from collections.abc import Mapping
 from typing import Any, Dict, Iterable, Set, Union
 from trec_eval._trec_eval import Evaluator, __version__
 
@@ -91,9 +92,13 @@ class RelevanceEvaluator:
             judged_docs_only=judged_docs_only_flag,
         )
         self.measures = set(measures) if not isinstance(measures, str) else {measures}
+        self._qrel_ids = set(qrel) if isinstance(qrel, Mapping) else None
 
     def evaluate(self, run: Any) -> Dict[str, Dict[str, float]]:
         """Evaluate run and return nested dict matching pytrec_eval output format."""
+        # pytrec_eval returns no topics, where Evaluator raises ValueError.
+        if self._qrel_ids is not None and isinstance(run, Mapping) and self._qrel_ids.isdisjoint(run):
+            return {}
         eval_result = self._evaluator.evaluate(run)
         return eval_result.to_dict()
 

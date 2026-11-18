@@ -121,6 +121,7 @@ impl Evaluator {
         let mut output = py.allow_threads(|| {
             evaluate_run(qrels_ref, &run_data, &active_measures, config_ref, None)
         });
+        require_shared_topic(&output, config_ref)?;
 
 
         // 2. Run custom measures with exception sandboxing
@@ -162,6 +163,7 @@ impl Evaluator {
         let mut output = py.allow_threads(|| {
             evaluate_run(qrels_ref, &run_data, &active_measures, config_ref, None)
         });
+        require_shared_topic(&output, config_ref)?;
 
 
         if !self.custom_measures.is_empty() {
@@ -177,6 +179,17 @@ impl Evaluator {
 
         Ok(EvalResult::from_output(output))
     }
+}
+
+/// As the CLI does, refuse a run that shares no topic with the qrels, unless
+/// `complete_set_average` scores the qrels topics.
+fn require_shared_topic(output: &EvaluationOutput, config: &EvalConfig) -> PyResult<()> {
+    if !config.average_complete_flag && output.num_queries_evaluated == 0 {
+        return Err(PyValueError::new_err(
+            "no topic has both results and judgments; complete_set_average=True scores the qrels topics as 0",
+        ));
+    }
+    Ok(())
 }
 
 fn parse_measures_arg(

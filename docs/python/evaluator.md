@@ -45,6 +45,8 @@ Evaluates a system run against the pre-indexed judgments. The Python GIL is rele
 - `run` (`str`, `PathLike`, `dict`, `DataFrame`, or `Iterable`): System run results.
 - `qid`, `docno`, `score` (`str`, optional): Column name overrides for DataFrame inputs.
 
+Raises `ValueError` when the run shares no topic with `qrels`, as the CLI fails, unless `complete_set_average` is `True`. `evaluate_arrays` does the same.
+
 #### `evaluate_arrays`
 
 ```python
