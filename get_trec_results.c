@@ -117,7 +117,7 @@ te_get_trec_results(EPI * epi, char *text_results_file,
     }
 
     /* Append ending newline if not present, Append NULL terminator */
-    if (trec_results_buf[size - 1] != '\n') {
+    if (size == 0 || trec_results_buf[size - 1] != '\n') {
         trec_results_buf[size] = '\n';
         size++;
     }
@@ -168,6 +168,12 @@ te_get_trec_results(EPI * epi, char *text_results_file,
         line_ptr++;
     }
     num_lines = line_ptr - lines;
+    if (num_lines == 0) {
+        fprintf(stderr,
+                "trec_eval.get_results: No data lines in results file '%s'\n",
+                text_results_file);
+        return (UNDEF);
+    }
 
     /* Sort all lines by qid, then docno */
     qsort((char *) lines, (int) num_lines, sizeof(LINES), comp_lines_qid_docno);
