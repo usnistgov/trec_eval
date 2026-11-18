@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 use std::path::Path;
-use pyo3::exceptions::{PyFileNotFoundError, PyTypeError, PyValueError};
+use pyo3::exceptions::{PyFileNotFoundError, PyTypeError, PyUserWarning, PyValueError};
 use pyo3::prelude::*;
 use pyo3::types::{PyDict, PyIterator, PySequence, PyString};
 use te_rust::io::{parse_trec_qrels, parse_trec_run, QrelsData, QrelsQuery, QrelsRecord, RunData, RunQuery, RunRecord};
@@ -62,9 +62,15 @@ pub fn ingest_qrels(obj: &Bound<'_, PyAny>, mapping: Option<&ColumnMapping>) -> 
     if let Some(path_str) = extract_path_string(obj) {
         let path = Path::new(&path_str);
         if path.is_file() {
-            return parse_trec_qrels(path).map_err(|e| {
+            let qrels = parse_trec_qrels(path).map_err(|e| {
                 PyValueError::new_err(format!("Failed to parse qrels file '{}': {}", path_str, e))
-            });
+            })?;
+            let category = obj.py().get_type_bound::<PyUserWarning>();
+            for warning in &qrels.warnings {
+                let message = format!("qrels file '{}': {}", path_str, warning);
+                PyErr::warn_bound(obj.py(), category.as_any(), &message, 1)?;
+            }
+            return Ok(qrels);
         }
         return Err(PyFileNotFoundError::new_err(format!(
             "Qrels file not found: '{}'",
@@ -112,6 +118,7 @@ pub fn ingest_qrels(obj: &Bound<'_, PyAny>, mapping: Option<&ColumnMapping>) -> 
         return Ok(QrelsData {
             queries,
             comments: Vec::new(),
+            warnings: Vec::new(),
         });
     }
 
@@ -169,6 +176,7 @@ pub fn ingest_qrels(obj: &Bound<'_, PyAny>, mapping: Option<&ColumnMapping>) -> 
         return Ok(QrelsData {
             queries,
             comments: Vec::new(),
+            warnings: Vec::new(),
         });
     }
 
@@ -206,6 +214,7 @@ fn ingest_qrels_from_iter(iter: Bound<'_, PyIterator>) -> PyResult<QrelsData> {
     Ok(QrelsData {
         queries,
         comments: Vec::new(),
+        warnings: Vec::new(),
     })
 }
 

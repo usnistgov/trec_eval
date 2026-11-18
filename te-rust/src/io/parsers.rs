@@ -55,6 +55,30 @@ impl std::fmt::Display for IOError {
 
 impl std::error::Error for IOError {}
 
+/// Reads a grade as `trec_eval`'s `str_to_long` does (`get_qrels.c:18`): the leading integer, with
+/// a warning when characters follow it, so `1.5` reads as 1 and `0.9` as 0. A value with no leading
+/// integer, or one that does not fit in an `i64`, is an error.
+fn parse_grade(value: &str, line_num: usize, warnings: &mut Vec<String>) -> Result<i64, IOError> {
+    let invalid = || {
+        IOError::FormatError(ParseError::InvalidInteger {
+            line_num,
+            field: "rel".to_string(),
+            value: value.to_string(),
+        })
+    };
+    let start = usize::from(value.starts_with(['+', '-']));
+    let digits = value[start..].bytes().take_while(u8::is_ascii_digit).count();
+    if digits == 0 {
+        return Err(invalid());
+    }
+    let end = start + digits;
+    let rel = value[..end].parse::<i64>().map_err(|_| invalid())?;
+    if end < value.len() {
+        warnings.push(format!("Line {}: value '{}' partially read as '{}'", line_num, value, rel));
+    }
+    Ok(rel)
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct QrelsRecord {
     pub docno: String,
@@ -71,6 +95,8 @@ pub struct QrelsQuery {
 pub struct QrelsData {
     pub queries: Vec<QrelsQuery>,
     pub comments: Vec<String>,
+    /// Problems that did not stop parsing, such as a grade read only in part.
+    pub warnings: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -89,6 +115,8 @@ pub struct QrelsJGQuery {
 pub struct QrelsJGData {
     pub queries: Vec<QrelsJGQuery>,
     pub comments: Vec<String>,
+    /// Problems that did not stop parsing, such as a grade read only in part.
+    pub warnings: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -144,6 +172,7 @@ pub fn parse_trec_qrels<P: AsRef<Path>>(path: P) -> Result<QrelsData, IOError> {
     let mut raw_records = Vec::new();
     let mut comments = Vec::new();
     let mut line_num = 0;
+    let mut warnings = Vec::new();
 
     for line_res in reader.lines() {
         line_num += 1;
@@ -172,13 +201,7 @@ pub fn parse_trec_qrels<P: AsRef<Path>>(path: P) -> Result<QrelsData, IOError> {
         let docno = parts[2].to_string();
         let rel_str = parts[3];
 
-        let rel = rel_str.parse::<i64>().map_err(|_| {
-            IOError::FormatError(ParseError::InvalidInteger {
-                line_num,
-                field: "rel".to_string(),
-                value: rel_str.to_string(),
-            })
-        })?;
+        let rel = parse_grade(rel_str, line_num, &mut warnings)?;
 
         if rel < -1_000_000 || rel > 1_000_000 {
             return Err(IOError::FormatError(ParseError::RelevanceOutOfBounds {
@@ -247,7 +270,7 @@ pub fn parse_trec_qrels<P: AsRef<Path>>(path: P) -> Result<QrelsData, IOError> {
     }
     queries.push(current_query);
 
-    Ok(QrelsData { queries, comments })
+    Ok(QrelsData { queries, comments, warnings })
 }
 
 struct RawQrelsJG {
@@ -265,6 +288,7 @@ pub fn parse_trec_qrels_jg<P: AsRef<Path>>(path: P) -> Result<QrelsJGData, IOErr
     let mut raw_records = Vec::new();
     let mut comments = Vec::new();
     let mut line_num = 0;
+    let mut warnings = Vec::new();
 
     for line_res in reader.lines() {
         line_num += 1;
@@ -294,13 +318,7 @@ pub fn parse_trec_qrels_jg<P: AsRef<Path>>(path: P) -> Result<QrelsJGData, IOErr
         let docno = parts[2].to_string();
         let rel_str = parts[3];
 
-        let rel = rel_str.parse::<i64>().map_err(|_| {
-            IOError::FormatError(ParseError::InvalidInteger {
-                line_num,
-                field: "rel".to_string(),
-                value: rel_str.to_string(),
-            })
-        })?;
+        let rel = parse_grade(rel_str, line_num, &mut warnings)?;
 
         if rel < -1_000_000 || rel > 1_000_000 {
             return Err(IOError::FormatError(ParseError::RelevanceOutOfBounds {
@@ -380,7 +398,7 @@ pub fn parse_trec_qrels_jg<P: AsRef<Path>>(path: P) -> Result<QrelsJGData, IOErr
         }
     }
 
-    Ok(QrelsJGData { queries, comments })
+    Ok(QrelsJGData { queries, comments, warnings })
 }
 
 /// Parses standard results (run) file format.

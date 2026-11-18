@@ -72,6 +72,7 @@ qid  iter  docno  rel
 - `iter`: Iteration/judgment tag (traditionally `0` or accessor ID; ignored during scoring).
 - `docno`: Unique document identifier (`str`).
 - `rel`: Integer relevance grade ($\ge 0$ for judged grades; negative integers reserved for unjudged pool sentinels).
+  As in `trec_eval`, a grade such as `1.5` is read as its leading integer, 1, with a warning on stderr. A grade with no leading integer, such as `.5`, is an error.
 
 Example `qrels.txt`:
 ```text

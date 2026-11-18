@@ -220,6 +220,9 @@ fn main() {
                     process::exit(1);
                 }
             };
+            for warning in &qrels_jg_data.warnings {
+                eprintln!("Warning in qrels_jg file '{}': {}", qrels_filename, warning);
+            }
             evaluate_run_jg(&qrels_jg_data, &run_data, &active_measures, &config, ci_config.as_ref())
         }
         "qrels" => {
@@ -230,6 +233,9 @@ fn main() {
                     process::exit(1);
                 }
             };
+            for warning in &qrels_data.warnings {
+                eprintln!("Warning in qrels file '{}': {}", qrels_filename, warning);
+            }
             evaluate_run(&qrels_data, &run_data, &active_measures, &config, ci_config.as_ref())
         }
         other => {

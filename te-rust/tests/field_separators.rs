@@ -160,13 +160,15 @@ fn leading_nbsp_belongs_to_the_qrels_qid() {
 
 #[test]
 fn trailing_nbsp_is_part_of_the_grade() {
+    // The grade field is "1<NBSP>". As in trec_eval, its leading integer is read with a warning.
     let out = te_rust(&[
         "-m",
         "map",
         &fixture("trailing-nbsp.qrels"),
         &fixture("x.run"),
     ]);
-    assert!(!out.status.success());
+    assert_eq!(summary(&out, "map"), "1.0000");
+    assert!(String::from_utf8_lossy(&out.stderr).contains("partially read as '1'"));
 }
 
 #[test]
