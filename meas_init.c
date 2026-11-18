@@ -223,6 +223,51 @@ int te_init_meas_s_double_p_double(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
     return (1);
 }
 
+/* Return 1, and set *level, if name is a relevance level as setup_gains
+   reads one: an optional sign and digits, within the range of a long */
+static int level_of_name(const char *name, long *level)
+{
+    const char *ptr = name;
+    char *end;
+
+    if (*ptr == '-' || *ptr == '+')
+        ptr++;
+    if (*ptr < '0' || *ptr > '9')
+        return (0);
+    errno = 0;
+    *level = strtol(name, &end, 10);
+    return (*end == '\0' && errno != ERANGE);
+}
+
+/* Refuse two pairs with the same name, or with names that give the same
+   relevance level, as in -m ndcg.1=2,01=5 */
+static int check_pair_names(const TREC_MEAS * tm)
+{
+    DOUBLE_PARAM_PAIR *pairs =
+        (DOUBLE_PARAM_PAIR *) tm->meas_params->param_values;
+    long i, j, level_i, level_j;
+
+    for (i = 1; i < tm->meas_params->num_params; i++) {
+        for (j = 0; j < i; j++) {
+            if (level_of_name(pairs[i].name, &level_i) &&
+                level_of_name(pairs[j].name, &level_j)) {
+                if (level_i == level_j) {
+                    fprintf(stderr,
+                            "trec_eval: relevance level %ld of measure '%s' is given more than once\n",
+                            level_i, tm->name);
+                    return (UNDEF);
+                }
+            } else if (0 == strcmp(pairs[i].name, pairs[j].name)) {
+                fprintf(stderr,
+                        "trec_eval: parameter '%s' of measure '%s' is given more than once\n",
+                        pairs[i].name, tm->name);
+                return (UNDEF);
+            }
+        }
+    }
+    return (1);
+}
+
 /* Measure is a single double with paired name=double params */
 int te_init_meas_s_double_p_pair(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
 {
@@ -231,7 +276,8 @@ int te_init_meas_s_double_p_pair(EPI * epi, TREC_MEAS * tm, TREC_EVAL * eval)
         while (meas_arg_ptr->measure_name) {
             if (0 == strcmp(meas_arg_ptr->measure_name, tm->name)) {
                 if (UNDEF == get_param_pairs(tm->meas_params,
-                                             meas_arg_ptr->parameters))
+                                             meas_arg_ptr->parameters) ||
+                    UNDEF == check_pair_names(tm))
                     return (UNDEF);
                 break;
             }
