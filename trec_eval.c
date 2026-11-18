@@ -51,7 +51,8 @@ normally ever used.   \n\
  --level_for_rel num:\n\
  -l<num>: Num indicates the minimum relevance judgement value needed for \n\
       a document to be called relevant. Used if rel_info_file contains \n\
-      relevance judged on a multi-relevance scale.  Default is 1. \n\
+      relevance judged on a multi-relevance scale.  Num must be 0 or more.\n\
+      Default is 1. \n\
  --nosummary:\n\
  -n: No summary evaluation will be printed\n\
  --Debug_level num:\n\
@@ -241,7 +242,7 @@ int main(int argc, char * argv[])
                 break;
             case 'l':
                 epi.relevance_level = str_to_long(optarg, &error);
-                if (error) {
+                if (error || epi.relevance_level < 0) {
                     fprintf(stderr, "trec_eval: Unusable relevance level '%s'\n",
                             optarg);
                     exit(1);
