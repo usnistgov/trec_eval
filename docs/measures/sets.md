@@ -40,4 +40,4 @@ Weighted harmonic mean of set precision and set recall, parameterized by $\beta$
 $$F_\beta = \frac{(1 + \beta^2) \cdot \text{set\_P} \cdot \text{set\_recall}}{\beta^2 \cdot \text{set\_P} + \text{set\_recall}}$$
 
 - Parameter: `beta` (default `1.0` for balanced $F_1$).
-- Usage: `-m set_F` ($F_1$) or `-m set_F.beta=0.5` ($F_{0.5}$, emphasizing precision) or `-m set_F.beta=2.0` ($F_2$, emphasizing recall).
+- Usage: `-m set_F` ($F_1$) or `-m set_F.0.5` (weight 0.5). The weight must be 0 or more, and `set_F.0` gives `set_P`.
