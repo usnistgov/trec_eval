@@ -71,7 +71,7 @@ static ZSCORES *find_qid(const ALL_ZSCORES * all_zscores, const char *qid)
     int result;
 
     base = all_zscores->q_zscores;
-    end = all_zscores->num_q_zscores;
+    end = all_zscores->num_q_zscores - 1;
     start = 0;
     while (start <= end) {
         current = (start + end) / 2;
@@ -93,7 +93,7 @@ static ZSCORE_QID *find_meas(const ZSCORES * zscores, const char *meas)
     int result;
 
     base = zscores->zscores;
-    end = zscores->num_zscores;
+    end = zscores->num_zscores - 1;
     start = 0;
     while (start <= end) {
         current = (start + end) / 2;
