@@ -991,7 +991,11 @@ comp_prefs_and_ranks_jg_rel_level(const void * ptr1,
         return (-1);
     if (p1->rel_level < p2->rel_level)
         return (1);
-    return (p1->rank - p2->rank);
+    if (p1->rank < p2->rank)
+        return (-1);
+    if (p1->rank > p2->rank)
+        return (1);
+    return (0);
 }
 
 static int comp_sim_docno(const void * ptr1, const void * ptr2)
@@ -1012,7 +1016,11 @@ static int comp_docno(const void * ptr1, const void * ptr2)
 
 static int comp_results_inc_rank(const void * ptr1, const void * ptr2)
 {
-    return (((DOCNO_RESULTS *) ptr1)->rank - ((DOCNO_RESULTS *) ptr2)->rank);
+    if (((DOCNO_RESULTS *) ptr1)->rank < ((DOCNO_RESULTS *) ptr2)->rank)
+        return (-1);
+    if (((DOCNO_RESULTS *) ptr1)->rank > ((DOCNO_RESULTS *) ptr2)->rank)
+        return (1);
+    return (0);
 }
 
 
