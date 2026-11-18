@@ -34,7 +34,7 @@ check is made that it is consistent throughout).
 typedef struct {
     char *qid;
     char *docno;
-    char *sim;
+    double sim;
 } LINES;
 
 static int parse_results_line(char **start_ptr, char **qid_ptr,
@@ -67,6 +67,7 @@ te_get_trec_results(EPI * epi, char *text_results_file,
     long current_column;
     long num_qid;
     char *run_id_ptr = NULL;
+    char *sim_ptr, *end_ptr;
     /* current pointers into static pools above */
     RESULTS *q_results_ptr;
     TEXT_RESULTS_INFO *text_info_ptr;
@@ -122,6 +123,12 @@ te_get_trec_results(EPI * epi, char *text_results_file,
         size++;
     }
     trec_results_buf[size] = '\0';
+    if (strlen(trec_results_buf) != size) {
+        fprintf(stderr,
+                "trec_eval.get_results: NUL character in results file '%s'\n",
+                text_results_file);
+        return (UNDEF);
+    }
 
     /* Count number of non-comment lines in file */
     num_lines = 0;
@@ -160,11 +167,23 @@ te_get_trec_results(EPI * epi, char *text_results_file,
             continue;
         }
         if (UNDEF == parse_results_line(&ptr, &line_ptr->qid, &line_ptr->docno,
-                                        &line_ptr->sim, &run_id_ptr)) {
+                                        &sim_ptr, &run_id_ptr)) {
             fprintf(stderr, "trec_eval.get_results: Malformed line %ld\n",
                     (long) (line_ptr - lines + 1));
             return (UNDEF);
         }
+        line_ptr->sim = strtod(sim_ptr, &end_ptr);
+        if (end_ptr == sim_ptr || isnan(line_ptr->sim)) {
+            fprintf(stderr,
+                    "trec_eval.get_results: Unusable score '%s' in line %ld\n",
+                    sim_ptr, (long) (line_ptr - lines + 1));
+            return (UNDEF);
+        }
+        if (*end_ptr != '\0')
+            fprintf(stderr, "trec_eval.get_results: Warning, score '%s' in "
+                    "line %ld partially read as '%.*s'\n",
+                    sim_ptr, (long) (line_ptr - lines + 1),
+                    (int) (end_ptr - sim_ptr), sim_ptr);
         line_ptr++;
     }
     num_lines = line_ptr - lines;
@@ -207,7 +226,7 @@ te_get_trec_results(EPI * epi, char *text_results_file,
             current_qid, run_id_ptr, "trec_results", text_info_ptr};
         }
         text_results_ptr->docno = lines[i].docno;
-        text_results_ptr->sim = atof(lines[i].sim);
+        text_results_ptr->sim = lines[i].sim;
         text_results_ptr++;
     }
     /* End last qid */

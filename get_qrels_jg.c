@@ -120,6 +120,12 @@ te_get_qrels_jg(EPI * epi, char *text_qrels_file, ALL_REL_INFO * all_rel_info)
         size++;
     }
     trec_qrels_buf[size] = '\0';
+    if (strlen(trec_qrels_buf) != (size_t) size) {
+        fprintf(stderr,
+                "trec_eval.get_qrels_jg: NUL character in qrels file '%s'\n",
+                text_qrels_file);
+        return (UNDEF);
+    }
 
     /* Count number of non-comment lines in file */
     num_lines = 0;
