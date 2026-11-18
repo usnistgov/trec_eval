@@ -12,7 +12,7 @@ impl NdcgCutMeasure {
         let sub_metrics = cutoffs.iter().map(|c| format!("ndcg_cut_{}", c)).collect();
         Self {
             cutoffs,
-            gains_config: GainsConfig::parse(""),
+            gains_config: GainsConfig::default(),
             sub_metrics,
         }
     }
@@ -179,7 +179,7 @@ mod tests {
     fn test_ndcg_cut_global_gains() {
         let measure = NdcgCutMeasure::new(vec![1, 3]);
         let mut config = EvalConfig::default();
-        config.global_gains = Some(GainsConfig::parse("1=5.0,2=10.0"));
+        config.global_gains = Some(GainsConfig::parse("1=5.0,2=10.0").unwrap());
         
         let state = crate::eval::alignment::QueryEvalState {
             qid: "mock_topic".to_string(),

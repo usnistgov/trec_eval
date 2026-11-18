@@ -1,5 +1,5 @@
 use crate::metrics::{EvalConfig, EvalState, EvaluationType, Measure, MetricValue, ValueFormat};
-use crate::metrics::common::{Gains, GainsConfig};
+use crate::metrics::common::{Gains, GainsConfig, MeasureParseError};
 
 pub struct NdcgRelMeasure {
     gains_config: GainsConfig,
@@ -7,16 +7,16 @@ pub struct NdcgRelMeasure {
 }
 
 impl NdcgRelMeasure {
-    pub fn new(params_str: &str) -> Self {
+    pub fn new(params_str: &str) -> Result<Self, MeasureParseError> {
         let name = if params_str.is_empty() {
             "ndcg_rel".to_string()
         } else {
             format!("ndcg_rel_{}", params_str)
         };
-        Self {
-            gains_config: GainsConfig::parse(params_str),
+        Ok(Self {
+            gains_config: GainsConfig::parse(params_str)?,
             sub_metrics: vec![name],
-        }
+        })
     }
 }
 
@@ -146,7 +146,7 @@ impl Measure for NdcgRelMeasure {
 
 impl Default for NdcgRelMeasure {
     fn default() -> Self {
-        Self::new("")
+        Self::new("").expect("an empty gain map is valid")
     }
 }
 
@@ -157,7 +157,7 @@ mod tests {
 
     #[test]
     fn test_ndcg_rel_standard() {
-        let measure = NdcgRelMeasure::new("");
+        let measure = NdcgRelMeasure::new("").unwrap();
         let config = EvalConfig::default();
         let state = make_mock_state(vec![1, 0, 1], 2);
         let actual = measure.calc(&config, &EvalState::Standard(state));

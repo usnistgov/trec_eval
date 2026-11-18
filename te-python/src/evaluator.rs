@@ -66,8 +66,10 @@ impl Evaluator {
         }
 
         let parsed_gains = global_gains
-            .as_ref()
-            .map(|s| te_rust::metrics::common::GainsConfig::parse(s));
+            .as_deref()
+            .map(te_rust::metrics::common::GainsConfig::parse)
+            .transpose()
+            .map_err(|e| PyValueError::new_err(format!("Invalid global_gains: {}", e)))?;
 
         let config = EvalConfig {
             query_flag: true,

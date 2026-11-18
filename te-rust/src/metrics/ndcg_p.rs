@@ -1,5 +1,5 @@
 use crate::metrics::{EvalConfig, EvalState, EvaluationType, Measure, MetricValue, ValueFormat};
-use crate::metrics::common::{Gains, GainsConfig};
+use crate::metrics::common::{Gains, GainsConfig, MeasureParseError};
 
 pub struct NdcgPMeasure {
     gains_config: GainsConfig,
@@ -7,16 +7,16 @@ pub struct NdcgPMeasure {
 }
 
 impl NdcgPMeasure {
-    pub fn new(params_str: &str) -> Self {
+    pub fn new(params_str: &str) -> Result<Self, MeasureParseError> {
         let name = if params_str.is_empty() {
             "ndcg_p".to_string()
         } else {
             format!("ndcg_p_{}", params_str)
         };
-        Self {
-            gains_config: GainsConfig::parse(params_str),
+        Ok(Self {
+            gains_config: GainsConfig::parse(params_str)?,
             sub_metrics: vec![name],
-        }
+        })
     }
 }
 
@@ -112,7 +112,7 @@ impl Measure for NdcgPMeasure {
 
 impl Default for NdcgPMeasure {
     fn default() -> Self {
-        Self::new("")
+        Self::new("").expect("an empty gain map is valid")
     }
 }
 
@@ -123,7 +123,7 @@ mod tests {
 
     #[test]
     fn test_ndcg_p_standard() {
-        let measure = NdcgPMeasure::new("");
+        let measure = NdcgPMeasure::new("").unwrap();
         let config = EvalConfig::default();
         // retrieved: [1, 0, 1]. R=2.
         // rank 1 (i=0): rel=1 -> gain=1.0. dcg += 1.0 = 1.0

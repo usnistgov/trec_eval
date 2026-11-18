@@ -89,8 +89,8 @@ struct Args {
     run_file: Option<String>,
 
     /// Global relevance-to-gain mapping (e.g. --global-gains 1=3.5,2=9.0)
-    #[arg(long = "global-gains", value_name = "gains")]
-    global_gains: Option<String>,
+    #[arg(long = "global-gains", value_name = "gains", value_parser = metrics::common::GainsConfig::parse)]
+    global_gains: Option<metrics::common::GainsConfig>,
 }
 
 fn handle_help_flags(help_measures: bool, help_measure: Option<&str>) {
@@ -187,7 +187,7 @@ fn main() {
     };
 
     // 5. Setup runtime config
-    let global_gains = args.global_gains.as_ref().map(|s| crate::metrics::common::GainsConfig::parse(s));
+    let global_gains = args.global_gains;
     let config = EvalConfig {
         query_flag: args.query_flag,
         summary_flag: !args.no_summary_flag,
