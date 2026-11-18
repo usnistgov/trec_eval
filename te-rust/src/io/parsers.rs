@@ -202,7 +202,10 @@ fn split_fields(line: &str) -> Vec<&str> {
     line.split(is_field_sep).filter(|field| !field.is_empty()).collect()
 }
 
-/// Reads lines as `BufRead::lines` does, and checks each line's bytes with `decode_line`.
+const UTF8_BOM: &[u8] = b"\xEF\xBB\xBF";
+
+/// Reads lines as `BufRead::lines` does, and checks each line's bytes with `decode_line`. A UTF-8
+/// byte-order mark at the start of the file is removed; elsewhere it is part of the line.
 fn read_lines(mut reader: impl BufRead) -> impl Iterator<Item = Result<String, IOError>> {
     let mut line_num = 0;
     std::iter::from_fn(move || {
@@ -211,6 +214,9 @@ fn read_lines(mut reader: impl BufRead) -> impl Iterator<Item = Result<String, I
             Ok(0) => None,
             Ok(_) => {
                 line_num += 1;
+                if line_num == 1 && bytes.starts_with(UTF8_BOM) {
+                    bytes.drain(..UTF8_BOM.len());
+                }
                 Some(decode_line(bytes, line_num))
             }
             Err(e) => Some(Err(IOError::FileReadError(e))),

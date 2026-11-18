@@ -110,7 +110,7 @@ Example `run.txt`:
 
 Lines starting with `#` in either file are treated as comments and ignored. Comments in run files were a trec_eval 10.x feature to support including metadata and documentation about a run.
 
-Lines in either file end with LF or CRLF. A NUL byte, or a CR that is not followed by LF, as in a file with CR line endings, is an error that names the line. A CR that ends the file is accepted. A data line must be UTF-8, and the error names the first line that is not; `trec_eval` 10.x reads such lines. A comment line may hold bytes that are not UTF-8, and a NUL or a lone CR in a comment line is an error too. `trec_eval` 10.x reads a file with CR line endings as one line, and it accepts a lone CR in a comment line.
+Lines in either file end with LF or CRLF. A NUL byte, or a CR that is not followed by LF, as in a file with CR line endings, is an error that names the line. A CR that ends the file is accepted. A data line must be UTF-8, and the error names the first line that is not; `trec_eval` 10.x reads such lines. A comment line may hold bytes that are not UTF-8, and a NUL or a lone CR in a comment line is an error too. `trec_eval` 10.x reads a file with CR line endings as one line, and it accepts a lone CR in a comment line. A UTF-8 byte-order mark at the start of a file is skipped. `trec_eval` 10.x reads the mark as part of the first qid.
 
 ---
 
