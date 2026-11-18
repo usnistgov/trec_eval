@@ -111,6 +111,8 @@ Lines starting with `#` in either file are treated as comments and ignored. Comm
 
 ## Output Formats
 
+If `te-rust` cannot write its output, as on a full disk, it prints a message and exits `8`. `trec_eval` 10.x ignores such an error and exits `0`.
+
 ### Standard Relational Output
 
 Scores are printed as tab-separated triples: `measure  topic_id  score`.
