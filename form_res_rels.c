@@ -76,7 +76,7 @@ te_form_res_rels(const EPI * epi, const REL_INFO * rel_info,
     if (strcmp("qrels", rel_info->rel_format) ||
         strcmp("trec_results", results->ret_format)) {
         fprintf(stderr,
-                "trec_eval.form_res_qrels: rel_info format not qrels or results format not trec_results\n");
+                "trec_eval.form_res_rels: rel_info format not qrels or results format not trec_results\n");
         return (UNDEF);
     }
 
@@ -128,7 +128,7 @@ te_form_res_rels(const EPI * epi, const REL_INFO * rel_info,
     /* Error checking for duplicates */
     for (i = 1; i < num_results; i++) {
         if (0 == strcmp(docno_info[i].docno, docno_info[i - 1].docno)) {
-            fprintf(stderr, "trec_eval.form_res_qrels: duplicate docs %s\n",
+            fprintf(stderr, "trec_eval.form_res_rels: duplicate docs %s\n",
                     docno_info[i].docno);
             return (UNDEF);
         }

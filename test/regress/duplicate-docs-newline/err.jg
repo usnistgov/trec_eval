@@ -1,2 +1,2 @@
-trec_eval.form_res_qrels: duplicate docs d1
+trec_eval.form_res_rels_jg: duplicate docs d1
 trec_eval: Can't calculate measure 'map_avgjg'

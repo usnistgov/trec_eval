@@ -177,7 +177,7 @@ te_get_qrels_jg(EPI * epi, char *text_qrels_file, ALL_REL_INFO * all_rel_info)
             /* New jg within current_query */
             num_jg++;
         } else if (0 == strcmp(lines[i - 1].docno, lines[i].docno)) {
-            fprintf(stderr, "trec_eval.get_qrels: duplicate docs %s\n",
+            fprintf(stderr, "trec_eval.get_qrels_jg: duplicate docs %s\n",
                     lines[i].docno);
             return (UNDEF);
         }

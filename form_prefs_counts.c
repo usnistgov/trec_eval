@@ -236,7 +236,7 @@ form_prefs_counts(const EPI * epi, const REL_INFO * rel_info,
          strcmp("qrels_prefs", rel_info->rel_format)) ||
         strcmp("trec_results", results->ret_format)) {
         fprintf(stderr,
-                "trec_eval.form_prefs_info: prefs_info format not (prefs or qrels_prefs) or results format not trec_results\n");
+                "trec_eval.form_prefs_counts: prefs_info format not (prefs or qrels_prefs) or results format not trec_results\n");
         return (UNDEF);
     }
 
