@@ -345,8 +345,10 @@ int main(int argc, char * argv[])
     }
 
     if (epi.zscore_flag) {
-        if (UNDEF == te_get_zscores(&epi, zscores_file, &all_zscores))
-            return (UNDEF);
+        if (UNDEF == te_get_zscores(&epi, zscores_file, &all_zscores)) {
+            fprintf(stderr, "trec_eval: Quit in file '%s'\n", zscores_file);
+            exit(2);
+        }
     }
 
     /* Initialize all marked measures (possibly using command line info) */
