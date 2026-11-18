@@ -160,7 +160,11 @@ te_calc_Rndcg(const EPI * epi, const REL_INFO * rel_info,
         i++;
     }
 
-    eval->values[tm->eval_index].value = sum / num_changed_ideal_gain;
+    /* No ideal gain above 0, eg every relevant doc has gain 0 */
+    if (num_changed_ideal_gain > 0)
+        eval->values[tm->eval_index].value = sum / num_changed_ideal_gain;
+    else
+        eval->values[tm->eval_index].value = 0.0;
 
     Free(gains.rel_gains);
     return (1);
