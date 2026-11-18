@@ -1,6 +1,7 @@
 use crate::metrics::EvalConfig;
 use std::collections::HashMap;
 use std::fmt;
+use std::num::IntErrorKind;
 
 /// Error returned when a measure's parameter string cannot be parsed.
 #[derive(Debug, Clone, PartialEq)]
@@ -23,7 +24,8 @@ impl fmt::Display for MeasureParseError {
 impl std::error::Error for MeasureParseError {}
 
 /// Parse a comma-separated list of integer cutoffs (e.g. "5,10,20") into
-/// ascending order, which the single-pass measures rely on.
+/// ascending order, which the single-pass measures rely on. A cutoff must fit
+/// in an `i64`, as trec_eval's `long` cutoffs must.
 /// An empty string yields the provided defaults.
 pub fn parse_int_cutoffs(params: &str, default: &[usize]) -> Result<Vec<usize>, MeasureParseError> {
     if params.is_empty() {
@@ -32,9 +34,14 @@ pub fn parse_int_cutoffs(params: &str, default: &[usize]) -> Result<Vec<usize>, 
     let mut list = Vec::new();
     for s in params.split(',') {
         let tok = s.trim();
-        match tok.parse::<usize>() {
-            Ok(v) => list.push(v),
-            Err(_) => return Err(MeasureParseError::new(format!("invalid integer cutoff '{}'", tok))),
+        let invalid = || MeasureParseError::new(format!("invalid integer cutoff '{}'", tok));
+        match tok.parse::<i64>() {
+            Ok(v) => list.push(usize::try_from(v).map_err(|_| invalid())?),
+            Err(e) if matches!(e.kind(), IntErrorKind::PosOverflow | IntErrorKind::NegOverflow) => {
+                let message = format!("integer cutoff '{}' is out of range", tok);
+                return Err(MeasureParseError::new(message));
+            }
+            Err(_) => return Err(invalid()),
         }
     }
     list.sort_unstable();
@@ -237,6 +244,17 @@ mod parser_tests {
     fn int_cutoffs_rejects_bad_token() {
         assert!(parse_int_cutoffs("5,x,20", &[]).is_err());
         assert!(parse_int_cutoffs("5,-1", &[]).is_err());
+    }
+
+    #[test]
+    #[cfg(target_pointer_width = "64")]
+    fn int_cutoffs_must_fit_in_i64() {
+        let max = parse_int_cutoffs("9223372036854775807", &[]).unwrap();
+        assert_eq!(max, vec![i64::MAX as usize]);
+        for bad in ["9223372036854775808", "18446744073709551615", "-9223372036854775809"] {
+            let err = parse_int_cutoffs(bad, &[]).unwrap_err();
+            assert!(err.message.contains("out of range"), "{bad}: {}", err.message);
+        }
     }
 
     #[test]
