@@ -32,6 +32,10 @@ For cutoff measures, `@` syntax is supported as an alias:
 - `recall@10` $\rightarrow$ `recall.10`
 - `mrr` $\rightarrow$ `recip_rank`
 
+### 4. Parameter Checks
+`te-rust` refuses a parameter that its measure cannot use, with a message that names the measure. `trec_eval` 10.x accepts each of these:
+- a float parameter that is not a finite number, such as `set_F.nan`, `rbp.p=inf` or `iprec_at_recall.1e400`
+
 
 ---
 

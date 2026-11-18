@@ -48,20 +48,29 @@ pub fn parse_int_cutoffs(params: &str, default: &[usize]) -> Result<Vec<usize>, 
 }
 
 /// Parse a comma-separated list of float cutoffs/coefficients (e.g. "0.0,0.5,1.0").
-/// An empty string yields the provided defaults.
+/// Each value must be a finite number. An empty string yields the provided defaults.
 pub fn parse_float_cutoffs(params: &str, default: &[f64]) -> Result<Vec<f64>, MeasureParseError> {
     if params.is_empty() {
         return Ok(default.to_vec());
     }
     let mut list = Vec::new();
     for s in params.split(',') {
-        let tok = s.trim();
-        match tok.parse::<f64>() {
-            Ok(v) => list.push(v),
-            Err(_) => return Err(MeasureParseError::new(format!("invalid float value '{}'", tok))),
-        }
+        list.push(parse_finite_float(s.trim())?);
     }
     Ok(list)
+}
+
+/// Parse a float parameter that must be a finite number. NaN, infinity, and values that
+/// overflow to infinity (`1e400`) are refused.
+pub(crate) fn parse_finite_float(tok: &str) -> Result<f64, MeasureParseError> {
+    match tok.parse::<f64>() {
+        Ok(v) if v.is_finite() => Ok(v),
+        Ok(_) => Err(MeasureParseError::new(format!(
+            "float value '{}' is not a finite number",
+            tok
+        ))),
+        Err(_) => Err(MeasureParseError::new(format!("invalid float value '{}'", tok))),
+    }
 }
 
 /// Parse a comma-separated list of float cutoffs into ascending order, for
@@ -243,6 +252,14 @@ mod parser_tests {
     #[test]
     fn float_cutoffs_rejects_bad_token() {
         assert!(parse_float_cutoffs("0.0,nope", &[]).is_err());
+    }
+
+    #[test]
+    fn float_cutoffs_rejects_non_finite_values() {
+        for bad in ["nan", "NaN", "inf", "-inf", "infinity", "1e400", "0.5,nan"] {
+            assert!(parse_float_cutoffs(bad, &[]).is_err(), "{bad}");
+        }
+        assert_eq!(parse_float_cutoffs("1e300,-0.5", &[]).unwrap(), vec![1e300, -0.5]);
     }
 
     #[test]

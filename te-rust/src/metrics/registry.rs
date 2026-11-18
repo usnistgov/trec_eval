@@ -62,9 +62,7 @@ fn parse_rbp_p(params: &str) -> Result<f64, MeasureParseError> {
     let mut p = 0.9;
     for (k, v) in parse_key_values(params)? {
         if k == "p" {
-            p = v
-                .parse::<f64>()
-                .map_err(|_| MeasureParseError::new(format!("invalid float parameter '{}'", v)))?;
+            p = metrics::common::parse_finite_float(&v)?;
         }
     }
     Ok(p)
@@ -167,7 +165,7 @@ pub fn registry() -> &'static [MeasureSpec] {
                 let beta = if p.is_empty() {
                     1.0
                 } else {
-                    p.parse::<f64>().map_err(|_| MeasureParseError::new(format!("invalid float parameter '{}'", p)))?
+                    metrics::common::parse_finite_float(p)?
                 };
                 Ok(Box::new(metrics::set_f::SetFMeasure::new(beta, p)))
             },
