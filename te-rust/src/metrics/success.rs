@@ -1,3 +1,4 @@
+use crate::metrics::common::{validate_rank_cutoffs, MeasureParseError};
 use crate::metrics::{EvalConfig, EvalState, EvaluationType, Measure, MetricValue, ValueFormat};
 
 pub struct SuccessCutMeasure {
@@ -6,9 +7,10 @@ pub struct SuccessCutMeasure {
 }
 
 impl SuccessCutMeasure {
-    pub fn new(cutoffs: Vec<usize>) -> Self {
+    pub fn new(cutoffs: Vec<usize>) -> Result<Self, MeasureParseError> {
+        let cutoffs = validate_rank_cutoffs(cutoffs)?;
         let sub_metrics = cutoffs.iter().map(|c| format!("success_{}", c)).collect();
-        Self { cutoffs, sub_metrics }
+        Ok(Self { cutoffs, sub_metrics })
     }
 }
 
@@ -61,7 +63,7 @@ impl Measure for SuccessCutMeasure {
 
 impl Default for SuccessCutMeasure {
     fn default() -> Self {
-        Self::new(vec![1, 5, 10])
+        Self::new(vec![1, 5, 10]).expect("default success cutoffs are valid")
     }
 }
 
@@ -72,12 +74,22 @@ mod tests {
 
     #[test]
     fn test_success_standard() {
-        let measure = SuccessCutMeasure::new(vec![1, 3]);
+        let measure = SuccessCutMeasure::new(vec![1, 3]).unwrap();
         let config = EvalConfig::default();
         // retrieved: [0, 0, 1] (relevant at rank 3). num_rel = 1.
         // Success@1 = 0.0. Success@3 = 1.0.
         let state = make_mock_state(vec![0, 0, 1], 1);
         let actual = measure.calc(&config, &EvalState::Standard(state));
         assert_eq!(actual, vec![MetricValue::Float(0.0), MetricValue::Float(1.0)]);
+    }
+
+    #[test]
+    fn test_success_unsorted_and_invalid_cutoffs() {
+        let measure = SuccessCutMeasure::new(vec![3, 1]).unwrap();
+        assert_eq!(measure.sub_metrics(), vec!["success_1", "success_3"]);
+        assert!(SuccessCutMeasure::new(vec![]).is_err());
+        assert!(SuccessCutMeasure::new(vec![0]).is_err());
+        assert!(SuccessCutMeasure::new(vec![5, 5]).is_err());
+        assert!(SuccessCutMeasure::new(vec![i64::MAX as usize + 1]).is_err());
     }
 }

@@ -1,3 +1,4 @@
+use crate::metrics::common::{validate_rank_cutoffs, MeasureParseError};
 use crate::metrics::{EvalConfig, EvalState, EvaluationType, Measure, MetricValue, ValueFormat};
 
 pub struct RecallCutMeasure {
@@ -6,9 +7,10 @@ pub struct RecallCutMeasure {
 }
 
 impl RecallCutMeasure {
-    pub fn new(cutoffs: Vec<usize>) -> Self {
+    pub fn new(cutoffs: Vec<usize>) -> Result<Self, MeasureParseError> {
+        let cutoffs = validate_rank_cutoffs(cutoffs)?;
         let sub_metrics = cutoffs.iter().map(|c| format!("recall_{}", c)).collect();
-        Self { cutoffs, sub_metrics }
+        Ok(Self { cutoffs, sub_metrics })
     }
 }
 
@@ -67,6 +69,7 @@ impl Measure for RecallCutMeasure {
 impl Default for RecallCutMeasure {
     fn default() -> Self {
         Self::new(vec![5, 10, 15, 20, 30, 100, 200, 500, 1000])
+            .expect("default recall cutoffs are valid")
     }
 }
 
@@ -77,12 +80,26 @@ mod tests {
 
     #[test]
     fn test_recall_standard() {
-        let measure = RecallCutMeasure::new(vec![1, 3]);
+        let measure = RecallCutMeasure::new(vec![1, 3]).unwrap();
         let config = EvalConfig::default();
         // retrieved: [1, 0, 1], num_rel = 4.
         // Recall@1 = 1 / 4 = 0.25. Recall@3 = 2 / 4 = 0.5.
         let state = make_mock_state(vec![1, 0, 1], 4);
         let actual = measure.calc(&config, &EvalState::Standard(state));
         assert_eq!(actual, vec![MetricValue::Float(0.25), MetricValue::Float(0.5)]);
+    }
+
+    #[test]
+    fn test_recall_unsorted_and_invalid_cutoffs() {
+        let measure = RecallCutMeasure::new(vec![5, 2]).unwrap();
+        assert_eq!(measure.sub_metrics(), vec!["recall_2", "recall_5"]);
+        let config = EvalConfig::default();
+        let state = EvalState::Standard(make_mock_state(vec![1, 1, 1, 1, 1, 1], 6));
+        let actual = measure.calc(&config, &state);
+        assert_eq!(actual, vec![MetricValue::Float(2.0 / 6.0), MetricValue::Float(5.0 / 6.0)]);
+        assert!(RecallCutMeasure::new(vec![]).is_err());
+        assert!(RecallCutMeasure::new(vec![0]).is_err());
+        assert!(RecallCutMeasure::new(vec![5, 5]).is_err());
+        assert!(RecallCutMeasure::new(vec![i64::MAX as usize + 1]).is_err());
     }
 }

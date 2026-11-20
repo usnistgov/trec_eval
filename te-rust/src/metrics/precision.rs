@@ -1,3 +1,4 @@
+use crate::metrics::common::{validate_rank_cutoffs, MeasureParseError};
 use crate::metrics::{EvalConfig, EvalState, EvaluationType, Measure, MetricValue, ValueFormat};
 
 pub struct PrecisionCutMeasure {
@@ -6,9 +7,10 @@ pub struct PrecisionCutMeasure {
 }
 
 impl PrecisionCutMeasure {
-    pub fn new(cutoffs: Vec<usize>) -> Self {
+    pub fn new(cutoffs: Vec<usize>) -> Result<Self, MeasureParseError> {
+        let cutoffs = validate_rank_cutoffs(cutoffs)?;
         let sub_metrics = cutoffs.iter().map(|c| format!("P_{}", c)).collect();
-        Self { cutoffs, sub_metrics }
+        Ok(Self { cutoffs, sub_metrics })
     }
 }
 
@@ -62,6 +64,7 @@ impl Measure for PrecisionCutMeasure {
 impl Default for PrecisionCutMeasure {
     fn default() -> Self {
         Self::new(vec![5, 10, 15, 20, 30, 100, 200, 500, 1000])
+            .expect("default P cutoffs are valid")
     }
 }
 
@@ -72,7 +75,7 @@ mod tests {
 
     #[test]
     fn test_precision_standard() {
-        let measure = PrecisionCutMeasure::new(vec![1, 3]);
+        let measure = PrecisionCutMeasure::new(vec![1, 3]).unwrap();
         let config = EvalConfig::default();
         // retrieved: [1, 0, 1], num_rel = 2.
         // P@1 = 1 / 1 = 1.0. P@3 = 2 / 3 = 0.6667.
@@ -85,5 +88,15 @@ mod tests {
         } else {
             panic!("Expected float value");
         }
+    }
+
+    #[test]
+    fn test_precision_unsorted_and_invalid_cutoffs() {
+        let measure = PrecisionCutMeasure::new(vec![3, 1]).unwrap();
+        assert_eq!(measure.sub_metrics(), vec!["P_1", "P_3"]);
+        assert!(PrecisionCutMeasure::new(vec![]).is_err());
+        assert!(PrecisionCutMeasure::new(vec![0]).is_err());
+        assert!(PrecisionCutMeasure::new(vec![5, 5]).is_err());
+        assert!(PrecisionCutMeasure::new(vec![i64::MAX as usize + 1]).is_err());
     }
 }
