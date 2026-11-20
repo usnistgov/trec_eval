@@ -1,18 +1,33 @@
+use crate::metrics::common::MeasureParseError;
 use crate::metrics::{EvalConfig, EvalState, EvaluationType, Measure, MetricValue, ValueFormat};
 
 pub struct UtilityMeasure {
-    params: Vec<f64>,
+    params: [f64; 4],
     sub_metrics: Vec<String>,
 }
 
 impl UtilityMeasure {
-    pub fn new(params: Vec<f64>, params_str: &str) -> Self {
+    pub fn new(params: Vec<f64>, params_str: &str) -> Result<Self, MeasureParseError> {
+        let params: [f64; 4] = params.try_into().map_err(|v: Vec<f64>| {
+            MeasureParseError::new(format!(
+                "utility requires exactly 4 coefficients (got {})",
+                v.len()
+            ))
+        })?;
+        for &v in &params {
+            if !v.is_finite() {
+                return Err(MeasureParseError::new(format!(
+                    "non-finite utility coefficient '{}'",
+                    v
+                )));
+            }
+        }
         let name = if params_str.is_empty() {
             "utility".to_string()
         } else {
             format!("utility_{}", params_str)
         };
-        Self { params, sub_metrics: vec![name] }
+        Ok(Self { params, sub_metrics: vec![name] })
     }
 }
 
@@ -84,6 +99,7 @@ impl Measure for UtilityMeasure {
 impl Default for UtilityMeasure {
     fn default() -> Self {
         Self::new(vec![1.0, -1.0, 0.0, 0.0], "")
+            .expect("default utility coefficients are valid")
     }
 }
 
@@ -113,5 +129,28 @@ mod tests {
         // score = 1.0 * 0 + (-1.0) * 2 = -2.0
         let actual = measure.calc(&config, &EvalState::Standard(state));
         assert_eq!(actual, vec![MetricValue::Float(-2.0)]);
+    }
+
+    #[test]
+    fn test_utility_preserves_order_negatives_and_duplicates() {
+        let measure = UtilityMeasure::new(vec![2.0, -1.0, -1.0, 0.5], "2,-1,-1,0.5").unwrap();
+        assert_eq!(measure.sub_metrics(), vec!["utility_2,-1,-1,0.5"]);
+        let mut config = EvalConfig::default();
+        config.num_docs_in_coll = 10;
+        // retrieved: [1, 0, 0] -> a=1, b=2, num_rel=3 -> c=2, d=10+1-3-3=5
+        // score = 2.0*1 + (-1.0)*2 + (-1.0)*2 + 0.5*5 = 2 - 2 - 2 + 2.5 = 0.5
+        let state = make_mock_state(vec![1, 0, 0], 3);
+        let actual = measure.calc(&config, &EvalState::Standard(state));
+        assert_eq!(actual, vec![MetricValue::Float(0.5)]);
+    }
+
+    #[test]
+    fn test_utility_rejects_invalid_params() {
+        assert!(UtilityMeasure::new(vec![], "").is_err());
+        assert!(UtilityMeasure::new(vec![1.0, -1.0, 0.0], "1,-1,0").is_err());
+        assert!(UtilityMeasure::new(vec![1.0, -1.0, 0.0, 0.0, 0.0], "1,-1,0,0,0").is_err());
+        assert!(UtilityMeasure::new(vec![f64::NAN, -1.0, 0.0, 0.0], "nan,-1,0,0").is_err());
+        assert!(UtilityMeasure::new(vec![1.0, f64::INFINITY, 0.0, 0.0], "1,inf,0,0").is_err());
+        assert!(UtilityMeasure::new(vec![1.0, -1.0, f64::NEG_INFINITY, 0.0], "1,-1,-inf,0").is_err());
     }
 }

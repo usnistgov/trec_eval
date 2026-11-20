@@ -163,10 +163,7 @@ pub fn registry() -> &'static [MeasureSpec] {
             usage: "utility.<rr,rn,nr,nn>  four utility coefficients (default: 1.0,-1.0,0.0,0.0)",
             factory: |p| {
                 let coeffs = parse_float_cutoffs(p, DEFAULT_UTILITY_COEFFS)?;
-                if coeffs.len() != 4 {
-                    return Err(MeasureParseError::new("utility requires exactly 4 coefficients"));
-                }
-                Ok(Box::new(metrics::utility::UtilityMeasure::new(coeffs, p.unwrap_or(""))))
+                Ok(Box::new(metrics::utility::UtilityMeasure::new(coeffs, p.unwrap_or(""))?))
             },
         },
         MeasureSpec {
