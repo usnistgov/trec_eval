@@ -1,23 +1,63 @@
+use crate::metrics::common::{parse_key_values, MeasureParseError};
 use crate::metrics::{EvalConfig, EvalState, EvaluationType, Measure, MetricValue, ValueFormat};
 
 pub struct RbpResidMeasure {
     p: f64,
-    _params_str: String,
     sub_metrics: Vec<String>,
 }
 
 impl RbpResidMeasure {
-    pub fn new(p: f64, params_str: &str) -> Self {
+    pub fn new(p: f64, params_str: &str) -> Result<Self, MeasureParseError> {
+        if !p.is_finite() {
+            return Err(MeasureParseError::new(format!(
+                "non-finite rbp_resid persistence '{}'",
+                p
+            )));
+        }
+        if !(0.0..1.0).contains(&p) {
+            return Err(MeasureParseError::new(format!(
+                "rbp_resid persistence '{}' must be in [0.0, 1.0)",
+                p
+            )));
+        }
         let name = if params_str.is_empty() {
             "rbp_resid".to_string()
         } else {
             format!("rbp_resid_{}", params_str)
         };
-        Self {
+        Ok(Self {
             p,
-            _params_str: params_str.to_string(),
             sub_metrics: vec![name],
+        })
+    }
+
+    pub fn from_params(params: Option<&str>) -> Result<Self, MeasureParseError> {
+        let Some(params_str) = params else {
+            return Self::new(0.9, "");
+        };
+        let pairs = parse_key_values(params_str)?;
+        if pairs.is_empty() {
+            return Err(MeasureParseError::new("rbp_resid parameter string must not be empty"));
         }
+        let mut p = 0.9;
+        let mut seen_p = false;
+        for (k, v) in pairs {
+            if k == "p" {
+                if seen_p {
+                    return Err(MeasureParseError::new("duplicate rbp_resid parameter 'p'"));
+                }
+                seen_p = true;
+                p = v.parse::<f64>().map_err(|_| {
+                    MeasureParseError::new(format!("invalid float parameter '{}'", v))
+                })?;
+            } else {
+                return Err(MeasureParseError::new(format!(
+                    "unknown rbp_resid parameter '{}'",
+                    k
+                )));
+            }
+        }
+        Self::new(p, params_str)
     }
 }
 
@@ -80,7 +120,7 @@ impl Measure for RbpResidMeasure {
 
 impl Default for RbpResidMeasure {
     fn default() -> Self {
-        Self::new(0.9, "")
+        Self::new(0.9, "").expect("default rbp_resid parameter is valid")
     }
 }
 
@@ -91,7 +131,7 @@ mod tests {
 
     #[test]
     fn test_rbp_resid_standard() {
-        let measure = RbpResidMeasure::new(0.9, "");
+        let measure = RbpResidMeasure::new(0.9, "").unwrap();
         let config = EvalConfig::default();
         // retrieved: [1, -1, 1] (index 1 is unjudged).
         // loop:
@@ -111,10 +151,37 @@ mod tests {
 
     #[test]
     fn test_rbp_resid_zero_unjudged() {
-        let measure = RbpResidMeasure::new(0.9, "");
+        let measure = RbpResidMeasure::new(0.9, "").unwrap();
         let config = EvalConfig::default();
         let state = make_mock_state(vec![1, 0, 1], 2);
         let actual = measure.calc(&config, &EvalState::Standard(state));
         assert_eq!(actual, vec![MetricValue::Float(0.0)]);
+    }
+
+    #[test]
+    fn test_rbp_resid_params_validation() {
+        let default_m = RbpResidMeasure::from_params(None).unwrap();
+        assert_eq!(default_m.sub_metrics(), vec!["rbp_resid"]);
+
+        let zero_p = RbpResidMeasure::from_params(Some("p=0.0")).unwrap();
+        assert_eq!(zero_p.sub_metrics(), vec!["rbp_resid_p=0.0"]);
+
+        // Rejects invalid p values
+        assert!(RbpResidMeasure::new(f64::NAN, "p=nan").is_err());
+        assert!(RbpResidMeasure::new(f64::INFINITY, "p=inf").is_err());
+        assert!(RbpResidMeasure::new(f64::NEG_INFINITY, "p=-inf").is_err());
+        assert!(RbpResidMeasure::new(-0.1, "p=-0.1").is_err());
+        assert!(RbpResidMeasure::new(1.0, "p=1.0").is_err());
+        assert!(RbpResidMeasure::new(1.5, "p=1.5").is_err());
+
+        // Rejects malformed, unknown, gain-key, and duplicate params
+        assert!(RbpResidMeasure::from_params(Some("")).is_err());
+        assert!(RbpResidMeasure::from_params(Some("0.5")).is_err());
+        assert!(RbpResidMeasure::from_params(Some("q=0.5")).is_err());
+        assert!(RbpResidMeasure::from_params(Some("1=2")).is_err());
+        assert!(RbpResidMeasure::from_params(Some("p=0.5,1=2")).is_err());
+        assert!(RbpResidMeasure::from_params(Some("p=0.5,p=0.8")).is_err());
+        assert!(RbpResidMeasure::from_params(Some("p=bad")).is_err());
+        assert!(RbpResidMeasure::from_params(Some("p=1.0")).is_err());
     }
 }

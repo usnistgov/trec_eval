@@ -160,7 +160,7 @@ pub(crate) fn count_relevant_retrieved_up_to(results_rel_list: &[i64], limit: us
         .count()
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct GainsConfig {
     pub custom_gains: HashMap<i64, f64>,
 }
