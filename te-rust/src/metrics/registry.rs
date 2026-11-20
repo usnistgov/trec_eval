@@ -187,7 +187,7 @@ pub fn registry() -> &'static [MeasureSpec] {
                     None => 10,
                     Some(s) => s.trim().parse::<usize>().map_err(|_| MeasureParseError::new(format!("invalid length '{}'", s)))?,
                 };
-                Ok(Box::new(metrics::relstring::RelstringMeasure::new(len, p.unwrap_or(""))))
+                Ok(Box::new(metrics::relstring::RelstringMeasure::new(len, p.unwrap_or(""))?))
             },
         },
         MeasureSpec { name: "set_P", status: Production, usage: "", factory: |p| { reject_params(p)?; Ok(Box::new(metrics::set_p::SetPMeasure::new())) } },
