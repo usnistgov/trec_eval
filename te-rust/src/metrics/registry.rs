@@ -143,7 +143,7 @@ pub fn registry() -> &'static [MeasureSpec] {
             name: "11pt_avg",
             status: Production,
             usage: "11pt_avg[.<r1,r2,...>]  interpolated precision at recall levels (default: 0.0,0.1,...,1.0)",
-            factory: |p| Ok(Box::new(metrics::avg_11pt::Avg11PtMeasure::new(parse_float_cutoffs(p, DEFAULT_RECALL_LEVELS)?, p.unwrap_or("")))),
+            factory: |p| Ok(Box::new(metrics::avg_11pt::Avg11PtMeasure::new(parse_float_cutoffs(p, DEFAULT_RECALL_LEVELS)?, p.unwrap_or(""))?)),
         },
         MeasureSpec {
             name: "iprec_at_recall",
