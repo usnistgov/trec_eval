@@ -94,6 +94,32 @@ pub fn parse_key_values(params: &str) -> Result<Vec<(String, String)>, MeasurePa
     Ok(pairs)
 }
 
+/// Sort and validate positive integer rank cutoffs.
+/// Rejects empty lists, zero cutoffs, cutoffs above `i64::MAX`, and duplicates.
+pub(crate) fn validate_rank_cutoffs(mut cutoffs: Vec<usize>) -> Result<Vec<usize>, MeasureParseError> {
+    if cutoffs.is_empty() {
+        return Err(MeasureParseError::new("cutoff list must not be empty"));
+    }
+    for &c in &cutoffs {
+        if c == 0 {
+            return Err(MeasureParseError::new("cutoff must be a positive integer (got 0)"));
+        }
+        if c > i64::MAX as usize {
+            return Err(MeasureParseError::new(format!(
+                "illegal cutoff '{}' (exceeds maximum)",
+                c
+            )));
+        }
+    }
+    cutoffs.sort_unstable();
+    for w in cutoffs.windows(2) {
+        if w[0] == w[1] {
+            return Err(MeasureParseError::new(format!("duplicate cutoff '{}'", w[0])));
+        }
+    }
+    Ok(cutoffs)
+}
+
 /// Helper function to count the number of relevant documents retrieved up to a certain rank limit.
 pub(crate) fn count_relevant_retrieved_up_to(results_rel_list: &[i64], limit: usize, config: &EvalConfig) -> usize {
     let actual_limit = std::cmp::min(limit, results_rel_list.len());

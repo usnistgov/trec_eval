@@ -119,7 +119,7 @@ pub fn registry() -> &'static [MeasureSpec] {
             name: "map_cut",
             status: Production,
             usage: "map_cut[.<c1,c2,...>]  MAP at integer rank cutoffs (default: 5,10,15,20,30,100,200,500,1000)",
-            factory: |p| Ok(Box::new(metrics::map_cut::MapCutMeasure::new(parse_int_cutoffs(p, DEFAULT_RANK_CUTOFFS)?))),
+            factory: |p| Ok(Box::new(metrics::map_cut::MapCutMeasure::new(parse_int_cutoffs(p, DEFAULT_RANK_CUTOFFS)?)?)),
         },
         MeasureSpec {
             name: "relative_P",
