@@ -175,7 +175,7 @@ pub fn registry() -> &'static [MeasureSpec] {
                     None => 1.0,
                     Some(s) => s.trim().parse::<f64>().map_err(|_| MeasureParseError::new(format!("invalid float parameter '{}'", s)))?,
                 };
-                Ok(Box::new(metrics::set_f::SetFMeasure::new(beta, p.unwrap_or(""))))
+                Ok(Box::new(metrics::set_f::SetFMeasure::new(beta, p.unwrap_or(""))?))
             },
         },
         MeasureSpec {
