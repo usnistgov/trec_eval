@@ -1,3 +1,4 @@
+use crate::metrics::common::{validate_float_cutoffs, MeasureParseError};
 use crate::metrics::{EvalConfig, EvalState, EvaluationType, Measure, MetricValue, ValueFormat};
 
 pub struct RprecMultMeasure {
@@ -6,9 +7,15 @@ pub struct RprecMultMeasure {
 }
 
 impl RprecMultMeasure {
-    pub fn new(cutoff_percents: Vec<f64>) -> Self {
+    pub fn new(cutoff_percents: Vec<f64>) -> Result<Self, MeasureParseError> {
+        let cutoff_percents = validate_float_cutoffs(
+            cutoff_percents,
+            "multiplier",
+            |v| v > 0.0,
+            "greater than 0.0",
+        )?;
         let sub_metrics = cutoff_percents.iter().map(|p| format!("Rprec_mult_{:.2}", p)).collect();
-        Self { cutoff_percents, sub_metrics }
+        Ok(Self { cutoff_percents, sub_metrics })
     }
 }
 
@@ -96,6 +103,7 @@ impl Measure for RprecMultMeasure {
 impl Default for RprecMultMeasure {
     fn default() -> Self {
         Self::new(vec![0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0])
+            .expect("default Rprec_mult cutoffs are valid")
     }
 }
 
@@ -106,7 +114,7 @@ mod tests {
 
     #[test]
     fn test_rprec_mult_standard() {
-        let measure = RprecMultMeasure::new(vec![0.5, 1.0, 1.5]);
+        let measure = RprecMultMeasure::new(vec![0.5, 1.0, 1.5]).unwrap();
         let config = EvalConfig::default();
         // retrieved: [1, 0, 1], num_rel = 2. num_ret = 3, num_rel_ret = 2.
         // percents: [0.5, 1.0, 1.5]
@@ -135,5 +143,46 @@ mod tests {
         } else {
             panic!("Expected float value");
         }
+    }
+
+    #[test]
+    fn test_rprec_mult_unsorted_cutoffs() {
+        let measure = RprecMultMeasure::new(vec![1.5, 0.5, 1.0]).unwrap();
+        assert_eq!(
+            measure.sub_metrics(),
+            vec!["Rprec_mult_0.50", "Rprec_mult_1.00", "Rprec_mult_1.50"]
+        );
+        let config = EvalConfig::default();
+        let state = EvalState::Standard(make_mock_state(vec![1, 0, 1], 2));
+        let actual = measure.calc(&config, &state);
+        assert_eq!(actual[0], MetricValue::Float(1.0));
+        assert_eq!(actual[1], MetricValue::Float(0.5));
+        if let MetricValue::Float(v) = actual[2] {
+            assert!((v - (2.0 / 3.0)).abs() < 1e-12);
+        } else {
+            panic!("Expected float value");
+        }
+    }
+
+    #[test]
+    fn test_rprec_mult_distinct_floats_same_label() {
+        let measure = RprecMultMeasure::new(vec![1.001, 0.999]).unwrap();
+        assert_eq!(
+            measure.sub_metrics(),
+            vec!["Rprec_mult_1.00", "Rprec_mult_1.00"]
+        );
+    }
+
+    #[test]
+    fn test_rprec_mult_rejects_invalid_cutoffs() {
+        assert!(RprecMultMeasure::new(vec![]).is_err());
+        assert!(RprecMultMeasure::new(vec![f64::NAN]).is_err());
+        assert!(RprecMultMeasure::new(vec![f64::INFINITY]).is_err());
+        assert!(RprecMultMeasure::new(vec![f64::NEG_INFINITY]).is_err());
+        assert!(RprecMultMeasure::new(vec![0.0]).is_err());
+        assert!(RprecMultMeasure::new(vec![-0.0]).is_err());
+        assert!(RprecMultMeasure::new(vec![-0.5, 1.0]).is_err());
+        assert!(RprecMultMeasure::new(vec![1.0, 1.0]).is_err());
+        assert!(RprecMultMeasure::new(vec![0.2, 2.0]).is_ok());
     }
 }

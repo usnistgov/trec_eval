@@ -155,7 +155,7 @@ pub fn registry() -> &'static [MeasureSpec] {
             name: "Rprec_mult",
             status: Production,
             usage: "Rprec_mult[.<m1,m2,...>]  R-precision at multiples of R (default: 0.2,0.4,...,2.0)",
-            factory: |p| Ok(Box::new(metrics::rprec_mult::RprecMultMeasure::new(parse_float_cutoffs(p, DEFAULT_RPREC_MULT)?))),
+            factory: |p| Ok(Box::new(metrics::rprec_mult::RprecMultMeasure::new(parse_float_cutoffs(p, DEFAULT_RPREC_MULT)?)?)),
         },
         MeasureSpec {
             name: "utility",
