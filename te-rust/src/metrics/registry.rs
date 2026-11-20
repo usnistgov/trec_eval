@@ -149,7 +149,7 @@ pub fn registry() -> &'static [MeasureSpec] {
             name: "iprec_at_recall",
             status: Production,
             usage: "iprec_at_recall[.<r1,r2,...>]  interpolated precision at recall levels (default: 0.0,0.1,...,1.0)",
-            factory: |p| Ok(Box::new(metrics::iprec_at_recall::IprecAtRecallMeasure::new(parse_float_cutoffs(p, DEFAULT_RECALL_LEVELS)?))),
+            factory: |p| Ok(Box::new(metrics::iprec_at_recall::IprecAtRecallMeasure::new(parse_float_cutoffs(p, DEFAULT_RECALL_LEVELS)?)?)),
         },
         MeasureSpec {
             name: "Rprec_mult",

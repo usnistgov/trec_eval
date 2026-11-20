@@ -120,6 +120,37 @@ pub(crate) fn validate_rank_cutoffs(mut cutoffs: Vec<usize>) -> Result<Vec<usize
     Ok(cutoffs)
 }
 
+/// Sort and validate finite float cutoffs, rejecting empty lists, non-finite
+/// values, out-of-range values, and exact duplicates (including `-0.0` vs `0.0`).
+pub(crate) fn validate_float_cutoffs(
+    mut cutoffs: Vec<f64>,
+    label: &str,
+    in_range: impl Fn(f64) -> bool,
+    range_desc: &str,
+) -> Result<Vec<f64>, MeasureParseError> {
+    if cutoffs.is_empty() {
+        return Err(MeasureParseError::new(format!("{} list must not be empty", label)));
+    }
+    for &v in &cutoffs {
+        if !v.is_finite() {
+            return Err(MeasureParseError::new(format!("non-finite {} '{}'", label, v)));
+        }
+        if !in_range(v) {
+            return Err(MeasureParseError::new(format!(
+                "{} '{}' must be {}",
+                label, v, range_desc
+            )));
+        }
+    }
+    cutoffs.sort_by(f64::total_cmp);
+    for w in cutoffs.windows(2) {
+        if w[0] == w[1] {
+            return Err(MeasureParseError::new(format!("duplicate {} '{}'", label, w[0])));
+        }
+    }
+    Ok(cutoffs)
+}
+
 /// Helper function to count the number of relevant documents retrieved up to a certain rank limit.
 pub(crate) fn count_relevant_retrieved_up_to(results_rel_list: &[i64], limit: usize, config: &EvalConfig) -> usize {
     let actual_limit = std::cmp::min(limit, results_rel_list.len());
