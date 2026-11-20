@@ -1,20 +1,27 @@
+use crate::metrics::common::{validate_float_cutoffs, MeasureParseError};
 use crate::metrics::{EvalConfig, EvalState, EvaluationType, Measure, MetricValue, ValueFormat};
 
 pub struct RprecMultAvgjgMeasure {
-    cutoff_percents: Vec<f64>,
+    multipliers: Vec<f64>,
     sub_metrics: Vec<String>,
 }
 
 impl RprecMultAvgjgMeasure {
-    pub fn new(cutoff_percents: Vec<f64>) -> Self {
-        let sub_metrics = cutoff_percents
+    pub fn new(multipliers: Vec<f64>) -> Result<Self, MeasureParseError> {
+        let multipliers = validate_float_cutoffs(
+            multipliers,
+            "multiplier",
+            |v| v > 0.0,
+            "greater than 0.0",
+        )?;
+        let sub_metrics = multipliers
             .iter()
-            .map(|p| format!("Rprec_mult_avgjg_{:.2}", p))
+            .map(|m| format!("Rprec_mult_avgjg_{:.2}", m))
             .collect();
-        Self {
-            cutoff_percents,
+        Ok(Self {
+            multipliers,
             sub_metrics,
-        }
+        })
     }
 }
 
@@ -44,7 +51,7 @@ impl Measure for RprecMultAvgjgMeasure {
     }
 
     fn initial_values(&self) -> Vec<MetricValue> {
-        vec![MetricValue::Float(0.0); self.cutoff_percents.len()]
+        vec![MetricValue::Float(0.0); self.multipliers.len()]
     }
 
     fn calc(&self, config: &EvalConfig, state: &EvalState) -> Vec<MetricValue> {
@@ -53,7 +60,7 @@ impl Measure for RprecMultAvgjgMeasure {
             EvalState::Standard(q_state) => std::slice::from_ref(q_state),
         };
 
-        let num_params = self.cutoff_percents.len();
+        let num_params = self.multipliers.len();
         if jg_states.is_empty() {
             return vec![MetricValue::Float(0.0); num_params];
         }
@@ -65,11 +72,11 @@ impl Measure for RprecMultAvgjgMeasure {
                 continue;
             }
 
-            // Convert percentages to integer rank cutoffs using C's + 0.9 cast rounding
+            // Convert multipliers to integer rank cutoffs using C's + 0.9 cast rounding
             let cutoffs: Vec<i64> = self
-                .cutoff_percents
+                .multipliers
                 .iter()
-                .map(|&p| (p * q_state.num_rel as f64 + 0.9) as i64)
+                .map(|&m| (m * q_state.num_rel as f64 + 0.9) as i64)
                 .collect();
 
             let mut jg_results = vec![0.0; num_params];
@@ -119,7 +126,7 @@ mod tests {
 
     #[test]
     fn test_rprec_mult_avgjg_standard() {
-        let measure = RprecMultAvgjgMeasure::new(vec![0.5, 1.0]);
+        let measure = RprecMultAvgjgMeasure::new(vec![0.5, 1.0]).unwrap();
         let config = EvalConfig::default();
 
         let state1 = QueryEvalState {
@@ -141,5 +148,50 @@ mod tests {
         assert_eq!(scores.len(), 2);
         assert_eq!(scores[0], MetricValue::Float(1.0));
         assert_eq!(scores[1], MetricValue::Float(0.5));
+    }
+
+    #[test]
+    fn test_rprec_mult_avgjg_unsorted_cutoffs() {
+        let measure = RprecMultAvgjgMeasure::new(vec![1.0, 0.5]).unwrap();
+        assert_eq!(
+            measure.sub_metrics(),
+            vec!["Rprec_mult_avgjg_0.50", "Rprec_mult_avgjg_1.00"]
+        );
+        let config = EvalConfig::default();
+        let state1 = QueryEvalState {
+            qid: "301".to_string(),
+            run_id: "run".to_string(),
+            results_rel_list: vec![1, 0, 1, 0],
+            num_ret: 4,
+            num_rel: 2,
+            num_rel_ret: 2,
+            num_nonpool: 0,
+            num_unjudged_in_pool: 0,
+            rel_levels: vec![2, 2],
+        };
+        let scores = measure.calc(&config, &EvalState::JudgmentGroups(vec![state1]));
+        assert_eq!(scores, vec![MetricValue::Float(1.0), MetricValue::Float(0.5)]);
+    }
+
+    #[test]
+    fn test_rprec_mult_avgjg_distinct_floats_same_label() {
+        let measure = RprecMultAvgjgMeasure::new(vec![1.001, 0.999]).unwrap();
+        assert_eq!(
+            measure.sub_metrics(),
+            vec!["Rprec_mult_avgjg_1.00", "Rprec_mult_avgjg_1.00"]
+        );
+    }
+
+    #[test]
+    fn test_rprec_mult_avgjg_rejects_invalid_cutoffs() {
+        assert!(RprecMultAvgjgMeasure::new(vec![]).is_err());
+        assert!(RprecMultAvgjgMeasure::new(vec![f64::NAN]).is_err());
+        assert!(RprecMultAvgjgMeasure::new(vec![f64::INFINITY]).is_err());
+        assert!(RprecMultAvgjgMeasure::new(vec![f64::NEG_INFINITY]).is_err());
+        assert!(RprecMultAvgjgMeasure::new(vec![0.0]).is_err());
+        assert!(RprecMultAvgjgMeasure::new(vec![-0.0]).is_err());
+        assert!(RprecMultAvgjgMeasure::new(vec![-0.5, 1.0]).is_err());
+        assert!(RprecMultAvgjgMeasure::new(vec![1.0, 1.0]).is_err());
+        assert!(RprecMultAvgjgMeasure::new(vec![0.2, 2.0]).is_ok());
     }
 }

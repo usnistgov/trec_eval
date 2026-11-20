@@ -215,7 +215,7 @@ pub fn registry() -> &'static [MeasureSpec] {
             name: "Rprec_mult_avgjg",
             status: Production,
             usage: "Rprec_mult_avgjg[.<m1,m2,...>]  R-precision at multiples of R averaged over JGs (default: 0.2,0.4,...,2.0)",
-            factory: |p| Ok(Box::new(metrics::rprec_mult_avgjg::RprecMultAvgjgMeasure::new(parse_float_cutoffs(p, DEFAULT_RPREC_MULT)?))),
+            factory: |p| Ok(Box::new(metrics::rprec_mult_avgjg::RprecMultAvgjgMeasure::new(parse_float_cutoffs(p, DEFAULT_RPREC_MULT)?)?)),
         },
         MeasureSpec { name: "yaap", status: Experimental, usage: "", factory: |p| { reject_params(p)?; Ok(Box::new(metrics::yaap::YaapMeasure::new())) } },
 
