@@ -2,15 +2,34 @@ use crate::metrics::EvalConfig;
 use std::collections::HashMap;
 use std::fmt;
 
-/// Error returned when a measure's parameter string cannot be parsed.
+/// Distinguishes CLI/specification syntax errors (exit 1) from invalid
+/// parameter values for a known measure (exit 2), matching C `trec_eval`.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum MeasureErrorKind {
+    Spec,
+    Param,
+}
+
+/// Error returned when a measure specification or parameter string is invalid.
 #[derive(Debug, Clone, PartialEq)]
 pub struct MeasureParseError {
+    pub kind: MeasureErrorKind,
     pub message: String,
 }
 
 impl MeasureParseError {
     pub fn new(message: impl Into<String>) -> Self {
-        Self { message: message.into() }
+        Self {
+            kind: MeasureErrorKind::Param,
+            message: message.into(),
+        }
+    }
+
+    pub fn spec(message: impl Into<String>) -> Self {
+        Self {
+            kind: MeasureErrorKind::Spec,
+            message: message.into(),
+        }
     }
 }
 
@@ -23,11 +42,12 @@ impl fmt::Display for MeasureParseError {
 impl std::error::Error for MeasureParseError {}
 
 /// Parse a comma-separated list of integer cutoffs (e.g. "5,10,20").
-/// An empty string yields the provided defaults.
-pub fn parse_int_cutoffs(params: &str, default: &[usize]) -> Result<Vec<usize>, MeasureParseError> {
-    if params.is_empty() {
-        return Ok(default.to_vec());
-    }
+/// `None` yields the provided defaults; `Some("")` is rejected.
+pub fn parse_int_cutoffs(params: Option<&str>, default: &[usize]) -> Result<Vec<usize>, MeasureParseError> {
+    let params = match params {
+        None => return Ok(default.to_vec()),
+        Some(s) => s,
+    };
     let mut list = Vec::new();
     for s in params.split(',') {
         let tok = s.trim();
@@ -39,12 +59,13 @@ pub fn parse_int_cutoffs(params: &str, default: &[usize]) -> Result<Vec<usize>, 
     Ok(list)
 }
 
-/// Parse a comma-separated list of float cutoffs/coefficients (e.g. "0.0,0.5,1.0").
-/// An empty string yields the provided defaults.
-pub fn parse_float_cutoffs(params: &str, default: &[f64]) -> Result<Vec<f64>, MeasureParseError> {
-    if params.is_empty() {
-        return Ok(default.to_vec());
-    }
+/// Parse a comma-separated list of float values (e.g. "0.0,0.5,1.0").
+/// `None` yields the provided defaults; `Some("")` is rejected.
+pub fn parse_float_cutoffs(params: Option<&str>, default: &[f64]) -> Result<Vec<f64>, MeasureParseError> {
+    let params = match params {
+        None => return Ok(default.to_vec()),
+        Some(s) => s,
+    };
     let mut list = Vec::new();
     for s in params.split(',') {
         let tok = s.trim();
@@ -195,34 +216,44 @@ mod parser_tests {
     use super::*;
 
     #[test]
-    fn int_cutoffs_empty_uses_default() {
-        assert_eq!(parse_int_cutoffs("", &[5, 10, 20]).unwrap(), vec![5, 10, 20]);
+    fn int_cutoffs_none_uses_default() {
+        assert_eq!(parse_int_cutoffs(None, &[5, 10, 20]).unwrap(), vec![5, 10, 20]);
+    }
+
+    #[test]
+    fn int_cutoffs_empty_some_is_rejected() {
+        assert!(parse_int_cutoffs(Some(""), &[5, 10, 20]).is_err());
     }
 
     #[test]
     fn int_cutoffs_parses_and_trims() {
-        assert_eq!(parse_int_cutoffs("5, 10 ,20", &[]).unwrap(), vec![5, 10, 20]);
+        assert_eq!(parse_int_cutoffs(Some("5, 10 ,20"), &[]).unwrap(), vec![5, 10, 20]);
     }
 
     #[test]
     fn int_cutoffs_rejects_bad_token() {
-        assert!(parse_int_cutoffs("5,x,20", &[]).is_err());
-        assert!(parse_int_cutoffs("5,-1", &[]).is_err());
+        assert!(parse_int_cutoffs(Some("5,x,20"), &[]).is_err());
+        assert!(parse_int_cutoffs(Some("5,-1"), &[]).is_err());
     }
 
     #[test]
-    fn float_cutoffs_empty_uses_default() {
-        assert_eq!(parse_float_cutoffs("", &[0.0, 1.0]).unwrap(), vec![0.0, 1.0]);
+    fn float_cutoffs_none_uses_default() {
+        assert_eq!(parse_float_cutoffs(None, &[0.0, 1.0]).unwrap(), vec![0.0, 1.0]);
+    }
+
+    #[test]
+    fn float_cutoffs_empty_some_is_rejected() {
+        assert!(parse_float_cutoffs(Some(""), &[0.0, 1.0]).is_err());
     }
 
     #[test]
     fn float_cutoffs_parses_and_trims() {
-        assert_eq!(parse_float_cutoffs("0.0, 0.5 ,1.0", &[]).unwrap(), vec![0.0, 0.5, 1.0]);
+        assert_eq!(parse_float_cutoffs(Some("0.0, 0.5 ,1.0"), &[]).unwrap(), vec![0.0, 0.5, 1.0]);
     }
 
     #[test]
     fn float_cutoffs_rejects_bad_token() {
-        assert!(parse_float_cutoffs("0.0,nope", &[]).is_err());
+        assert!(parse_float_cutoffs(Some("0.0,nope"), &[]).is_err());
     }
 
     #[test]

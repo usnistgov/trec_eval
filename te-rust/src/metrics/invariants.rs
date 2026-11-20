@@ -187,7 +187,7 @@ pub(crate) mod checking {
         use crate::metrics::registry::registry;
 
         for spec in registry() {
-            let measure = (spec.factory)("")
+            let measure = (spec.factory)(None)
                 .unwrap_or_else(|e| panic!("registry factory for '{}' failed: {}", spec.name, e));
 
             for &inv in measure.invariants() {
