@@ -113,7 +113,7 @@ pub fn registry() -> &'static [MeasureSpec] {
             name: "ndcg_cut",
             status: Production,
             usage: "ndcg_cut[.<c1,c2,...>]  nDCG at integer rank cutoffs (default: 5,10,15,20,30,100,200,500,1000)",
-            factory: |p| Ok(Box::new(metrics::ndcg_cut::NdcgCutMeasure::new(parse_int_cutoffs(p, DEFAULT_RANK_CUTOFFS)?))),
+            factory: |p| Ok(Box::new(metrics::ndcg_cut::NdcgCutMeasure::new(parse_int_cutoffs(p, DEFAULT_RANK_CUTOFFS)?)?)),
         },
         MeasureSpec {
             name: "map_cut",
