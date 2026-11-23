@@ -2,22 +2,22 @@ use crate::metrics::common::MeasureParseError;
 use crate::metrics::{EvalConfig, EvalState, EvaluationType, Measure, MetricValue, ValueFormat};
 
 pub struct SetFMeasure {
-    beta: f64,
+    x: f64,
     sub_metrics: Vec<String>,
 }
 
 impl SetFMeasure {
-    pub fn new(beta: f64, params_str: &str) -> Result<Self, MeasureParseError> {
-        if !beta.is_finite() {
+    pub fn new(x: f64, params_str: &str) -> Result<Self, MeasureParseError> {
+        if !x.is_finite() {
             return Err(MeasureParseError::new(format!(
-                "non-finite set_F beta '{}'",
-                beta
+                "non-finite set_F weight '{}'",
+                x
             )));
         }
-        if beta < 0.0 {
+        if x < 0.0 {
             return Err(MeasureParseError::new(format!(
-                "set_F beta '{}' must be >= 0.0",
-                beta
+                "set_F weight '{}' must be >= 0.0",
+                x
             )));
         }
         let name = if params_str.is_empty() {
@@ -25,7 +25,7 @@ impl SetFMeasure {
         } else {
             format!("set_F_{}", params_str)
         };
-        Ok(Self { beta, sub_metrics: vec![name] })
+        Ok(Self { x, sub_metrics: vec![name] })
     }
 }
 
@@ -39,9 +39,12 @@ impl Measure for SetFMeasure {
     }
 
     fn explanation(&self) -> &'static str {
-        "Set F measure: weighted harmonic mean of recall and precision\n\
-        set_Fx = (x+1) * P * R / (R + x*P)\n\
-        where x is the relative importance of R to P (default 1.0)."
+        "Set F measure: weighted harmonic mean of precision and recall\n\
+        set_Fx = (x + 1) / (1/P + x/R) = (x + 1) * P * R / (R + x * P)\n\
+        where x >= 0 weights 1/R relative to 1/P in the harmonic mean (default 1.0).\n\
+        In van Rijsbergen's F_beta notation, x = beta^2, where beta = sqrt(x) is the\n\
+        R/P ratio at which small changes in P and R have equal effect (not a linear\n\
+        tradeoff). x = 0 equals set_P; larger x places more emphasis on recall."
     }
 
     fn format(&self) -> ValueFormat {
@@ -65,9 +68,9 @@ impl Measure for SetFMeasure {
             let score = if q_state.num_rel_ret > 0 && q_state.num_ret > 0 && q_state.num_rel > 0 {
                 let p = (q_state.num_rel_ret as f64) / (q_state.num_ret as f64);
                 let r = (q_state.num_rel_ret as f64) / (q_state.num_rel as f64);
-                let denominator = self.beta * p + r;
+                let denominator = self.x * p + r;
                 if denominator > 0.0 {
-                    (self.beta + 1.0) * p * r / denominator
+                    (self.x + 1.0) * p * r / denominator
                 } else {
                     0.0
                 }

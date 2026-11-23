@@ -154,13 +154,13 @@ pub fn registry() -> &'static [MeasureSpec] {
         MeasureSpec {
             name: "set_F",
             status: Production,
-            usage: "set_F[.<beta>]  F-measure beta weighting (default: 1.0)",
+            usage: "set_F[.<x>]  harmonic-mean weight x = beta^2 on 1/R vs 1/P (default: 1.0)",
             factory: |p| {
-                let beta = match p {
+                let x = match p {
                     None => 1.0,
                     Some(s) => s.trim().parse::<f64>().map_err(|_| MeasureParseError::new(format!("invalid float parameter '{}'", s)))?,
                 };
-                Ok(Box::new(metrics::set_f::SetFMeasure::new(beta, p.unwrap_or(""))?))
+                Ok(Box::new(metrics::set_f::SetFMeasure::new(x, p.unwrap_or(""))?))
             },
         },
         MeasureSpec {

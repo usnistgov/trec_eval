@@ -9,6 +9,7 @@ nav = [
 
   { "Overview" = "index.md" },
   { "Command-Line Interface" = "cli.md" },
+  { "Differences from C trec_eval" = "differences.md" },
   { "Python API" = [
       { "Quickstart & Data Formats" = "python/quickstart.md" },
       { "Evaluator & Result" = "python/evaluator.md" },

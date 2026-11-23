@@ -2,7 +2,7 @@
 
 `te-rust` is the standalone command-line evaluation tool. It accepts standard TREC relevance judgments (qrels) and system run results files, evaluates requested measures, and prints relational summary outputs.
 
-It is a drop-in replacement for `trec_eval`, supporting the same command-line options and measure specifications. If you find an incompatibilty with trec_eval 10.x, that is a bug on our part
+It is a drop-in replacement for `trec_eval`, supporting the same command-line options and measure specifications. See [Intentional Differences from C `trec_eval`](./differences.md) for documented cases where `te-rust` intentionally diverges (such as stricter parameter validation); any other incompatibility with `trec_eval` 10.x is a bug on our part.
 
 ---
 
