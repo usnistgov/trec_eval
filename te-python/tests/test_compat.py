@@ -53,3 +53,22 @@ def test_pytrec_eval_supported_measures():
     assert "recip_rank" in pytrec_eval.supported_measures
     assert "official" in pytrec_eval.supported_measures
 
+
+def test_pytrec_eval_rejects_invalid_run_scores(tmp_path):
+    qrels = {"1": {"a": 1, "b": 2, "c": 3}}
+    evaluator = pytrec_eval.RelevanceEvaluator(qrels, {"map"})
+
+    for bad in ["nan", "abc", "1.5x", "inf", "-inf"]:
+        run_text = f"1 Q0 a 1 5 r\n1 Q0 b 2 {bad} r\n1 Q0 c 3 3 r\n"
+        with pytest.raises(ValueError):
+            pytrec_eval.parse_run(run_text)
+
+        run_file = tmp_path / f"{bad}.run"
+        run_file.write_text(run_text)
+        with pytest.raises(ValueError):
+            pytrec_eval.parse_run(str(run_file))
+
+    for bad_float in [float("nan"), float("inf"), float("-inf")]:
+        with pytest.raises(ValueError):
+            evaluator.evaluate({"1": {"a": 5.0, "b": bad_float, "c": 3.0}})
+

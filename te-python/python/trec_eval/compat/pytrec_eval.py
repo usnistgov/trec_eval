@@ -9,6 +9,7 @@ import trec_eval.compat.pytrec_eval as pytrec_eval
 
 import collections
 import io
+import math
 from typing import Any, Dict, Iterable, Set, Union
 from trec_eval._trec_eval import Evaluator, __version__
 
@@ -35,6 +36,10 @@ def parse_run(f_or_path: Union[str, io.IOBase, Any]) -> Dict[str, Dict[str, floa
                 parts = line.strip().split()
                 if len(parts) >= 6 and not parts[0].startswith("#"):
                     qid, docno, score = parts[0], parts[2], float(parts[4])
+                    if not math.isfinite(score):
+                        raise ValueError(
+                            f"Invalid non-finite score '{parts[4]}' for query '{qid}', document '{docno}'"
+                        )
                     run[qid][docno] = score
         return dict(run)
 
@@ -45,6 +50,10 @@ def parse_run(f_or_path: Union[str, io.IOBase, Any]) -> Dict[str, Dict[str, floa
         parts = line_str.strip().split()
         if len(parts) >= 6 and not parts[0].startswith("#"):
             qid, docno, score = parts[0], parts[2], float(parts[4])
+            if not math.isfinite(score):
+                raise ValueError(
+                    f"Invalid non-finite score '{parts[4]}' for query '{qid}', document '{docno}'"
+                )
             run[qid][docno] = score
 
     return dict(run)

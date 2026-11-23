@@ -254,6 +254,16 @@ fn extract_qrel_item(item: &Bound<'_, PyAny>) -> PyResult<(String, String, i64)>
     Ok((qid, docno, rel))
 }
 
+fn validate_run_score(sim: f64, qid: &str, docno: &str) -> PyResult<f64> {
+    if !sim.is_finite() {
+        return Err(PyValueError::new_err(format!(
+            "Invalid non-finite score '{}' for query '{}', document '{}'",
+            sim, qid, docno
+        )));
+    }
+    Ok(sim)
+}
+
 /// Ingest run results from a Python object (file path, dict, DataFrame, or iterable).
 pub fn ingest_run(obj: &Bound<'_, PyAny>, mapping: Option<&ColumnMapping>) -> PyResult<RunData> {
     // 1. File path / PathLike
@@ -284,7 +294,7 @@ pub fn ingest_run(obj: &Bound<'_, PyAny>, mapping: Option<&ColumnMapping>) -> Py
                 ))
             })?;
 
-            let records = grouped.entry(qid).or_default();
+            let records = grouped.entry(qid.clone()).or_default();
             for (doc_obj, sim_obj) in docs_dict.iter() {
                 let docno = doc_obj.extract::<String>().map_err(|_| {
                     PyTypeError::new_err("Expected doc_id to be a string in run dict")
@@ -292,6 +302,7 @@ pub fn ingest_run(obj: &Bound<'_, PyAny>, mapping: Option<&ColumnMapping>) -> Py
                 let sim = sim_obj.extract::<f64>().map_err(|_| {
                     PyTypeError::new_err("Expected score to be a float in run dict")
                 })?;
+                let sim = validate_run_score(sim, &qid, &docno)?;
                 records.push(RunRecord { docno, sim });
             }
         }
@@ -344,7 +355,7 @@ pub fn ingest_run(obj: &Bound<'_, PyAny>, mapping: Option<&ColumnMapping>) -> Py
         while let (Some(q_res), Some(d_res), Some(s_res)) = (qid_iter.next(), doc_iter.next(), score_iter.next()) {
             let qid = q_res?.extract::<String>()?;
             let docno = d_res?.extract::<String>()?;
-            let sim = s_res?.extract::<f64>()?;
+            let sim = validate_run_score(s_res?.extract::<f64>()?, &qid, &docno)?;
             grouped.entry(qid).or_default().push(RunRecord { docno, sim });
         }
 
@@ -385,7 +396,7 @@ pub fn ingest_run_arrays(
     while let (Some(q_res), Some(d_res), Some(s_res)) = (qid_iter.next(), doc_iter.next(), score_iter.next()) {
         let qid = q_res?.extract::<String>()?;
         let docno = d_res?.extract::<String>()?;
-        let sim = s_res?.extract::<f64>()?;
+        let sim = validate_run_score(s_res?.extract::<f64>()?, &qid, &docno)?;
         grouped.entry(qid).or_default().push(RunRecord { docno, sim });
     }
 
@@ -429,7 +440,7 @@ fn extract_run_item(item: &Bound<'_, PyAny>) -> PyResult<(String, String, f64)> 
         if len >= 3 {
             let qid = seq.get_item(0)?.extract::<String>()?;
             let docno = seq.get_item(1)?.extract::<String>()?;
-            let sim = seq.get_item(2)?.extract::<f64>()?;
+            let sim = validate_run_score(seq.get_item(2)?.extract::<f64>()?, &qid, &docno)?;
             return Ok((qid, docno, sim));
         }
     }
@@ -464,5 +475,6 @@ fn extract_run_item(item: &Bound<'_, PyAny>) -> PyResult<(String, String, f64)> 
         ));
     };
 
+    let sim = validate_run_score(sim, &qid, &docno)?;
     Ok((qid, docno, sim))
 }
