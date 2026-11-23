@@ -1,18 +1,31 @@
+use crate::metrics::common::MeasureParseError;
 use crate::metrics::{EvalConfig, EvalState, EvaluationType, Measure, MetricValue, ValueFormat};
 
 pub struct SetFMeasure {
-    beta: f64,
+    x: f64,
     sub_metrics: Vec<String>,
 }
 
 impl SetFMeasure {
-    pub fn new(beta: f64, params_str: &str) -> Self {
+    pub fn new(x: f64, params_str: &str) -> Result<Self, MeasureParseError> {
+        if !x.is_finite() {
+            return Err(MeasureParseError::new(format!(
+                "non-finite set_F weight '{}'",
+                x
+            )));
+        }
+        if x < 0.0 {
+            return Err(MeasureParseError::new(format!(
+                "set_F weight '{}' must be >= 0.0",
+                x
+            )));
+        }
         let name = if params_str.is_empty() {
             "set_F".to_string()
         } else {
             format!("set_F_{}", params_str)
         };
-        Self { beta, sub_metrics: vec![name] }
+        Ok(Self { x, sub_metrics: vec![name] })
     }
 }
 
@@ -26,9 +39,12 @@ impl Measure for SetFMeasure {
     }
 
     fn explanation(&self) -> &'static str {
-        "Set F measure: weighted harmonic mean of recall and precision\n\
-        set_Fx = (x+1) * P * R / (R + x*P)\n\
-        where x is the relative importance of R to P (default 1.0)."
+        "Set F measure: weighted harmonic mean of precision and recall\n\
+        set_Fx = (x + 1) / (1/P + x/R) = (x + 1) * P * R / (R + x * P)\n\
+        where x >= 0 weights 1/R relative to 1/P in the harmonic mean (default 1.0).\n\
+        In van Rijsbergen's F_beta notation, x = beta^2, where beta = sqrt(x) is the\n\
+        R/P ratio at which small changes in P and R have equal effect (not a linear\n\
+        tradeoff). x = 0 equals set_P; larger x places more emphasis on recall."
     }
 
     fn format(&self) -> ValueFormat {
@@ -52,9 +68,9 @@ impl Measure for SetFMeasure {
             let score = if q_state.num_rel_ret > 0 && q_state.num_ret > 0 && q_state.num_rel > 0 {
                 let p = (q_state.num_rel_ret as f64) / (q_state.num_ret as f64);
                 let r = (q_state.num_rel_ret as f64) / (q_state.num_rel as f64);
-                let denominator = self.beta * p + r;
+                let denominator = self.x * p + r;
                 if denominator > 0.0 {
-                    (self.beta + 1.0) * p * r / denominator
+                    (self.x + 1.0) * p * r / denominator
                 } else {
                     0.0
                 }
@@ -70,7 +86,7 @@ impl Measure for SetFMeasure {
 
 impl Default for SetFMeasure {
     fn default() -> Self {
-        Self::new(1.0, "")
+        Self::new(1.0, "").expect("default set_F beta is valid")
     }
 }
 
@@ -81,7 +97,7 @@ mod tests {
 
     #[test]
     fn test_set_f_standard() {
-        let measure = SetFMeasure::new(1.0, "");
+        let measure = SetFMeasure::new(1.0, "").unwrap();
         let config = EvalConfig::default();
         // retrieved: 3, relevant: 2, relevant retrieved: 2.
         // P = 2 / 3, R = 2 / 2 = 1.0.
@@ -93,7 +109,7 @@ mod tests {
 
     #[test]
     fn test_set_f_custom_beta() {
-        let measure = SetFMeasure::new(0.5, "0.5");
+        let measure = SetFMeasure::new(0.5, "0.5").unwrap();
         let config = EvalConfig::default();
         // P = 2 / 3, R = 1.0.
         // beta = 0.5.
@@ -101,5 +117,29 @@ mod tests {
         let state = make_mock_state(vec![1, 0, 1], 2);
         let actual = measure.calc(&config, &EvalState::Standard(state));
         assert_eq!(actual, vec![MetricValue::Float(0.75)]);
+    }
+
+    #[test]
+    fn test_set_f_zero_beta_equals_set_p() {
+        let measure = SetFMeasure::new(0.0, "0.0").unwrap();
+        assert_eq!(measure.sub_metrics(), vec!["set_F_0.0"]);
+        let config = EvalConfig::default();
+        // P = 2 / 3, R = 1.0; beta = 0.0 -> score = P = 2 / 3
+        let state = make_mock_state(vec![1, 0, 1], 2);
+        let actual = measure.calc(&config, &EvalState::Standard(state));
+        if let MetricValue::Float(v) = actual[0] {
+            assert!((v - (2.0 / 3.0)).abs() < 1e-12);
+        } else {
+            panic!("Expected float value");
+        }
+    }
+
+    #[test]
+    fn test_set_f_rejects_invalid_beta() {
+        assert!(SetFMeasure::new(f64::NAN, "nan").is_err());
+        assert!(SetFMeasure::new(f64::INFINITY, "inf").is_err());
+        assert!(SetFMeasure::new(f64::NEG_INFINITY, "-inf").is_err());
+        assert!(SetFMeasure::new(-0.1, "-0.1").is_err());
+        assert!(SetFMeasure::new(-1.0, "-1.0").is_err());
     }
 }

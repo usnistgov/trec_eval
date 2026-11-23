@@ -1,5 +1,5 @@
+use crate::metrics::common::{validate_rank_cutoffs, Gains, GainsConfig, MeasureParseError};
 use crate::metrics::{EvalConfig, EvalState, EvaluationType, Measure, MetricValue, ValueFormat};
-use crate::metrics::common::{Gains, GainsConfig};
 
 pub struct NdcgCutMeasure {
     cutoffs: Vec<usize>,
@@ -8,13 +8,14 @@ pub struct NdcgCutMeasure {
 }
 
 impl NdcgCutMeasure {
-    pub fn new(cutoffs: Vec<usize>) -> Self {
+    pub fn new(cutoffs: Vec<usize>) -> Result<Self, MeasureParseError> {
+        let cutoffs = validate_rank_cutoffs(cutoffs)?;
         let sub_metrics = cutoffs.iter().map(|c| format!("ndcg_cut_{}", c)).collect();
-        Self {
+        Ok(Self {
             cutoffs,
-            gains_config: GainsConfig::parse(""),
+            gains_config: GainsConfig::default(),
             sub_metrics,
-        }
+        })
     }
 }
 
@@ -148,6 +149,7 @@ impl Measure for NdcgCutMeasure {
 impl Default for NdcgCutMeasure {
     fn default() -> Self {
         Self::new(vec![5, 10, 15, 20, 30, 100, 200, 500, 1000])
+            .expect("default ndcg_cut cutoffs are valid")
     }
 }
 
@@ -158,7 +160,7 @@ mod tests {
 
     #[test]
     fn test_ndcg_cut_standard() {
-        let measure = NdcgCutMeasure::new(vec![1, 3]);
+        let measure = NdcgCutMeasure::new(vec![1, 3]).unwrap();
         let config = EvalConfig::default();
         // retrieved: [1, 0, 1], num_rel = 2.
         // dcg@1 = 1.0. dcg@3 = 1.0 + 0.0 + 1.0 / log2(4) = 1.5.
@@ -177,9 +179,9 @@ mod tests {
 
     #[test]
     fn test_ndcg_cut_global_gains() {
-        let measure = NdcgCutMeasure::new(vec![1, 3]);
+        let measure = NdcgCutMeasure::new(vec![1, 3]).unwrap();
         let mut config = EvalConfig::default();
-        config.global_gains = Some(GainsConfig::parse("1=5.0,2=10.0"));
+        config.global_gains = Some(GainsConfig::parse("1=5.0,2=10.0").unwrap());
         
         let state = crate::eval::alignment::QueryEvalState {
             qid: "mock_topic".to_string(),
@@ -201,5 +203,31 @@ mod tests {
         } else {
             panic!("Expected float value");
         }
+    }
+
+    #[test]
+    fn test_ndcg_cut_unsorted_cutoffs() {
+        let config = EvalConfig::default();
+        // mixed.qrels / mixed.run from issue #57: 5 relevant docs, retrieved [1, -1, 0, 1, -1, 0, 1, 1]
+        let state = EvalState::Standard(make_mock_state(vec![1, -1, 0, 1, -1, 0, 1, 1], 5));
+
+        let asc = NdcgCutMeasure::new(vec![2, 5]).unwrap();
+        let desc = NdcgCutMeasure::new(vec![5, 2]).unwrap();
+
+        assert_eq!(desc.sub_metrics(), vec!["ndcg_cut_2", "ndcg_cut_5"]);
+        assert_eq!(desc.calc(&config, &state), asc.calc(&config, &state));
+        if let MetricValue::Float(v2) = desc.calc(&config, &state)[0] {
+            assert!((v2 - 0.613147192765).abs() < 1e-6);
+        } else {
+            panic!("Expected float value");
+        }
+    }
+
+    #[test]
+    fn test_ndcg_cut_rejects_invalid_cutoffs() {
+        assert!(NdcgCutMeasure::new(vec![]).is_err());
+        assert!(NdcgCutMeasure::new(vec![0]).is_err());
+        assert!(NdcgCutMeasure::new(vec![5, 5]).is_err());
+        assert!(NdcgCutMeasure::new(vec![i64::MAX as usize + 1]).is_err());
     }
 }

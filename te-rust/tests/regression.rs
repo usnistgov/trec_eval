@@ -305,3 +305,196 @@ fn test_regression_qrels_jg_with_comments() {
     );
 }
 
+fn parse_ordered_rows(output_str: &str) -> Vec<(String, String, String)> {
+    output_str
+        .lines()
+        .filter_map(|line| {
+            let parts: Vec<&str> = line.split_whitespace().collect();
+            if parts.len() >= 3 {
+                Some((parts[0].to_string(), parts[1].to_string(), parts[2].to_string()))
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
+#[test]
+fn test_regression_unsorted_cutoffs() {
+    let qrels_path = get_test_file_path("qrels.test");
+    let results_path = get_test_file_path("results.test");
+    let qrels_jg_path = get_test_file_path("qrels.123");
+
+    let cases: &[(&[&str], &PathBuf)] = &[
+        (&["-m", "map_cut.20,5"], &qrels_path),
+        (&["-m", "ndcg_cut.20,5"], &qrels_path),
+        (&["-m", "relative_P.20,5"], &qrels_path),
+        (&["-m", "unj.20,5"], &qrels_path),
+        (&["-m", "P.20,5"], &qrels_path),
+        (&["-m", "recall.20,5"], &qrels_path),
+        (&["-m", "success.10,1"], &qrels_path),
+        (&["-m", "iprec_at_recall.0.8,0.2"], &qrels_path),
+        (&["-m", "Rprec_mult.2.0,0.5"], &qrels_path),
+        (&["-R", "qrels_jg", "-m", "P_avgjg.20,5"], &qrels_jg_path),
+        (&["-R", "qrels_jg", "-m", "Rprec_mult_avgjg.2.0,0.5"], &qrels_jg_path),
+    ];
+
+    for (args, qrels) in cases {
+        let rust_out = Command::new(get_te_rust_bin())
+            .args(*args)
+            .arg(qrels.to_str().unwrap())
+            .arg(results_path.to_str().unwrap())
+            .output()
+            .expect("Failed to run te-rust");
+        assert!(
+            rust_out.status.success(),
+            "te-rust failed for {:?}: {}",
+            args,
+            String::from_utf8_lossy(&rust_out.stderr)
+        );
+
+        let c_out = Command::new(get_trec_eval_bin())
+            .args(*args)
+            .arg(qrels.to_str().unwrap())
+            .arg(results_path.to_str().unwrap())
+            .output()
+            .expect("Failed to run trec_eval");
+        assert!(
+            c_out.status.success(),
+            "trec_eval failed for {:?}: {}",
+            args,
+            String::from_utf8_lossy(&c_out.stderr)
+        );
+
+        let rust_rows = parse_ordered_rows(&String::from_utf8_lossy(&rust_out.stdout));
+        let c_rows = parse_ordered_rows(&String::from_utf8_lossy(&c_out.stdout));
+        assert_eq!(rust_rows.len(), c_rows.len(), "Row count mismatch for {:?}", args);
+        for (r, c) in rust_rows.iter().zip(c_rows.iter()) {
+            assert_eq!(r.0, c.0, "Metric name/order mismatch for {:?}", args);
+            assert_eq!(r.1, c.1, "QID mismatch for {:?}", args);
+            let rf: f64 = r.2.parse().unwrap();
+            let cf: f64 = c.2.parse().unwrap();
+            assert!(
+                (rf - cf).abs() < 1e-4,
+                "Value mismatch for {:?} ({}): rust={}, c={}",
+                args,
+                r.0,
+                rf,
+                cf
+            );
+        }
+    }
+
+    // 11pt_avg intentionally sorts recall levels (fixing C trec_eval #142):
+    // verify descending order produces the same score as ascending order.
+    let asc = Command::new(get_te_rust_bin())
+        .args(["-m", "11pt_avg.0.2,0.5,0.8"])
+        .arg(qrels_path.to_str().unwrap())
+        .arg(results_path.to_str().unwrap())
+        .output()
+        .expect("Failed to run te-rust");
+    let desc = Command::new(get_te_rust_bin())
+        .args(["-m", "11pt_avg.0.8,0.2,0.5"])
+        .arg(qrels_path.to_str().unwrap())
+        .arg(results_path.to_str().unwrap())
+        .output()
+        .expect("Failed to run te-rust");
+    assert!(asc.status.success() && desc.status.success());
+    let asc_rows = parse_ordered_rows(&String::from_utf8_lossy(&asc.stdout));
+    let desc_rows = parse_ordered_rows(&String::from_utf8_lossy(&desc.stdout));
+    assert_eq!(asc_rows[0].2, desc_rows[0].2);
+}
+
+#[test]
+fn test_regression_parameter_validation_and_exit_codes() {
+    let qrels_path = get_test_file_path("qrels.test");
+    let results_path = get_test_file_path("results.test");
+    let rust_bin = get_te_rust_bin();
+
+    // Exit 1: spec / CLI option errors
+    let exit_1_cases: &[&[&str]] = &[
+        &["-m", "P."],
+        &["-m", "P_"],
+        &["-m", "P@"],
+        &["-m", "ndcg."],
+        &["-m", "unknown_measure"],
+        &["--global-gains", "1=x", "-m", "ndcg"],
+    ];
+    for args in exit_1_cases {
+        let out = Command::new(&rust_bin)
+            .args(*args)
+            .arg(qrels_path.to_str().unwrap())
+            .arg(results_path.to_str().unwrap())
+            .output()
+            .expect("Failed to run te-rust");
+        assert_eq!(
+            out.status.code(),
+            Some(1),
+            "Expected exit 1 for {:?}, got {:?}; stderr={}",
+            args,
+            out.status.code(),
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
+
+    // Exit 2: invalid parameter values for known measures
+    let exit_2_cases: &[&str] = &[
+        "ndcg.1=x",
+        "ndcg.x=1",
+        "ndcg.5,5",
+        "ndcg.1=2,1=5",
+        "rbp.p=0.5,q=1",
+        "rbp.p=0.5,p=0.8",
+        "rbp_resid.x=1",
+        "rbp_resid.1=2",
+        "P.0",
+        "ndcg_cut.0",
+        "P.5,5",
+        "iprec_at_recall.0.5,0.5",
+        "set_F.nan",
+        "set_F.inf",
+        "rbp.p=nan",
+        "utility.1,nan,0,0",
+        "iprec_at_recall.1e400",
+        "P.9223372036854775808",
+        "iprec_at_recall.-1,1.5",
+        "11pt_avg.-1,1.5",
+        "Rprec_mult.0",
+        "Rprec_mult_avgjg.0",
+        "set_F.-0.5",
+        "rbp.p=1",
+        "rbp.p=-0.5",
+        "rbp_resid.p=1.5",
+        "map.5",
+    ];
+    for spec in exit_2_cases {
+        let out = Command::new(&rust_bin)
+            .args(["-m", spec])
+            .arg(qrels_path.to_str().unwrap())
+            .arg(results_path.to_str().unwrap())
+            .output()
+            .expect("Failed to run te-rust");
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert_eq!(
+            out.status.code(),
+            Some(2),
+            "Expected exit 2 for '{}', got {:?}; stderr={}",
+            spec,
+            out.status.code(),
+            stderr
+        );
+        assert!(
+            stderr.contains(spec),
+            "Expected stderr to name '{}', got '{}'",
+            spec,
+            stderr
+        );
+    }
+
+    // Legal edge cases (exit 0 and parity with C trec_eval)
+    for spec in ["iprec_at_recall.1.", "iprec_at_recall.0", "set_F.0", "rbp.p=0", "rbp.p=0.5,1=2,2=5"] {
+        compare_outputs(&["-m", spec], &["-m", spec], "qrels.test", "results.test");
+    }
+    compare_outputs(&["-q", "-m", "relstring.0"], &["-q", "-m", "relstring.0"], "qrels.test", "results.test");
+}
+

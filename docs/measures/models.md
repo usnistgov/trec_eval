@@ -35,12 +35,12 @@ where $\text{rel}(k) \in [0, 1]$ is the normalized relevance grade ($\text{rel}(
 
 ### RBP Residual (`rbp_resid`)
 
-Upper bound on the potential unobserved score due to unjudged documents:
+Maximum possible upward shift in RBP if all unjudged documents (both within the retrieved ranking of length $N$ and beyond rank $N$) had maximum normalized gain $1$:
 
-$$\text{RBP}_{\text{resid}} = \text{RBP} + p^N$$
+$$\text{RBP}_{\text{resid}} = \begin{cases} p^N + (1 - p) \sum_{\substack{k=1 \\ \text{doc } k \text{ unjudged}}}^N p^{k-1} & \text{if at least one retrieved document is unjudged} \\ 0.0 & \text{otherwise} \end{cases}$$
 
-- Parameter: `p` (persistence parameter, default `0.9`).
-- Usage: `-m rbp` or `-m rbp.p=0.8`
+- Parameter: `p` (persistence parameter in $[0.0, 1.0)$, default `0.9`). `rbp` also accepts optional `<rel>=<gain>` pairs (e.g., `-m rbp.p=0.8,1=2,2=5`).
+- Usage: `-m rbp`, `-m rbp.p=0.8`, `-m rbp_resid`, or `-m rbp_resid.p=0.8`
 - Reference: Moffat, A., & Zobel, J. (2008). "Rank-biased precision for measurement of retrieval effectiveness." *ACM Transactions on Information Systems (TOIS)*, 27(1): Article 2.
 
 ---

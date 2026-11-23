@@ -1,3 +1,4 @@
+use crate::metrics::common::MeasureParseError;
 use crate::metrics::{EvalConfig, EvalState, EvaluationType, Measure, MetricValue, ValueFormat};
 
 pub struct RelstringMeasure {
@@ -6,13 +7,19 @@ pub struct RelstringMeasure {
 }
 
 impl RelstringMeasure {
-    pub fn new(len: usize, params_str: &str) -> Self {
+    pub fn new(len: usize, params_str: &str) -> Result<Self, MeasureParseError> {
+        if len > i64::MAX as usize {
+            return Err(MeasureParseError::new(format!(
+                "illegal relstring length '{}' (exceeds maximum)",
+                len
+            )));
+        }
         let name = if params_str.is_empty() {
             "relstring".to_string()
         } else {
             format!("relstring_{}", params_str)
         };
-        Self { len, sub_metrics: vec![name] }
+        Ok(Self { len, sub_metrics: vec![name] })
     }
 }
 
@@ -60,7 +67,7 @@ impl Measure for RelstringMeasure {
         };
 
         let limit = std::cmp::min(self.len, q_state.results_rel_list.len());
-        let mut s = String::with_capacity(self.len);
+        let mut s = String::with_capacity(limit);
 
         for i in 0..limit {
             let rel = q_state.results_rel_list[i];
@@ -85,7 +92,7 @@ impl Measure for RelstringMeasure {
 
 impl Default for RelstringMeasure {
     fn default() -> Self {
-        Self::new(30, "")
+        Self::new(10, "").expect("default relstring length is valid")
     }
 }
 
@@ -98,7 +105,7 @@ mod tests {
     fn test_relstring_standard() {
         let measure = RelstringMeasure::default();
         let config = EvalConfig::default();
-        // retrieved: [1, 0, -1] (rel, nonrel, unjudged), len = 30
+        // retrieved: [1, 0, -1] (rel, nonrel, unjudged), len = 10
         let state = make_mock_state(vec![1, 0, -1], 1);
         let actual = measure.calc(&config, &EvalState::Standard(state));
         assert_eq!(actual, vec![MetricValue::Str("'10-'".to_string())]);
@@ -111,5 +118,20 @@ mod tests {
         let state = make_mock_state(vec![], 5);
         let actual = measure.calc(&config, &EvalState::Standard(state));
         assert_eq!(actual, vec![MetricValue::Str("''".to_string())]);
+    }
+
+    #[test]
+    fn test_relstring_zero_and_boundary_lengths() {
+        let config = EvalConfig::default();
+        let state = EvalState::Standard(make_mock_state(vec![1, 0, -1], 1));
+
+        let zero = RelstringMeasure::new(0, "0").unwrap();
+        assert_eq!(zero.sub_metrics(), vec!["relstring_0"]);
+        assert_eq!(zero.calc(&config, &state), vec![MetricValue::Str("''".to_string())]);
+
+        let max_ok = RelstringMeasure::new(i64::MAX as usize, "max").unwrap();
+        assert_eq!(max_ok.calc(&config, &state), vec![MetricValue::Str("'10-'".to_string())]);
+
+        assert!(RelstringMeasure::new(i64::MAX as usize + 1, "overflow").is_err());
     }
 }

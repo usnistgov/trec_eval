@@ -1,3 +1,4 @@
+use crate::metrics::common::{validate_rank_cutoffs, MeasureParseError};
 use crate::metrics::{EvalConfig, EvalState, EvaluationType, Measure, MetricValue, ValueFormat};
 
 pub struct MapCutMeasure {
@@ -6,9 +7,10 @@ pub struct MapCutMeasure {
 }
 
 impl MapCutMeasure {
-    pub fn new(cutoffs: Vec<usize>) -> Self {
+    pub fn new(cutoffs: Vec<usize>) -> Result<Self, MeasureParseError> {
+        let cutoffs = validate_rank_cutoffs(cutoffs)?;
         let sub_metrics = cutoffs.iter().map(|c| format!("map_cut_{}", c)).collect();
-        Self { cutoffs, sub_metrics }
+        Ok(Self { cutoffs, sub_metrics })
     }
 }
 
@@ -90,6 +92,7 @@ impl Measure for MapCutMeasure {
 impl Default for MapCutMeasure {
     fn default() -> Self {
         Self::new(vec![5, 10, 15, 20, 30, 100, 200, 500, 1000])
+            .expect("default map_cut cutoffs are valid")
     }
 }
 
@@ -100,7 +103,7 @@ mod tests {
 
     #[test]
     fn test_map_cut_standard() {
-        let measure = MapCutMeasure::new(vec![1, 2, 3]);
+        let measure = MapCutMeasure::new(vec![1, 2, 3]).unwrap();
         let config = EvalConfig::default();
         // retrieved: [1, 0, 1], num_rel = 2
         // Rank 1: rel=1 -> rel_so_far=1, prec=1/1=1.0, sum_prec=1.0. At i=1 (cutoff 1 achieved at i=1?),
@@ -122,5 +125,29 @@ mod tests {
         } else {
             panic!("Expected float value");
         }
+    }
+
+    #[test]
+    fn test_map_cut_unsorted_cutoffs() {
+        let measure = MapCutMeasure::new(vec![5, 2]).unwrap();
+        assert_eq!(measure.sub_metrics(), vec!["map_cut_2", "map_cut_5"]);
+        let config = EvalConfig::default();
+        let state = EvalState::Standard(make_mock_state(vec![1, 1, 1, 1, 1, 1], 6));
+        let actual = measure.calc(&config, &state);
+        assert_eq!(actual.len(), 2);
+        if let (MetricValue::Float(v2), MetricValue::Float(v5)) = (&actual[0], &actual[1]) {
+            assert!((v2 - (2.0 / 6.0)).abs() < 1e-12);
+            assert!((v5 - (5.0 / 6.0)).abs() < 1e-12);
+        } else {
+            panic!("Expected float values");
+        }
+    }
+
+    #[test]
+    fn test_map_cut_rejects_invalid_cutoffs() {
+        assert!(MapCutMeasure::new(vec![]).is_err());
+        assert!(MapCutMeasure::new(vec![0]).is_err());
+        assert!(MapCutMeasure::new(vec![5, 5]).is_err());
+        assert!(MapCutMeasure::new(vec![i64::MAX as usize + 1]).is_err());
     }
 }

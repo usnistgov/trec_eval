@@ -1,5 +1,5 @@
 use crate::metrics::{EvalConfig, EvalState, EvaluationType, Measure, MetricValue, ValueFormat};
-use crate::metrics::common::{Gains, GainsConfig};
+use crate::metrics::common::{Gains, GainsConfig, MeasureParseError};
 
 pub struct NdcgMeasure {
     gains_config: GainsConfig,
@@ -7,16 +7,17 @@ pub struct NdcgMeasure {
 }
 
 impl NdcgMeasure {
-    pub fn new(params_str: &str) -> Self {
+    pub fn new(params_str: &str) -> Result<Self, MeasureParseError> {
+        let gains_config = GainsConfig::parse(params_str)?;
         let name = if params_str.is_empty() {
             "ndcg".to_string()
         } else {
             format!("ndcg_{}", params_str)
         };
-        Self {
-            gains_config: GainsConfig::parse(params_str),
+        Ok(Self {
+            gains_config,
             sub_metrics: vec![name],
-        }
+        })
     }
 }
 
@@ -120,7 +121,7 @@ impl Measure for NdcgMeasure {
 
 impl Default for NdcgMeasure {
     fn default() -> Self {
-        Self::new("")
+        Self::new("").expect("default ndcg gains are valid")
     }
 }
 
@@ -131,7 +132,7 @@ mod tests {
 
     #[test]
     fn test_ndcg_standard() {
-        let measure = NdcgMeasure::new("");
+        let measure = NdcgMeasure::new("").unwrap();
         let config = EvalConfig::default();
         // retrieved: [1, 0, 1], num_rel = 2.
         // dcg = 1.0 / log2(2) + 0.0 + 1.0 / log2(4) = 1.0 + 0.5 = 1.5.
@@ -145,5 +146,14 @@ mod tests {
         } else {
             panic!("Expected float value");
         }
+    }
+
+    #[test]
+    fn test_ndcg_rejects_invalid_gains() {
+        assert!(NdcgMeasure::new("1=3,2=9").is_ok());
+        assert!(NdcgMeasure::new("5,5").is_err());
+        assert!(NdcgMeasure::new("x=1").is_err());
+        assert!(NdcgMeasure::new("1=inf").is_err());
+        assert!(NdcgMeasure::new("1=2,01=3").is_err());
     }
 }

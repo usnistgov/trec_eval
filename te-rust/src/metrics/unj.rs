@@ -1,3 +1,4 @@
+use crate::metrics::common::{validate_rank_cutoffs, MeasureParseError};
 use crate::metrics::{EvalConfig, EvalState, EvaluationType, Measure, MetricValue, ValueFormat};
 
 pub struct UnjMeasure {
@@ -6,9 +7,10 @@ pub struct UnjMeasure {
 }
 
 impl UnjMeasure {
-    pub fn new(cutoffs: Vec<usize>) -> Self {
+    pub fn new(cutoffs: Vec<usize>) -> Result<Self, MeasureParseError> {
+        let cutoffs = validate_rank_cutoffs(cutoffs)?;
         let sub_metrics = cutoffs.iter().map(|c| format!("unj_{}", c)).collect();
-        Self { cutoffs, sub_metrics }
+        Ok(Self { cutoffs, sub_metrics })
     }
 }
 
@@ -76,7 +78,7 @@ impl Measure for UnjMeasure {
 
 impl Default for UnjMeasure {
     fn default() -> Self {
-        Self::new(vec![5, 10, 20])
+        Self::new(vec![5, 10, 20]).expect("default unj cutoffs are valid")
     }
 }
 
@@ -87,7 +89,7 @@ mod tests {
 
     #[test]
     fn test_unj_standard() {
-        let measure = UnjMeasure::new(vec![2, 5]);
+        let measure = UnjMeasure::new(vec![2, 5]).unwrap();
         let config = EvalConfig::default();
         // retrieved: [-1, 1, -2, 0, 0]. First is unjudged (NONPOOL), third is unjudged (UNJUDGED).
         // unj_2: unj_so_far at i=2 is 1 (NONPOOL at index 0). result = 1 / 2 = 0.5.
@@ -95,5 +97,23 @@ mod tests {
         let state = make_mock_state(vec![-1, 1, -2, 0, 0], 2);
         let actual = measure.calc(&config, &EvalState::Standard(state));
         assert_eq!(actual, vec![MetricValue::Float(0.5), MetricValue::Float(0.4)]);
+    }
+
+    #[test]
+    fn test_unj_unsorted_cutoffs() {
+        let measure = UnjMeasure::new(vec![5, 2]).unwrap();
+        assert_eq!(measure.sub_metrics(), vec!["unj_2", "unj_5"]);
+        let config = EvalConfig::default();
+        // mixed.run from issue #57: unjudged at ranks 2 and 5
+        let state = EvalState::Standard(make_mock_state(vec![1, -1, 0, 1, -1, 0, 1, 1], 5));
+        assert_eq!(measure.calc(&config, &state), vec![MetricValue::Float(0.5), MetricValue::Float(0.4)]);
+    }
+
+    #[test]
+    fn test_unj_rejects_invalid_cutoffs() {
+        assert!(UnjMeasure::new(vec![]).is_err());
+        assert!(UnjMeasure::new(vec![0]).is_err());
+        assert!(UnjMeasure::new(vec![5, 5]).is_err());
+        assert!(UnjMeasure::new(vec![i64::MAX as usize + 1]).is_err());
     }
 }

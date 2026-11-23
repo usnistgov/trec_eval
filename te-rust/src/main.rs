@@ -98,7 +98,7 @@ fn handle_help_flags(help_measures: bool, help_measure: Option<&str>) {
         println!("{:<22} {:<13} {}", "Measure", "Status", "Description");
         println!("{}", "-".repeat(70));
         for spec in metrics::registry::registry() {
-            if let Ok(m) = (spec.factory)("") {
+            if let Ok(m) = (spec.factory)(None) {
                 println!("{:<22} {:<13} {}", m.name(), spec.status.label(), m.short_description());
             }
         }
@@ -109,7 +109,7 @@ fn handle_help_flags(help_measures: bool, help_measure: Option<&str>) {
     if let Some(target) = help_measure {
         for spec in metrics::registry::registry() {
             if spec.name.eq_ignore_ascii_case(target) {
-                if let Ok(m) = (spec.factory)("") {
+                if let Ok(m) = (spec.factory)(None) {
                     println!("{}", m.name());
                     if !spec.status.label().is_empty() {
                         println!("Status: {}", spec.status.label());
@@ -182,12 +182,25 @@ fn main() {
         Ok(m) => m,
         Err(e) => {
             eprintln!("te-rust: {}", e);
-            process::exit(1);
+            let code = match e.kind {
+                metrics::common::MeasureErrorKind::Spec => 1,
+                metrics::common::MeasureErrorKind::Param => 2,
+            };
+            process::exit(code);
         }
     };
 
     // 5. Setup runtime config
-    let global_gains = args.global_gains.as_ref().map(|s| crate::metrics::common::GainsConfig::parse(s));
+    let global_gains = match args.global_gains.as_ref() {
+        None => None,
+        Some(s) => match crate::metrics::common::GainsConfig::parse(s) {
+            Ok(cfg) => Some(cfg),
+            Err(e) => {
+                eprintln!("Error: invalid --global-gains '{}': {}", s, e);
+                process::exit(1);
+            }
+        },
+    };
     let config = EvalConfig {
         query_flag: args.query_flag,
         summary_flag: !args.no_summary_flag,

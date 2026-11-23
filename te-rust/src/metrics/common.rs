@@ -2,15 +2,34 @@ use crate::metrics::EvalConfig;
 use std::collections::HashMap;
 use std::fmt;
 
-/// Error returned when a measure's parameter string cannot be parsed.
+/// Distinguishes CLI/specification syntax errors (exit 1) from invalid
+/// parameter values for a known measure (exit 2), matching C `trec_eval`.
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub enum MeasureErrorKind {
+    Spec,
+    Param,
+}
+
+/// Error returned when a measure specification or parameter string is invalid.
 #[derive(Debug, Clone, PartialEq)]
 pub struct MeasureParseError {
+    pub kind: MeasureErrorKind,
     pub message: String,
 }
 
 impl MeasureParseError {
     pub fn new(message: impl Into<String>) -> Self {
-        Self { message: message.into() }
+        Self {
+            kind: MeasureErrorKind::Param,
+            message: message.into(),
+        }
+    }
+
+    pub fn spec(message: impl Into<String>) -> Self {
+        Self {
+            kind: MeasureErrorKind::Spec,
+            message: message.into(),
+        }
     }
 }
 
@@ -23,11 +42,12 @@ impl fmt::Display for MeasureParseError {
 impl std::error::Error for MeasureParseError {}
 
 /// Parse a comma-separated list of integer cutoffs (e.g. "5,10,20").
-/// An empty string yields the provided defaults.
-pub fn parse_int_cutoffs(params: &str, default: &[usize]) -> Result<Vec<usize>, MeasureParseError> {
-    if params.is_empty() {
-        return Ok(default.to_vec());
-    }
+/// `None` yields the provided defaults; `Some("")` is rejected.
+pub fn parse_int_cutoffs(params: Option<&str>, default: &[usize]) -> Result<Vec<usize>, MeasureParseError> {
+    let params = match params {
+        None => return Ok(default.to_vec()),
+        Some(s) => s,
+    };
     let mut list = Vec::new();
     for s in params.split(',') {
         let tok = s.trim();
@@ -39,12 +59,13 @@ pub fn parse_int_cutoffs(params: &str, default: &[usize]) -> Result<Vec<usize>, 
     Ok(list)
 }
 
-/// Parse a comma-separated list of float cutoffs/coefficients (e.g. "0.0,0.5,1.0").
-/// An empty string yields the provided defaults.
-pub fn parse_float_cutoffs(params: &str, default: &[f64]) -> Result<Vec<f64>, MeasureParseError> {
-    if params.is_empty() {
-        return Ok(default.to_vec());
-    }
+/// Parse a comma-separated list of float values (e.g. "0.0,0.5,1.0").
+/// `None` yields the provided defaults; `Some("")` is rejected.
+pub fn parse_float_cutoffs(params: Option<&str>, default: &[f64]) -> Result<Vec<f64>, MeasureParseError> {
+    let params = match params {
+        None => return Ok(default.to_vec()),
+        Some(s) => s,
+    };
     let mut list = Vec::new();
     for s in params.split(',') {
         let tok = s.trim();
@@ -73,6 +94,63 @@ pub fn parse_key_values(params: &str) -> Result<Vec<(String, String)>, MeasurePa
     Ok(pairs)
 }
 
+/// Sort and validate positive integer rank cutoffs.
+/// Rejects empty lists, zero cutoffs, cutoffs above `i64::MAX`, and duplicates.
+pub(crate) fn validate_rank_cutoffs(mut cutoffs: Vec<usize>) -> Result<Vec<usize>, MeasureParseError> {
+    if cutoffs.is_empty() {
+        return Err(MeasureParseError::new("cutoff list must not be empty"));
+    }
+    for &c in &cutoffs {
+        if c == 0 {
+            return Err(MeasureParseError::new("cutoff must be a positive integer (got 0)"));
+        }
+        if c > i64::MAX as usize {
+            return Err(MeasureParseError::new(format!(
+                "illegal cutoff '{}' (exceeds maximum)",
+                c
+            )));
+        }
+    }
+    cutoffs.sort_unstable();
+    for w in cutoffs.windows(2) {
+        if w[0] == w[1] {
+            return Err(MeasureParseError::new(format!("duplicate cutoff '{}'", w[0])));
+        }
+    }
+    Ok(cutoffs)
+}
+
+/// Sort and validate finite float cutoffs, rejecting empty lists, non-finite
+/// values, out-of-range values, and exact duplicates (including `-0.0` vs `0.0`).
+pub(crate) fn validate_float_cutoffs(
+    mut cutoffs: Vec<f64>,
+    label: &str,
+    in_range: impl Fn(f64) -> bool,
+    range_desc: &str,
+) -> Result<Vec<f64>, MeasureParseError> {
+    if cutoffs.is_empty() {
+        return Err(MeasureParseError::new(format!("{} list must not be empty", label)));
+    }
+    for &v in &cutoffs {
+        if !v.is_finite() {
+            return Err(MeasureParseError::new(format!("non-finite {} '{}'", label, v)));
+        }
+        if !in_range(v) {
+            return Err(MeasureParseError::new(format!(
+                "{} '{}' must be {}",
+                label, v, range_desc
+            )));
+        }
+    }
+    cutoffs.sort_by(f64::total_cmp);
+    for w in cutoffs.windows(2) {
+        if w[0] == w[1] {
+            return Err(MeasureParseError::new(format!("duplicate {} '{}'", label, w[0])));
+        }
+    }
+    Ok(cutoffs)
+}
+
 /// Helper function to count the number of relevant documents retrieved up to a certain rank limit.
 pub(crate) fn count_relevant_retrieved_up_to(results_rel_list: &[i64], limit: usize, config: &EvalConfig) -> usize {
     let actual_limit = std::cmp::min(limit, results_rel_list.len());
@@ -82,25 +160,39 @@ pub(crate) fn count_relevant_retrieved_up_to(results_rel_list: &[i64], limit: us
         .count()
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct GainsConfig {
     pub custom_gains: HashMap<i64, f64>,
 }
 
 impl GainsConfig {
-    pub fn parse(params_str: &str) -> Self {
+    pub fn parse(params_str: &str) -> Result<Self, MeasureParseError> {
         let mut custom_gains = HashMap::new();
-        if !params_str.is_empty() {
-            for pair_str in params_str.split(',') {
-                let parts: Vec<&str> = pair_str.split('=').collect();
-                if parts.len() == 2 {
-                    if let (Ok(rel_level), Ok(gain)) = (parts[0].trim().parse::<i64>(), parts[1].trim().parse::<f64>()) {
-                        custom_gains.insert(rel_level, gain);
-                    }
-                }
+        for (k, v) in parse_key_values(params_str)? {
+            let rel_level = k.parse::<i64>().map_err(|_| {
+                MeasureParseError::new(format!("invalid relevance level '{}'", k))
+            })?;
+            if custom_gains.contains_key(&rel_level) {
+                return Err(MeasureParseError::new(format!(
+                    "duplicate relevance level '{}'",
+                    rel_level
+                )));
             }
+            let gain = v.parse::<f64>().map_err(|_| {
+                MeasureParseError::new(format!(
+                    "invalid gain value '{}' for relevance level '{}'",
+                    v, k
+                ))
+            })?;
+            if !gain.is_finite() {
+                return Err(MeasureParseError::new(format!(
+                    "non-finite gain '{}' for relevance level '{}'",
+                    gain, k
+                )));
+            }
+            custom_gains.insert(rel_level, gain);
         }
-        Self { custom_gains }
+        Ok(Self { custom_gains })
     }
 }
 
@@ -195,34 +287,44 @@ mod parser_tests {
     use super::*;
 
     #[test]
-    fn int_cutoffs_empty_uses_default() {
-        assert_eq!(parse_int_cutoffs("", &[5, 10, 20]).unwrap(), vec![5, 10, 20]);
+    fn int_cutoffs_none_uses_default() {
+        assert_eq!(parse_int_cutoffs(None, &[5, 10, 20]).unwrap(), vec![5, 10, 20]);
+    }
+
+    #[test]
+    fn int_cutoffs_empty_some_is_rejected() {
+        assert!(parse_int_cutoffs(Some(""), &[5, 10, 20]).is_err());
     }
 
     #[test]
     fn int_cutoffs_parses_and_trims() {
-        assert_eq!(parse_int_cutoffs("5, 10 ,20", &[]).unwrap(), vec![5, 10, 20]);
+        assert_eq!(parse_int_cutoffs(Some("5, 10 ,20"), &[]).unwrap(), vec![5, 10, 20]);
     }
 
     #[test]
     fn int_cutoffs_rejects_bad_token() {
-        assert!(parse_int_cutoffs("5,x,20", &[]).is_err());
-        assert!(parse_int_cutoffs("5,-1", &[]).is_err());
+        assert!(parse_int_cutoffs(Some("5,x,20"), &[]).is_err());
+        assert!(parse_int_cutoffs(Some("5,-1"), &[]).is_err());
     }
 
     #[test]
-    fn float_cutoffs_empty_uses_default() {
-        assert_eq!(parse_float_cutoffs("", &[0.0, 1.0]).unwrap(), vec![0.0, 1.0]);
+    fn float_cutoffs_none_uses_default() {
+        assert_eq!(parse_float_cutoffs(None, &[0.0, 1.0]).unwrap(), vec![0.0, 1.0]);
+    }
+
+    #[test]
+    fn float_cutoffs_empty_some_is_rejected() {
+        assert!(parse_float_cutoffs(Some(""), &[0.0, 1.0]).is_err());
     }
 
     #[test]
     fn float_cutoffs_parses_and_trims() {
-        assert_eq!(parse_float_cutoffs("0.0, 0.5 ,1.0", &[]).unwrap(), vec![0.0, 0.5, 1.0]);
+        assert_eq!(parse_float_cutoffs(Some("0.0, 0.5 ,1.0"), &[]).unwrap(), vec![0.0, 0.5, 1.0]);
     }
 
     #[test]
     fn float_cutoffs_rejects_bad_token() {
-        assert!(parse_float_cutoffs("0.0,nope", &[]).is_err());
+        assert!(parse_float_cutoffs(Some("0.0,nope"), &[]).is_err());
     }
 
     #[test]
@@ -241,5 +343,29 @@ mod parser_tests {
     #[test]
     fn key_values_rejects_missing_equals() {
         assert!(parse_key_values("p0.9").is_err());
+    }
+
+    #[test]
+    fn gains_config_parses_valid_and_empty() {
+        let empty = GainsConfig::parse("").unwrap();
+        assert!(empty.custom_gains.is_empty());
+
+        let parsed = GainsConfig::parse("1=3.5, 2=-1.0, -1=0.0").unwrap();
+        assert_eq!(parsed.custom_gains.get(&1), Some(&3.5));
+        assert_eq!(parsed.custom_gains.get(&2), Some(&-1.0));
+        assert_eq!(parsed.custom_gains.get(&-1), Some(&0.0));
+    }
+
+    #[test]
+    fn gains_config_rejects_invalid_specs() {
+        assert!(GainsConfig::parse("5,5").is_err());
+        assert!(GainsConfig::parse("x=1").is_err());
+        assert!(GainsConfig::parse("1=x").is_err());
+        assert!(GainsConfig::parse("1=nan").is_err());
+        assert!(GainsConfig::parse("1=inf").is_err());
+        assert!(GainsConfig::parse("1=-inf").is_err());
+        assert!(GainsConfig::parse("1=2,1=5").is_err());
+        assert!(GainsConfig::parse("1=2,01=3").is_err());
+        assert!(GainsConfig::parse("1=2,").is_err());
     }
 }

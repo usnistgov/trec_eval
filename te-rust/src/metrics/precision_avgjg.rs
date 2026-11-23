@@ -1,3 +1,4 @@
+use crate::metrics::common::{validate_rank_cutoffs, MeasureParseError};
 use crate::metrics::{EvalConfig, EvalState, EvaluationType, Measure, MetricValue, ValueFormat};
 
 pub struct PrecisionAvgjgMeasure {
@@ -6,9 +7,10 @@ pub struct PrecisionAvgjgMeasure {
 }
 
 impl PrecisionAvgjgMeasure {
-    pub fn new(cutoffs: Vec<usize>) -> Self {
+    pub fn new(cutoffs: Vec<usize>) -> Result<Self, MeasureParseError> {
+        let cutoffs = validate_rank_cutoffs(cutoffs)?;
         let sub_metrics = cutoffs.iter().map(|c| format!("P_avgjg_{}", c)).collect();
-        Self { cutoffs, sub_metrics }
+        Ok(Self { cutoffs, sub_metrics })
     }
 }
 
@@ -80,7 +82,7 @@ mod tests {
 
     #[test]
     fn test_precision_avgjg_standard() {
-        let measure = PrecisionAvgjgMeasure::new(vec![5, 10]);
+        let measure = PrecisionAvgjgMeasure::new(vec![5, 10]).unwrap();
         let config = EvalConfig::default();
 
         let state1 = QueryEvalState {
@@ -113,5 +115,15 @@ mod tests {
         assert_eq!(scores.len(), 2);
         assert_eq!(scores[0], MetricValue::Float(0.2));
         assert_eq!(scores[1], MetricValue::Float(0.1));
+    }
+
+    #[test]
+    fn test_precision_avgjg_unsorted_and_invalid_cutoffs() {
+        let measure = PrecisionAvgjgMeasure::new(vec![10, 5]).unwrap();
+        assert_eq!(measure.sub_metrics(), vec!["P_avgjg_5", "P_avgjg_10"]);
+        assert!(PrecisionAvgjgMeasure::new(vec![]).is_err());
+        assert!(PrecisionAvgjgMeasure::new(vec![0]).is_err());
+        assert!(PrecisionAvgjgMeasure::new(vec![5, 5]).is_err());
+        assert!(PrecisionAvgjgMeasure::new(vec![i64::MAX as usize + 1]).is_err());
     }
 }

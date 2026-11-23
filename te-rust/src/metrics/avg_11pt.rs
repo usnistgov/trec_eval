@@ -1,3 +1,4 @@
+use crate::metrics::common::MeasureParseError;
 use crate::metrics::{EvalConfig, EvalState, EvaluationType, Measure, MetricValue, ValueFormat};
 
 pub struct Avg11PtMeasure {
@@ -6,13 +7,36 @@ pub struct Avg11PtMeasure {
 }
 
 impl Avg11PtMeasure {
-    pub fn new(cutoffs: Vec<f64>, params_str: &str) -> Self {
+    pub fn new(mut cutoffs: Vec<f64>, params_str: &str) -> Result<Self, MeasureParseError> {
+        if cutoffs.is_empty() {
+            return Err(MeasureParseError::new("recall level list must not be empty"));
+        }
+        for &v in &cutoffs {
+            if !v.is_finite() {
+                return Err(MeasureParseError::new(format!("non-finite recall level '{}'", v)));
+            }
+            if !(0.0..=1.0).contains(&v) {
+                return Err(MeasureParseError::new(format!(
+                    "recall level '{}' must be between 0.0 and 1.0",
+                    v
+                )));
+            }
+        }
+        cutoffs.sort_by(f64::total_cmp);
+        for w in cutoffs.windows(2) {
+            if w[0] == w[1] {
+                return Err(MeasureParseError::new(format!(
+                    "duplicate recall level '{}'",
+                    w[0]
+                )));
+            }
+        }
         let name = if params_str.is_empty() {
             "11pt_avg".to_string()
         } else {
             format!("11pt_avg_{}", params_str)
         };
-        Self { cutoffs, sub_metrics: vec![name] }
+        Ok(Self { cutoffs, sub_metrics: vec![name] })
     }
 }
 
@@ -113,6 +137,7 @@ impl Measure for Avg11PtMeasure {
 impl Default for Avg11PtMeasure {
     fn default() -> Self {
         Self::new(vec![0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0], "")
+            .expect("default 11pt_avg recall levels are valid")
     }
 }
 
@@ -133,5 +158,31 @@ mod tests {
         } else {
             panic!("Expected float value");
         }
+    }
+
+    #[test]
+    fn test_avg_11pt_unsorted_cutoffs() {
+        let config = EvalConfig::default();
+        let state = EvalState::Standard(make_mock_state(vec![1, 0, 0, 1], 2));
+
+        let asc = Avg11PtMeasure::new(vec![0.5, 1.0], "0.5,1.0").unwrap();
+        let desc = Avg11PtMeasure::new(vec![1.0, 0.5], "1.0,0.5").unwrap();
+
+        assert_eq!(desc.sub_metrics(), vec!["11pt_avg_1.0,0.5"]);
+        assert_eq!(asc.calc(&config, &state), vec![MetricValue::Float(0.75)]);
+        assert_eq!(desc.calc(&config, &state), vec![MetricValue::Float(0.75)]);
+    }
+
+    #[test]
+    fn test_avg_11pt_rejects_invalid_cutoffs() {
+        assert!(Avg11PtMeasure::new(vec![], "").is_err());
+        assert!(Avg11PtMeasure::new(vec![f64::NAN], "nan").is_err());
+        assert!(Avg11PtMeasure::new(vec![f64::INFINITY], "inf").is_err());
+        assert!(Avg11PtMeasure::new(vec![f64::NEG_INFINITY], "-inf").is_err());
+        assert!(Avg11PtMeasure::new(vec![-0.1, 0.5], "-0.1,0.5").is_err());
+        assert!(Avg11PtMeasure::new(vec![0.5, 1.5], "0.5,1.5").is_err());
+        assert!(Avg11PtMeasure::new(vec![0.5, 0.5], "0.5,0.5").is_err());
+        assert!(Avg11PtMeasure::new(vec![-0.0, 0.0], "-0.0,0.0").is_err());
+        assert!(Avg11PtMeasure::new(vec![0.0, 1.0], "0.0,1.0").is_ok());
     }
 }

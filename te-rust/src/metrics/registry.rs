@@ -8,9 +8,7 @@
 //! `P.10,20`). Groups such as `official` and `all_trec` are name lists resolved
 //! against this table.
 
-use crate::metrics::common::{
-    parse_float_cutoffs, parse_int_cutoffs, parse_key_values, MeasureParseError,
-};
+use crate::metrics::common::{parse_float_cutoffs, parse_int_cutoffs, MeasureParseError};
 use crate::metrics::{self, Measure};
 
 /// Development/support status of a measure (ISSUES #24).
@@ -35,8 +33,19 @@ impl MeasureStatus {
     }
 }
 
-/// Factory building a measure instance from its parameter string.
-type MeasureFactory = fn(&str) -> Result<Box<dyn Measure>, MeasureParseError>;
+/// Factory building a measure instance from its optional parameter string.
+/// `None` requests default parameters; `Some(s)` supplies explicit parameters.
+type MeasureFactory = fn(Option<&str>) -> Result<Box<dyn Measure>, MeasureParseError>;
+
+fn reject_params(params: Option<&str>) -> Result<(), MeasureParseError> {
+    if let Some(p) = params {
+        return Err(MeasureParseError::new(format!(
+            "does not accept parameters (got '{}')",
+            p
+        )));
+    }
+    Ok(())
+}
 
 /// Static description of a single measure root.
 pub struct MeasureSpec {
@@ -56,95 +65,82 @@ const DEFAULT_RECALL_LEVELS: &[f64] = &[0.0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 
 const DEFAULT_RPREC_MULT: &[f64] = &[0.2, 0.4, 0.6, 0.8, 1.0, 1.2, 1.4, 1.6, 1.8, 2.0];
 const DEFAULT_UTILITY_COEFFS: &[f64] = &[1.0, -1.0, 0.0, 0.0];
 
-/// Extract the RBP-style `p=<float>` parameter, defaulting to 0.9.
-fn parse_rbp_p(params: &str) -> Result<f64, MeasureParseError> {
-    let mut p = 0.9;
-    for (k, v) in parse_key_values(params)? {
-        if k == "p" {
-            p = v
-                .parse::<f64>()
-                .map_err(|_| MeasureParseError::new(format!("invalid float parameter '{}'", v)))?;
-        }
-    }
-    Ok(p)
-}
-
 /// The full measure registry table.
 pub fn registry() -> &'static [MeasureSpec] {
     use MeasureStatus::*;
     &[
-        MeasureSpec { name: "runid", status: Production, usage: "", factory: |_| Ok(Box::new(metrics::runid::RunIdMeasure::new())) },
-        MeasureSpec { name: "num_q", status: Production, usage: "", factory: |_| Ok(Box::new(metrics::num_q::NumQMeasure::new())) },
-        MeasureSpec { name: "num_ret", status: Production, usage: "", factory: |_| Ok(Box::new(metrics::num_ret::NumRetMeasure::new())) },
-        MeasureSpec { name: "num_rel", status: Production, usage: "", factory: |_| Ok(Box::new(metrics::num_rel::NumRelMeasure::new())) },
-        MeasureSpec { name: "num_rel_ret", status: Production, usage: "", factory: |_| Ok(Box::new(metrics::num_rel_ret::NumRelRetMeasure::new())) },
-        MeasureSpec { name: "num_nonrel_judged_ret", status: Production, usage: "", factory: |_| Ok(Box::new(metrics::num_nonrel_judged_ret::NumNonrelJudgedRetMeasure::new())) },
-        MeasureSpec { name: "map", status: Production, usage: "", factory: |_| Ok(Box::new(metrics::map::MapMeasure::new())) },
-        MeasureSpec { name: "gm_map", status: Production, usage: "", factory: |_| Ok(Box::new(metrics::gm_map::GMMapMeasure::new())) },
-        MeasureSpec { name: "Rprec", status: Production, usage: "", factory: |_| Ok(Box::new(metrics::rprec::RprecMeasure::new())) },
-        MeasureSpec { name: "recip_rank", status: Production, usage: "", factory: |_| Ok(Box::new(metrics::recip_rank::RecipRankMeasure::new())) },
-        MeasureSpec { name: "bpref", status: Production, usage: "", factory: |_| Ok(Box::new(metrics::bpref::BprefMeasure::new())) },
-        MeasureSpec { name: "gm_bpref", status: Production, usage: "", factory: |_| Ok(Box::new(metrics::gm_bpref::GMBprefMeasure::new())) },
-        MeasureSpec { name: "infAP", status: Production, usage: "", factory: |_| Ok(Box::new(metrics::infap::InfAPMeasure::new())) },
+        MeasureSpec { name: "runid", status: Production, usage: "", factory: |p| { reject_params(p)?; Ok(Box::new(metrics::runid::RunIdMeasure::new())) } },
+        MeasureSpec { name: "num_q", status: Production, usage: "", factory: |p| { reject_params(p)?; Ok(Box::new(metrics::num_q::NumQMeasure::new())) } },
+        MeasureSpec { name: "num_ret", status: Production, usage: "", factory: |p| { reject_params(p)?; Ok(Box::new(metrics::num_ret::NumRetMeasure::new())) } },
+        MeasureSpec { name: "num_rel", status: Production, usage: "", factory: |p| { reject_params(p)?; Ok(Box::new(metrics::num_rel::NumRelMeasure::new())) } },
+        MeasureSpec { name: "num_rel_ret", status: Production, usage: "", factory: |p| { reject_params(p)?; Ok(Box::new(metrics::num_rel_ret::NumRelRetMeasure::new())) } },
+        MeasureSpec { name: "num_nonrel_judged_ret", status: Production, usage: "", factory: |p| { reject_params(p)?; Ok(Box::new(metrics::num_nonrel_judged_ret::NumNonrelJudgedRetMeasure::new())) } },
+        MeasureSpec { name: "map", status: Production, usage: "", factory: |p| { reject_params(p)?; Ok(Box::new(metrics::map::MapMeasure::new())) } },
+        MeasureSpec { name: "gm_map", status: Production, usage: "", factory: |p| { reject_params(p)?; Ok(Box::new(metrics::gm_map::GMMapMeasure::new())) } },
+        MeasureSpec { name: "Rprec", status: Production, usage: "", factory: |p| { reject_params(p)?; Ok(Box::new(metrics::rprec::RprecMeasure::new())) } },
+        MeasureSpec { name: "recip_rank", status: Production, usage: "", factory: |p| { reject_params(p)?; Ok(Box::new(metrics::recip_rank::RecipRankMeasure::new())) } },
+        MeasureSpec { name: "bpref", status: Production, usage: "", factory: |p| { reject_params(p)?; Ok(Box::new(metrics::bpref::BprefMeasure::new())) } },
+        MeasureSpec { name: "gm_bpref", status: Production, usage: "", factory: |p| { reject_params(p)?; Ok(Box::new(metrics::gm_bpref::GMBprefMeasure::new())) } },
+        MeasureSpec { name: "infAP", status: Production, usage: "", factory: |p| { reject_params(p)?; Ok(Box::new(metrics::infap::InfAPMeasure::new())) } },
         MeasureSpec {
             name: "P",
             status: Production,
             usage: "P[.<c1,c2,...>]  precision at integer rank cutoffs (default: 5,10,15,20,30,100,200,500,1000)",
-            factory: |p| Ok(Box::new(metrics::precision::PrecisionCutMeasure::new(parse_int_cutoffs(p, DEFAULT_RANK_CUTOFFS)?))),
+            factory: |p| Ok(Box::new(metrics::precision::PrecisionCutMeasure::new(parse_int_cutoffs(p, DEFAULT_RANK_CUTOFFS)?)?)),
         },
         MeasureSpec {
             name: "recall",
             status: Production,
             usage: "recall[.<c1,c2,...>]  recall at integer rank cutoffs (default: 5,10,15,20,30,100,200,500,1000)",
-            factory: |p| Ok(Box::new(metrics::recall::RecallCutMeasure::new(parse_int_cutoffs(p, DEFAULT_RANK_CUTOFFS)?))),
+            factory: |p| Ok(Box::new(metrics::recall::RecallCutMeasure::new(parse_int_cutoffs(p, DEFAULT_RANK_CUTOFFS)?)?)),
         },
         MeasureSpec {
             name: "ndcg_cut",
             status: Production,
             usage: "ndcg_cut[.<c1,c2,...>]  nDCG at integer rank cutoffs (default: 5,10,15,20,30,100,200,500,1000)",
-            factory: |p| Ok(Box::new(metrics::ndcg_cut::NdcgCutMeasure::new(parse_int_cutoffs(p, DEFAULT_RANK_CUTOFFS)?))),
+            factory: |p| Ok(Box::new(metrics::ndcg_cut::NdcgCutMeasure::new(parse_int_cutoffs(p, DEFAULT_RANK_CUTOFFS)?)?)),
         },
         MeasureSpec {
             name: "map_cut",
             status: Production,
             usage: "map_cut[.<c1,c2,...>]  MAP at integer rank cutoffs (default: 5,10,15,20,30,100,200,500,1000)",
-            factory: |p| Ok(Box::new(metrics::map_cut::MapCutMeasure::new(parse_int_cutoffs(p, DEFAULT_RANK_CUTOFFS)?))),
+            factory: |p| Ok(Box::new(metrics::map_cut::MapCutMeasure::new(parse_int_cutoffs(p, DEFAULT_RANK_CUTOFFS)?)?)),
         },
         MeasureSpec {
             name: "relative_P",
             status: Production,
             usage: "relative_P[.<c1,c2,...>]  relative precision at integer rank cutoffs (default: 5,10,15,20,30,100,200,500,1000)",
-            factory: |p| Ok(Box::new(metrics::relative_p::RelativePMeasure::new(parse_int_cutoffs(p, DEFAULT_RANK_CUTOFFS)?))),
+            factory: |p| Ok(Box::new(metrics::relative_p::RelativePMeasure::new(parse_int_cutoffs(p, DEFAULT_RANK_CUTOFFS)?)?)),
         },
         MeasureSpec {
             name: "success",
             status: Production,
             usage: "success[.<c1,c2,...>]  success at integer rank cutoffs (default: 1,5,10)",
-            factory: |p| Ok(Box::new(metrics::success::SuccessCutMeasure::new(parse_int_cutoffs(p, DEFAULT_SUCCESS_CUTOFFS)?))),
+            factory: |p| Ok(Box::new(metrics::success::SuccessCutMeasure::new(parse_int_cutoffs(p, DEFAULT_SUCCESS_CUTOFFS)?)?)),
         },
         MeasureSpec {
             name: "unj",
             status: Production,
             usage: "unj[.<c1,c2,...>]  unjudged fraction at integer rank cutoffs (default: 5,10,20)",
-            factory: |p| Ok(Box::new(metrics::unj::UnjMeasure::new(parse_int_cutoffs(p, DEFAULT_UNJ_CUTOFFS)?))),
+            factory: |p| Ok(Box::new(metrics::unj::UnjMeasure::new(parse_int_cutoffs(p, DEFAULT_UNJ_CUTOFFS)?)?)),
         },
         MeasureSpec {
             name: "11pt_avg",
             status: Production,
             usage: "11pt_avg[.<r1,r2,...>]  interpolated precision at recall levels (default: 0.0,0.1,...,1.0)",
-            factory: |p| Ok(Box::new(metrics::avg_11pt::Avg11PtMeasure::new(parse_float_cutoffs(p, DEFAULT_RECALL_LEVELS)?, p))),
+            factory: |p| Ok(Box::new(metrics::avg_11pt::Avg11PtMeasure::new(parse_float_cutoffs(p, DEFAULT_RECALL_LEVELS)?, p.unwrap_or(""))?)),
         },
         MeasureSpec {
             name: "iprec_at_recall",
             status: Production,
             usage: "iprec_at_recall[.<r1,r2,...>]  interpolated precision at recall levels (default: 0.0,0.1,...,1.0)",
-            factory: |p| Ok(Box::new(metrics::iprec_at_recall::IprecAtRecallMeasure::new(parse_float_cutoffs(p, DEFAULT_RECALL_LEVELS)?))),
+            factory: |p| Ok(Box::new(metrics::iprec_at_recall::IprecAtRecallMeasure::new(parse_float_cutoffs(p, DEFAULT_RECALL_LEVELS)?)?)),
         },
         MeasureSpec {
             name: "Rprec_mult",
             status: Production,
             usage: "Rprec_mult[.<m1,m2,...>]  R-precision at multiples of R (default: 0.2,0.4,...,2.0)",
-            factory: |p| Ok(Box::new(metrics::rprec_mult::RprecMultMeasure::new(parse_float_cutoffs(p, DEFAULT_RPREC_MULT)?))),
+            factory: |p| Ok(Box::new(metrics::rprec_mult::RprecMultMeasure::new(parse_float_cutoffs(p, DEFAULT_RPREC_MULT)?)?)),
         },
         MeasureSpec {
             name: "utility",
@@ -152,23 +148,19 @@ pub fn registry() -> &'static [MeasureSpec] {
             usage: "utility.<rr,rn,nr,nn>  four utility coefficients (default: 1.0,-1.0,0.0,0.0)",
             factory: |p| {
                 let coeffs = parse_float_cutoffs(p, DEFAULT_UTILITY_COEFFS)?;
-                if coeffs.len() != 4 {
-                    return Err(MeasureParseError::new("utility requires exactly 4 coefficients"));
-                }
-                Ok(Box::new(metrics::utility::UtilityMeasure::new(coeffs, p)))
+                Ok(Box::new(metrics::utility::UtilityMeasure::new(coeffs, p.unwrap_or(""))?))
             },
         },
         MeasureSpec {
             name: "set_F",
             status: Production,
-            usage: "set_F[.<beta>]  F-measure beta weighting (default: 1.0)",
+            usage: "set_F[.<x>]  harmonic-mean weight x = beta^2 on 1/R vs 1/P (default: 1.0)",
             factory: |p| {
-                let beta = if p.is_empty() {
-                    1.0
-                } else {
-                    p.parse::<f64>().map_err(|_| MeasureParseError::new(format!("invalid float parameter '{}'", p)))?
+                let x = match p {
+                    None => 1.0,
+                    Some(s) => s.trim().parse::<f64>().map_err(|_| MeasureParseError::new(format!("invalid float parameter '{}'", s)))?,
                 };
-                Ok(Box::new(metrics::set_f::SetFMeasure::new(beta, p)))
+                Ok(Box::new(metrics::set_f::SetFMeasure::new(x, p.unwrap_or(""))?))
             },
         },
         MeasureSpec {
@@ -176,41 +168,40 @@ pub fn registry() -> &'static [MeasureSpec] {
             status: Production,
             usage: "relstring[.<len>]  relevance string length (default: 10)",
             factory: |p| {
-                let len = if p.is_empty() {
-                    10
-                } else {
-                    p.trim().parse::<usize>().map_err(|_| MeasureParseError::new(format!("invalid length '{}'", p)))?
+                let len = match p {
+                    None => 10,
+                    Some(s) => s.trim().parse::<usize>().map_err(|_| MeasureParseError::new(format!("invalid length '{}'", s)))?,
                 };
-                Ok(Box::new(metrics::relstring::RelstringMeasure::new(len, p)))
+                Ok(Box::new(metrics::relstring::RelstringMeasure::new(len, p.unwrap_or(""))?))
             },
         },
-        MeasureSpec { name: "set_P", status: Production, usage: "", factory: |_| Ok(Box::new(metrics::set_p::SetPMeasure::new())) },
-        MeasureSpec { name: "set_recall", status: Production, usage: "", factory: |_| Ok(Box::new(metrics::set_recall::SetRecallMeasure::new())) },
-        MeasureSpec { name: "set_relative_P", status: Production, usage: "", factory: |_| Ok(Box::new(metrics::set_relative_p::SetRelativePMeasure::new())) },
-        MeasureSpec { name: "set_map", status: Production, usage: "", factory: |_| Ok(Box::new(metrics::set_map::SetMapMeasure::new())) },
-        MeasureSpec { name: "G", status: Production, usage: "G[.<rel>=<gain>,...]  optional relevance-to-gain mapping (default: gain = relevance level)", factory: |p| Ok(Box::new(metrics::g::GMeasure::new(p))) },
-        MeasureSpec { name: "ndcg", status: Production, usage: "ndcg[.<rel>=<gain>,...]  optional relevance-to-gain mapping (default: gain = relevance level)", factory: |p| Ok(Box::new(metrics::ndcg::NdcgMeasure::new(p))) },
-        MeasureSpec { name: "ndcg_rel", status: Production, usage: "ndcg_rel[.<rel>=<gain>,...]  optional relevance-to-gain mapping (default: gain = relevance level)", factory: |p| Ok(Box::new(metrics::ndcg_rel::NdcgRelMeasure::new(p))) },
-        MeasureSpec { name: "Rndcg", status: Production, usage: "Rndcg[.<rel>=<gain>,...]  optional relevance-to-gain mapping (default: gain = relevance level)", factory: |p| Ok(Box::new(metrics::rndcg::RndcgMeasure::new(p))) },
-        MeasureSpec { name: "ndcg_p", status: Production, usage: "ndcg_p[.<rel>=<gain>,...]  optional relevance-to-gain mapping (default: gain = relevance level)", factory: |p| Ok(Box::new(metrics::ndcg_p::NdcgPMeasure::new(p))) },
-        MeasureSpec { name: "rbp", status: Production, usage: "rbp[.p=<float>]  persistence parameter p (default: 0.9)", factory: |p| Ok(Box::new(metrics::rbp::RbpMeasure::new(parse_rbp_p(p)?, p))) },
-        MeasureSpec { name: "rbp_resid", status: Production, usage: "rbp_resid[.p=<float>]  persistence parameter p (default: 0.9)", factory: |p| Ok(Box::new(metrics::rbp_resid::RbpResidMeasure::new(parse_rbp_p(p)?, p))) },
-        MeasureSpec { name: "map_avgjg", status: Production, usage: "", factory: |_| Ok(Box::new(metrics::map_avgjg::MapAvgjgMeasure::new())) },
+        MeasureSpec { name: "set_P", status: Production, usage: "", factory: |p| { reject_params(p)?; Ok(Box::new(metrics::set_p::SetPMeasure::new())) } },
+        MeasureSpec { name: "set_recall", status: Production, usage: "", factory: |p| { reject_params(p)?; Ok(Box::new(metrics::set_recall::SetRecallMeasure::new())) } },
+        MeasureSpec { name: "set_relative_P", status: Production, usage: "", factory: |p| { reject_params(p)?; Ok(Box::new(metrics::set_relative_p::SetRelativePMeasure::new())) } },
+        MeasureSpec { name: "set_map", status: Production, usage: "", factory: |p| { reject_params(p)?; Ok(Box::new(metrics::set_map::SetMapMeasure::new())) } },
+        MeasureSpec { name: "G", status: Production, usage: "G[.<rel>=<gain>,...]  optional relevance-to-gain mapping (default: gain = relevance level)", factory: |p| Ok(Box::new(metrics::g::GMeasure::new(p.unwrap_or(""))?)) },
+        MeasureSpec { name: "ndcg", status: Production, usage: "ndcg[.<rel>=<gain>,...]  optional relevance-to-gain mapping (default: gain = relevance level)", factory: |p| Ok(Box::new(metrics::ndcg::NdcgMeasure::new(p.unwrap_or(""))?)) },
+        MeasureSpec { name: "ndcg_rel", status: Production, usage: "ndcg_rel[.<rel>=<gain>,...]  optional relevance-to-gain mapping (default: gain = relevance level)", factory: |p| Ok(Box::new(metrics::ndcg_rel::NdcgRelMeasure::new(p.unwrap_or(""))?)) },
+        MeasureSpec { name: "Rndcg", status: Production, usage: "Rndcg[.<rel>=<gain>,...]  optional relevance-to-gain mapping (default: gain = relevance level)", factory: |p| Ok(Box::new(metrics::rndcg::RndcgMeasure::new(p.unwrap_or(""))?)) },
+        MeasureSpec { name: "ndcg_p", status: Production, usage: "ndcg_p[.<rel>=<gain>,...]  optional relevance-to-gain mapping (default: gain = relevance level)", factory: |p| Ok(Box::new(metrics::ndcg_p::NdcgPMeasure::new(p.unwrap_or(""))?)) },
+        MeasureSpec { name: "rbp", status: Production, usage: "rbp[.p=<float>[,<rel>=<gain>,...]]  persistence parameter p (default: 0.9) and optional gain mapping", factory: |p| Ok(Box::new(metrics::rbp::RbpMeasure::from_params(p)?)) },
+        MeasureSpec { name: "rbp_resid", status: Production, usage: "rbp_resid[.p=<float>]  persistence parameter p (default: 0.9)", factory: |p| Ok(Box::new(metrics::rbp_resid::RbpResidMeasure::from_params(p)?)) },
+        MeasureSpec { name: "map_avgjg", status: Production, usage: "", factory: |p| { reject_params(p)?; Ok(Box::new(metrics::map_avgjg::MapAvgjgMeasure::new())) } },
         MeasureSpec {
             name: "P_avgjg",
             status: Production,
             usage: "P_avgjg[.<c1,c2,...>]  precision at integer rank cutoffs averaged over JGs (default: 5,10,15,20,30,100,200,500,1000)",
-            factory: |p| Ok(Box::new(metrics::precision_avgjg::PrecisionAvgjgMeasure::new(parse_int_cutoffs(p, DEFAULT_RANK_CUTOFFS)?))),
+            factory: |p| Ok(Box::new(metrics::precision_avgjg::PrecisionAvgjgMeasure::new(parse_int_cutoffs(p, DEFAULT_RANK_CUTOFFS)?)?)),
         },
         MeasureSpec {
             name: "Rprec_mult_avgjg",
             status: Production,
             usage: "Rprec_mult_avgjg[.<m1,m2,...>]  R-precision at multiples of R averaged over JGs (default: 0.2,0.4,...,2.0)",
-            factory: |p| Ok(Box::new(metrics::rprec_mult_avgjg::RprecMultAvgjgMeasure::new(parse_float_cutoffs(p, DEFAULT_RPREC_MULT)?))),
+            factory: |p| Ok(Box::new(metrics::rprec_mult_avgjg::RprecMultAvgjgMeasure::new(parse_float_cutoffs(p, DEFAULT_RPREC_MULT)?)?)),
         },
-        MeasureSpec { name: "yaap", status: Experimental, usage: "", factory: |_| Ok(Box::new(metrics::yaap::YaapMeasure::new())) },
+        MeasureSpec { name: "yaap", status: Experimental, usage: "", factory: |p| { reject_params(p)?; Ok(Box::new(metrics::yaap::YaapMeasure::new())) } },
 
-        MeasureSpec { name: "binG", status: Production, usage: "", factory: |_| Ok(Box::new(metrics::bin_g::BinGMeasure::new())) },
+        MeasureSpec { name: "binG", status: Production, usage: "", factory: |p| { reject_params(p)?; Ok(Box::new(metrics::bin_g::BinGMeasure::new())) } },
     ]
 }
 
@@ -249,62 +240,54 @@ pub fn expand_group(name: &str) -> Option<&'static [&'static str]> {
     }
 }
 
-/// Canonicalize an input measure string (e.g. `ndcg@10`, `P.5,10`, `P_5`, `MRR`) into `(root, params)`.
-fn canonicalize_measure_spec(arg: &str) -> (String, String) {
+/// Canonicalize an input measure string (e.g. `ndcg@10`, `P.5,10`, `P_5`, `MRR`) into `(root, Option<params>)`.
+fn canonicalize_measure_spec(arg: &str) -> Result<(String, Option<String>), MeasureParseError> {
     if let Some((root, cutoffs)) = arg.split_once('@') {
-        let root_lower = root.to_ascii_lowercase();
-        match root_lower.as_str() {
-            "ndcg" => ("ndcg_cut".to_string(), cutoffs.to_string()),
-            "map" => ("map_cut".to_string(), cutoffs.to_string()),
-            "p" | "precision" => ("P".to_string(), cutoffs.to_string()),
-            "recall" => ("recall".to_string(), cutoffs.to_string()),
-            "success" => ("success".to_string(), cutoffs.to_string()),
-            "unj" => ("unj".to_string(), cutoffs.to_string()),
-            "relative_p" => ("relative_P".to_string(), cutoffs.to_string()),
-            _ => (root.to_string(), cutoffs.to_string()),
+        if cutoffs.is_empty() {
+            return Err(MeasureParseError::spec(format!(
+                "missing parameters in measure '{}'",
+                arg
+            )));
         }
+        let root_lower = root.to_ascii_lowercase();
+        let canonical = match root_lower.as_str() {
+            "ndcg" => "ndcg_cut".to_string(),
+            "map" => "map_cut".to_string(),
+            "p" | "precision" => "P".to_string(),
+            "recall" => "recall".to_string(),
+            "success" => "success".to_string(),
+            "unj" => "unj".to_string(),
+            "relative_p" => "relative_P".to_string(),
+            _ => root.to_string(),
+        };
+        Ok((canonical, Some(cutoffs.to_string())))
     } else if let Some((root, params)) = arg.split_once('.') {
-        (root.to_string(), params.to_string())
+        if params.is_empty() {
+            return Err(MeasureParseError::spec(format!(
+                "missing parameters in measure '{}'",
+                arg
+            )));
+        }
+        Ok((root.to_string(), Some(params.to_string())))
     } else {
         // Check for underscore cutoffs on known prefix names (e.g. P_5, ndcg_cut_10, map_cut_100, recall_10, success_5, unj_10)
         let arg_lower = arg.to_ascii_lowercase();
-        if let Some(rest) = arg_lower.strip_prefix("p_") {
-            if rest.chars().all(|c| c.is_ascii_digit() || c == ',') {
-                return ("P".to_string(), rest.to_string());
+        for (prefix, canonical) in [
+            ("p_avgjg_", "P_avgjg"),
+            ("p_", "P"),
+            ("ndcg_cut_", "ndcg_cut"),
+            ("map_cut_", "map_cut"),
+            ("recall_", "recall"),
+            ("success_", "success"),
+            ("unj_", "unj"),
+        ] {
+            if let Some(rest) = arg_lower.strip_prefix(prefix) {
+                if !rest.is_empty() && rest.chars().all(|c| c.is_ascii_digit() || c == ',') {
+                    return Ok((canonical.to_string(), Some(rest.to_string())));
+                }
             }
         }
-        if let Some(rest) = arg_lower.strip_prefix("p_avgjg_") {
-            if rest.chars().all(|c| c.is_ascii_digit() || c == ',') {
-                return ("P_avgjg".to_string(), rest.to_string());
-            }
-        }
-
-        if let Some(rest) = arg_lower.strip_prefix("ndcg_cut_") {
-            if rest.chars().all(|c| c.is_ascii_digit() || c == ',') {
-                return ("ndcg_cut".to_string(), rest.to_string());
-            }
-        }
-        if let Some(rest) = arg_lower.strip_prefix("map_cut_") {
-            if rest.chars().all(|c| c.is_ascii_digit() || c == ',') {
-                return ("map_cut".to_string(), rest.to_string());
-            }
-        }
-        if let Some(rest) = arg_lower.strip_prefix("recall_") {
-            if rest.chars().all(|c| c.is_ascii_digit() || c == ',') {
-                return ("recall".to_string(), rest.to_string());
-            }
-        }
-        if let Some(rest) = arg_lower.strip_prefix("success_") {
-            if rest.chars().all(|c| c.is_ascii_digit() || c == ',') {
-                return ("success".to_string(), rest.to_string());
-            }
-        }
-        if let Some(rest) = arg_lower.strip_prefix("unj_") {
-            if rest.chars().all(|c| c.is_ascii_digit() || c == ',') {
-                return ("unj".to_string(), rest.to_string());
-            }
-        }
-        (arg.to_string(), String::new())
+        Ok((arg.to_string(), None))
     }
 }
 
@@ -327,11 +310,14 @@ pub fn resolve_measures(requested: &[String]) -> Result<Vec<Box<dyn Measure>>, M
     // 2. Build each measure from its root and parameter string.
     let mut measures: Vec<Box<dyn Measure>> = Vec::with_capacity(expanded.len());
     for arg in &expanded {
-        let (root, params) = canonicalize_measure_spec(arg);
+        let (root, params) = canonicalize_measure_spec(arg)?;
         let spec = find_spec(&root)
-            .ok_or_else(|| MeasureParseError::new(format!("unknown measure '{}'", arg)))?;
-        let measure = (spec.factory)(&params)
-            .map_err(|e| MeasureParseError::new(format!("measure '{}': {}", arg, e)))?;
+            .ok_or_else(|| MeasureParseError::spec(format!("unknown measure '{}'", arg)))?;
+        let measure = (spec.factory)(params.as_deref())
+            .map_err(|e| MeasureParseError {
+                kind: e.kind,
+                message: format!("measure '{}': {}", arg, e),
+            })?;
         measures.push(measure);
     }
     Ok(measures)
@@ -341,11 +327,12 @@ pub fn resolve_measures(requested: &[String]) -> Result<Vec<Box<dyn Measure>>, M
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::metrics::common::MeasureErrorKind;
 
     #[test]
     fn every_registry_factory_builds_with_defaults() {
         for spec in registry() {
-            let m = (spec.factory)("").unwrap_or_else(|e| panic!("{} failed: {}", spec.name, e));
+            let m = (spec.factory)(None).unwrap_or_else(|e| panic!("{} failed: {}", spec.name, e));
             assert_eq!(m.name(), spec.name, "spec name must match measure name");
         }
     }
@@ -424,13 +411,34 @@ mod tests {
 
     #[test]
     fn unknown_measure_errors() {
-        assert!(resolve_measures(&["nope".to_string()]).is_err());
+        let err = resolve_measures(&["nope".to_string()]).err().unwrap();
+        assert_eq!(err.kind, MeasureErrorKind::Spec);
+    }
+
+    #[test]
+    fn empty_param_suffix_errors_as_spec() {
+        for bad in ["P.", "P_", "P@"] {
+            let err = resolve_measures(&[bad.to_string()]).err().unwrap_or_else(|| panic!("expected error for '{}'", bad));
+            assert_eq!(err.kind, MeasureErrorKind::Spec, "expected Spec error for '{}'", bad);
+        }
+        // Trailing decimal point in a float parameter stays legal (e.g. "1.")
+        let ok = resolve_measures(&["iprec_at_recall.1.".to_string()]).unwrap();
+        assert_eq!(ok[0].sub_metrics(), vec!["iprec_at_recall_1.00"]);
+    }
+
+    #[test]
+    fn parameterless_measure_rejects_params() {
+        let err = resolve_measures(&["map.5".to_string()]).err().unwrap();
+        assert_eq!(err.kind, MeasureErrorKind::Param);
     }
 
     #[test]
     fn bad_param_errors_with_context() {
         match resolve_measures(&["P.x".to_string()]) {
-            Err(e) => assert!(e.message.contains("P.x"), "error should name the argument: {}", e.message),
+            Err(e) => {
+                assert_eq!(e.kind, MeasureErrorKind::Param);
+                assert!(e.message.contains("P.x"), "error should name the argument: {}", e.message);
+            }
             Ok(_) => panic!("expected an error"),
         }
     }

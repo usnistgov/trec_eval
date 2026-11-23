@@ -33,11 +33,15 @@ $$\text{set\_map} = \text{set\_P} \cdot \text{set\_recall} = \frac{(\text{num\_r
 
 ---
 
-## Set $F_\beta$-Measure (`set_F`)
+## Set $F$-Measure (`set_F`)
 
-Weighted harmonic mean of set precision and set recall, parameterized by $\beta$:
+Weighted harmonic mean of set precision and set recall, parameterized by $x \ge 0$:
 
-$$F_\beta = \frac{(1 + \beta^2) \cdot \text{set\_P} \cdot \text{set\_recall}}{\beta^2 \cdot \text{set\_P} + \text{set\_recall}}$$
+$$\text{set\_F}_x = \frac{x + 1}{\frac{1}{\text{set\_P}} + \frac{x}{\text{set\_recall}}} = \frac{(x + 1) \cdot \text{set\_P} \cdot \text{set\_recall}}{x \cdot \text{set\_P} + \text{set\_recall}}$$
 
-- Parameter: `beta` (default `1.0` for balanced $F_1$).
-- Usage: `-m set_F` ($F_1$) or `-m set_F.beta=0.5` ($F_{0.5}$, emphasizing precision) or `-m set_F.beta=2.0` ($F_2$, emphasizing recall).
+Because `set_F` is a harmonic mean, $x$ is **not** a linear tradeoff between recall and precision; it weights $1/\text{set\_recall}$ relative to $1/\text{set\_P}$, so low values of either precision or recall continue to pull the score down strongly.
+
+In van Rijsbergen's $E$-measure / $F_\beta$ formulation (*Information Retrieval*, 1979), $x = \beta^2$: $\beta = \sqrt{x}$ is the recall-to-precision ratio ($R/P$) at which small changes in precision and recall have equal effect on the score ($\partial F / \partial P = \partial F / \partial R$), and at $P = R$ the marginal sensitivity to recall is $x = \beta^2$ times that of precision.
+
+- Parameter: $x \ge 0.0$ (default `1.0` for balanced $F_1$). At the boundary $x = 0.0$, $\text{set\_F}_0 = \text{set\_P}$; as $x \to \infty$, $\text{set\_F}_x \to \text{set\_recall}$.
+- Usage: `-m set_F` ($F_1$, $x = 1.0$), `-m set_F.0.25` ($F_{0.5}$, $\beta = 0.5$, emphasizing precision), or `-m set_F.4.0` ($F_2$, $\beta = 2.0$, emphasizing recall).

@@ -1,5 +1,5 @@
 use crate::metrics::{EvalConfig, EvalState, EvaluationType, Measure, MetricValue, ValueFormat};
-use crate::metrics::common::{Gains, GainsConfig};
+use crate::metrics::common::{Gains, GainsConfig, MeasureParseError};
 
 pub struct GMeasure {
     gains_config: GainsConfig,
@@ -7,16 +7,17 @@ pub struct GMeasure {
 }
 
 impl GMeasure {
-    pub fn new(params_str: &str) -> Self {
+    pub fn new(params_str: &str) -> Result<Self, MeasureParseError> {
+        let gains_config = GainsConfig::parse(params_str)?;
         let name = if params_str.is_empty() {
             "G".to_string()
         } else {
             format!("G_{}", params_str)
         };
-        Self {
-            gains_config: GainsConfig::parse(params_str),
+        Ok(Self {
+            gains_config,
             sub_metrics: vec![name],
-        }
+        })
     }
 }
 
@@ -138,7 +139,7 @@ impl Measure for GMeasure {
 
 impl Default for GMeasure {
     fn default() -> Self {
-        Self::new("")
+        Self::new("").expect("default G gains are valid")
     }
 }
 
@@ -149,10 +150,19 @@ mod tests {
 
     #[test]
     fn test_g_standard() {
-        let measure = GMeasure::new("");
+        let measure = GMeasure::new("").unwrap();
         let config = EvalConfig::default();
         let state = make_mock_state(vec![1, 0, 1], 2);
         let actual = measure.calc(&config, &EvalState::Standard(state));
         assert_eq!(actual.len(), 1);
+    }
+
+    #[test]
+    fn test_g_rejects_invalid_gains() {
+        assert!(GMeasure::new("1=2,2=5").is_ok());
+        assert!(GMeasure::new("5,5").is_err());
+        assert!(GMeasure::new("1=x").is_err());
+        assert!(GMeasure::new("1=nan").is_err());
+        assert!(GMeasure::new("1=2,1=5").is_err());
     }
 }
