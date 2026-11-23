@@ -166,19 +166,33 @@ pub struct GainsConfig {
 }
 
 impl GainsConfig {
-    pub fn parse(params_str: &str) -> Self {
+    pub fn parse(params_str: &str) -> Result<Self, MeasureParseError> {
         let mut custom_gains = HashMap::new();
-        if !params_str.is_empty() {
-            for pair_str in params_str.split(',') {
-                let parts: Vec<&str> = pair_str.split('=').collect();
-                if parts.len() == 2 {
-                    if let (Ok(rel_level), Ok(gain)) = (parts[0].trim().parse::<i64>(), parts[1].trim().parse::<f64>()) {
-                        custom_gains.insert(rel_level, gain);
-                    }
-                }
+        for (k, v) in parse_key_values(params_str)? {
+            let rel_level = k.parse::<i64>().map_err(|_| {
+                MeasureParseError::new(format!("invalid relevance level '{}'", k))
+            })?;
+            if custom_gains.contains_key(&rel_level) {
+                return Err(MeasureParseError::new(format!(
+                    "duplicate relevance level '{}'",
+                    rel_level
+                )));
             }
+            let gain = v.parse::<f64>().map_err(|_| {
+                MeasureParseError::new(format!(
+                    "invalid gain value '{}' for relevance level '{}'",
+                    v, k
+                ))
+            })?;
+            if !gain.is_finite() {
+                return Err(MeasureParseError::new(format!(
+                    "non-finite gain '{}' for relevance level '{}'",
+                    gain, k
+                )));
+            }
+            custom_gains.insert(rel_level, gain);
         }
-        Self { custom_gains }
+        Ok(Self { custom_gains })
     }
 }
 
@@ -329,5 +343,29 @@ mod parser_tests {
     #[test]
     fn key_values_rejects_missing_equals() {
         assert!(parse_key_values("p0.9").is_err());
+    }
+
+    #[test]
+    fn gains_config_parses_valid_and_empty() {
+        let empty = GainsConfig::parse("").unwrap();
+        assert!(empty.custom_gains.is_empty());
+
+        let parsed = GainsConfig::parse("1=3.5, 2=-1.0, -1=0.0").unwrap();
+        assert_eq!(parsed.custom_gains.get(&1), Some(&3.5));
+        assert_eq!(parsed.custom_gains.get(&2), Some(&-1.0));
+        assert_eq!(parsed.custom_gains.get(&-1), Some(&0.0));
+    }
+
+    #[test]
+    fn gains_config_rejects_invalid_specs() {
+        assert!(GainsConfig::parse("5,5").is_err());
+        assert!(GainsConfig::parse("x=1").is_err());
+        assert!(GainsConfig::parse("1=x").is_err());
+        assert!(GainsConfig::parse("1=nan").is_err());
+        assert!(GainsConfig::parse("1=inf").is_err());
+        assert!(GainsConfig::parse("1=-inf").is_err());
+        assert!(GainsConfig::parse("1=2,1=5").is_err());
+        assert!(GainsConfig::parse("1=2,01=3").is_err());
+        assert!(GainsConfig::parse("1=2,").is_err());
     }
 }

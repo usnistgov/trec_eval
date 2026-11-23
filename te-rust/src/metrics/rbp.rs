@@ -228,7 +228,7 @@ mod tests {
 
         let mut config = EvalConfig::default();
         // Global gains would map rel 1 -> 10, rel 2 -> 10, but per-measure gains must win
-        config.global_gains = Some(GainsConfig::parse("1=10,2=10"));
+        config.global_gains = Some(GainsConfig::parse("1=10,2=10").unwrap());
 
         let mut state = make_mock_state(vec![1, 2], 2);
         state.rel_levels = vec![100, 1, 1];

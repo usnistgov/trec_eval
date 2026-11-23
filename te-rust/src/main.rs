@@ -191,7 +191,16 @@ fn main() {
     };
 
     // 5. Setup runtime config
-    let global_gains = args.global_gains.as_ref().map(|s| crate::metrics::common::GainsConfig::parse(s));
+    let global_gains = match args.global_gains.as_ref() {
+        None => None,
+        Some(s) => match crate::metrics::common::GainsConfig::parse(s) {
+            Ok(cfg) => Some(cfg),
+            Err(e) => {
+                eprintln!("Error: invalid --global-gains '{}': {}", s, e);
+                process::exit(1);
+            }
+        },
+    };
     let config = EvalConfig {
         query_flag: args.query_flag,
         summary_flag: !args.no_summary_flag,
