@@ -173,3 +173,19 @@ def test_numerical_parity_against_known_run():
     for measure_name in ["map", "Rprec", "recip_rank", "bpref", "P_5", "P_10"]:
         score = agg[measure_name]
         assert 0.0 <= score <= 1.0, f"{measure_name} score {score} outside [0, 1]"
+
+
+def test_parameter_validation_and_sorting(sample_qrels_dict, sample_run_dict):
+    # Unsorted cutoffs match ascending cutoffs
+    asc = evaluate(sample_qrels_dict, sample_run_dict, measures=["ndcg_cut.1,3", "map_cut.1,3"])
+    desc = evaluate(sample_qrels_dict, sample_run_dict, measures=["ndcg_cut.3,1", "map_cut.3,1"])
+    assert desc.aggregate() == pytest.approx(asc.aggregate())
+
+    # Invalid measure specifications / parameters raise ValueError
+    for bad in ["P.", "P.0", "P.5,5", "ndcg.1=x", "rbp.p=1.0", "rbp_resid.1=2", "set_F.-0.5"]:
+        with pytest.raises(ValueError):
+            Evaluator(sample_qrels_dict, measures=[bad])
+
+    # Invalid global_gains raises ValueError
+    with pytest.raises(ValueError):
+        Evaluator(sample_qrels_dict, measures=["ndcg"], global_gains="1=x")
