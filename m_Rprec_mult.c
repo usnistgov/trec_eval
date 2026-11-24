@@ -64,7 +64,7 @@ te_calc_Rprec_mult(const EPI * epi, const REL_INFO * rel_info,
          return (UNDEF);
     for (i = 0; i < tm->meas_params->num_params; i++)
         cutoffs[i] = (long) (cutoff_percents[i] * rr.num_rel + 0.9);
-    precis = (double) rr.num_rel_ret / (double) rr.num_ret;
+    precis = rr.num_ret ? (double) rr.num_rel_ret / (double) rr.num_ret : 0.0;
     int_precis = precis;
 
     current_cut = tm->meas_params->num_params - 1;
