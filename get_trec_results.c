@@ -9,6 +9,7 @@
 #include "sysfunc.h"
 #include "trec_eval.h"
 #include "trec_format.h"
+#include "functions.h"
 #include <ctype.h>
 #include <sys/types.h>
 
@@ -34,7 +35,7 @@ check is made that it is consistent throughout).
 typedef struct {
     char *qid;
     char *docno;
-    char *sim;
+    double sim;
 } LINES;
 
 static int parse_results_line(char **start_ptr, char **qid_ptr,
@@ -67,6 +68,8 @@ te_get_trec_results(EPI * epi, char *text_results_file,
     long current_column;
     long num_qid;
     char *run_id_ptr = NULL;
+    char *sim_str = NULL;
+    int error = 0;
     /* current pointers into static pools above */
     RESULTS *q_results_ptr;
     TEXT_RESULTS_INFO *text_info_ptr;
@@ -160,9 +163,17 @@ te_get_trec_results(EPI * epi, char *text_results_file,
             continue;
         }
         if (UNDEF == parse_results_line(&ptr, &line_ptr->qid, &line_ptr->docno,
-                                        &line_ptr->sim, &run_id_ptr)) {
+                                        &sim_str, &run_id_ptr)) {
             fprintf(stderr, "trec_eval.get_results: Malformed line %ld\n",
                     (long) (line_ptr - lines + 1));
+            Free(lines);
+            return (UNDEF);
+        }
+        line_ptr->sim = str_to_double(sim_str, TRUE, &error);
+        if (error) {
+            fprintf(stderr, "trec_eval.get_results: Unusable score '%s' on line %ld\n",
+                    sim_str, (long) (line_ptr - lines + 1));
+            Free(lines);
             return (UNDEF);
         }
         line_ptr++;
@@ -207,7 +218,7 @@ te_get_trec_results(EPI * epi, char *text_results_file,
             current_qid, run_id_ptr, "trec_results", text_info_ptr};
         }
         text_results_ptr->docno = lines[i].docno;
-        text_results_ptr->sim = atof(lines[i].sim);
+        text_results_ptr->sim = lines[i].sim;
         text_results_ptr++;
     }
     /* End last qid */
