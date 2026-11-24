@@ -35,8 +35,6 @@ te_calc_avg_meas_s(const EPI * epi, const TREC_MEAS * tm,
                    const ALL_REL_INFO * all_rel_info, TREC_EVAL * accum_eval)
 {
     long num_queries = accum_eval->num_queries;
-    if (epi->average_complete_flag)
-        num_queries = all_rel_info->num_q_rels;
 
     if (num_queries)
         accum_eval->values[tm->eval_index].value /= num_queries;
@@ -51,8 +49,6 @@ te_calc_avg_meas_a_cut(const EPI * epi, const TREC_MEAS * tm,
 {
     long i;
     long num_queries = accum_eval->num_queries;
-    if (epi->average_complete_flag)
-        num_queries = all_rel_info->num_q_rels;
 
     if (num_queries) {
         for (i = 0; i < tm->meas_params->num_params; i++) {
@@ -70,16 +66,9 @@ te_calc_avg_meas_s_gm(const EPI * epi, const TREC_MEAS * tm,
 {
     double sum;
     long num_queries = accum_eval->num_queries;
-    if (epi->average_complete_flag)
-        num_queries = all_rel_info->num_q_rels;
 
     if (num_queries > 0) {
         sum = accum_eval->values[tm->eval_index].value;
-        if (epi->average_complete_flag)
-            /* Must patch up averages for any missing queries, since */
-            /* value of 0 means perfection */
-            sum += (num_queries - accum_eval->num_queries) * log(MIN_GEO_MEAN);
-
         accum_eval->values[tm->eval_index].value =
             exp((double) (sum / num_queries));
     }
