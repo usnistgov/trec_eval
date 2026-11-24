@@ -1,6 +1,6 @@
 #!/bin/sh
 # Regression tests for -c (complete evaluation), -l (relevance level),
-# -D (debug query), and empty-ranking handling (issue #95).
+# -D (debug query), and empty-ranking handling (issues #95, #96, #142 item 4).
 set -eu
 
 BIN="${1:-./trec_eval}"
@@ -113,3 +113,42 @@ assert_val "missing first prefs" prefs_simp all 0.5000
 run_eval "zscore -c" "$BIN" -c -q -m all_trec -Z test/zscores_file test/qrels.test test/results.trunc
 assert_val "zscore -c" Znum_q all 3.0000
 assert_val "zscore -c" Znum_rel all 0.0000
+
+# --- Issue #96: parameterized measures and level -1 gains on missing topic ---
+printf '1 0 a 1\n1 0 b 0\n2 0 a 1\n' > "$TMPDIR/two.qrels"
+printf '1 Q0 a 1 2 r\n1 Q0 b 2 1 r\n' > "$TMPDIR/one.run"
+
+run_eval "issue96 utility.1,-1,0,0" "$BIN" -c -q -m utility.1,-1,0,0 "$TMPDIR/two.qrels" "$TMPDIR/one.run"
+assert_val "issue96 utility.1,-1,0,0" utility_1,-1,0,0 2 0.0000
+assert_val "issue96 utility.1,-1,0,0" utility_1,-1,0,0 all 0.0000
+
+run_eval "issue96 rbp_resid.p=0.5" "$BIN" -c -q -m rbp_resid.p=0.5 "$TMPDIR/two.qrels" "$TMPDIR/one.run"
+assert_val "issue96 rbp_resid.p=0.5" rbp_resid_p=0.5 2 0.0000
+assert_val "issue96 rbp_resid.p=0.5" rbp_resid_p=0.5 all 0.0000
+
+run_eval "issue96 relstring.3" "$BIN" -c -q -m relstring.3 "$TMPDIR/two.qrels" "$TMPDIR/one.run"
+assert_val "issue96 relstring.3" relstring_3 1 "'10'"
+assert_val "issue96 relstring.3" relstring_3 2 "''"
+
+run_eval "issue96 ndcg.-1=1" "$BIN" -c -q -m ndcg.-1=1 "$TMPDIR/two.qrels" "$TMPDIR/one.run"
+assert_val "issue96 ndcg.-1=1" ndcg_-1=1 1 1.0000
+assert_val "issue96 ndcg.-1=1" ndcg_-1=1 2 0.0000
+assert_val "issue96 ndcg.-1=1" ndcg_-1=1 all 0.5000
+
+run_eval "issue96 utility.1,-1,2,3" "$BIN" -c -q -m utility.1,-1,2,3 "$TMPDIR/two.qrels" "$TMPDIR/one.run"
+assert_val "issue96 utility.1,-1,2,3" utility_1,-1,2,3 2 -1.0000
+assert_val "issue96 utility.1,-1,2,3" utility_1,-1,2,3 all -3.5000
+
+# --- Issue #142 item 4: -J (all unjudged) and -M 0 empty rankings avoid NaN ---
+printf '1 0 a 1\n1 0 b 0\n' > "$TMPDIR/one.qrels"
+printf '1 Q0 x 1 3 r\n1 Q0 y 2 2 r\n1 Q0 z 3 1 r\n' > "$TMPDIR/unjudged.run"
+
+run_eval "issue142 -J all unjudged" "$BIN" -J -m iprec_at_recall -m 11pt_avg -m Rprec_mult "$TMPDIR/one.qrels" "$TMPDIR/unjudged.run"
+assert_val "issue142 -J all unjudged" iprec_at_recall_0.00 all 0.0000
+assert_val "issue142 -J all unjudged" 11pt_avg all 0.0000
+assert_val "issue142 -J all unjudged" Rprec_mult_1.00 all 0.0000
+
+run_eval "issue142 -M 0" "$BIN" -M 0 -m iprec_at_recall -m 11pt_avg -m Rprec_mult "$TMPDIR/one.qrels" "$TMPDIR/one.run"
+assert_val "issue142 -M 0" iprec_at_recall_0.00 all 0.0000
+assert_val "issue142 -M 0" 11pt_avg all 0.0000
+assert_val "issue142 -M 0" Rprec_mult_1.00 all 0.0000
