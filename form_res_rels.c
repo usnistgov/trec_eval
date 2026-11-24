@@ -13,10 +13,9 @@
    rel_rank object giving the ordered relevance values for retrieved
    docs, plus relevance occurrence statatistics.
    Relevance value is
-       value in text_qrels if docno is in text_qrels and was judged
-           (assumed to be a small non-negative integer)
+       value in text_qrels if docno is in text_qrels and was judged (>= 0)
        RELVALUE_NONPOOL (-1) if docno is not in text_qrels
-       RELVALUE_UNJUDGED (-2) if docno is in text_qrels and was not judged.
+       RELVALUE_UNJUDGED (-2) if docno is in text_qrels and was not judged (< 0).
 
    This procedure may be called repeatedly for a given topic - returned
    values are cached until the query changes.
@@ -27,7 +26,7 @@
    UNDEF returned if error, 0 if used cache values, 1 if new values.
 */
 
-static int comp_rank_judged(const void * ptr1, const void * ptr2), comp_sim_docno(const void * ptr1, const void * ptr2), comp_docno(const void * ptr1, const void * ptr2);
+static int comp_rank_judged(const void * ptr1, const void * ptr2), comp_sim_docno(const void * ptr1, const void * ptr2), comp_docno(const void * ptr1, const void * ptr2), comp_long(const void * ptr1, const void * ptr2);
 
 /* Definitions used for temporary and cached values */
 typedef struct {
@@ -42,7 +41,7 @@ static char *current_query = "no query";
 static long max_current_query = 0;
 
 /* Space reserved for cached returned values */
-static long *rel_levels;
+static REL_LEVEL *rel_levels;
 static long max_rel_levels = 0;
 static RES_RELS saved_res_rels;
 static long *ranked_rel_list;
@@ -51,15 +50,18 @@ static long max_ranked_rel_list = 0;
 /* Space reserved for intermediate values */
 static DOCNO_INFO *docno_info;
 static long max_docno_info = 0;
+static long *rel_vals;
+static long max_rel_vals = 0;
 
 
 int
 te_form_res_rels(const EPI * epi, const REL_INFO * rel_info,
                  const RESULTS * results, RES_RELS * res_rels)
 {
-    long i;
+    long i, j;
     long num_results;
-    long max_rel;
+    long num_judged;
+    long num_rel_levels;
 
     TEXT_RESULTS_INFO *text_results_info;
     TEXT_QRELS_INFO *trec_qrels;
@@ -134,29 +136,64 @@ te_form_res_rels(const EPI * epi, const REL_INFO * rel_info,
         }
     }
 
-    /* Find max_rel among qid, reserve and zero space for rel_levels */
-    /* Check for duplicate docnos. */
+    /* Check for duplicate docnos in qrels and count judged (>= 0) docs */
     qrels_ptr = trec_qrels->text_qrels;
     end_qrels = &trec_qrels->text_qrels[trec_qrels->num_text_qrels];
-    max_rel = qrels_ptr->rel;
-    qrels_ptr++;
+    num_judged = 0;
     while (qrels_ptr < end_qrels) {
-        if (max_rel < qrels_ptr->rel)
-            max_rel = qrels_ptr->rel;
-        if (0 == strcmp((qrels_ptr - 1)->docno, qrels_ptr->docno)) {
+        if (qrels_ptr > trec_qrels->text_qrels &&
+            0 == strcmp((qrels_ptr - 1)->docno, qrels_ptr->docno)) {
             fprintf(stderr, "trec_eval.form_res_rels: duplicate docs %s\n",
                     qrels_ptr->docno);
             return (UNDEF);
         }
+        if (qrels_ptr->rel >= 0)
+            num_judged++;
         qrels_ptr++;
     }
-    if (NULL == (rel_levels =
-                 te_chk_and_malloc(rel_levels, &max_rel_levels,
-                                   (max_rel + 1), sizeof(long))))
-        return (UNDEF);
-    (void) memset(rel_levels, 0, (max_rel + 1) * sizeof(long));
 
-    /* Construct rank_rel array and rel_levels */
+    /* Count distinct judged relevance levels and occurrences per level */
+    num_rel_levels = 0;
+    if (num_judged > 0) {
+        if (NULL == (rel_vals =
+                     te_chk_and_malloc(rel_vals, &max_rel_vals,
+                                       num_judged, sizeof(long))))
+            return (UNDEF);
+        i = 0;
+        for (qrels_ptr = trec_qrels->text_qrels; qrels_ptr < end_qrels;
+             qrels_ptr++) {
+            if (qrels_ptr->rel >= 0)
+                rel_vals[i++] = qrels_ptr->rel;
+        }
+        if (num_judged > 1)
+            qsort((char *) rel_vals, (size_t) num_judged, sizeof(long),
+                  comp_long);
+
+        num_rel_levels = 1;
+        for (i = 1; i < num_judged; i++) {
+            if (rel_vals[i] != rel_vals[i - 1])
+                num_rel_levels++;
+        }
+        if (NULL == (rel_levels =
+                     te_chk_and_malloc(rel_levels, &max_rel_levels,
+                                       num_rel_levels, sizeof(REL_LEVEL))))
+            return (UNDEF);
+
+        j = 0;
+        rel_levels[0].rel_level = rel_vals[0];
+        rel_levels[0].num_at_level = 1;
+        for (i = 1; i < num_judged; i++) {
+            if (rel_vals[i] == rel_levels[j].rel_level) {
+                rel_levels[j].num_at_level++;
+            } else {
+                j++;
+                rel_levels[j].rel_level = rel_vals[i];
+                rel_levels[j].num_at_level = 1;
+            }
+        }
+    }
+
+    /* Construct rank_rel array */
     /* Go through docno_info, trec_qrels in parallel to determine relevance
        for each doc in docno_info.
        Note that trec_qrels already sorted by docno with no duplicates */
@@ -165,8 +202,6 @@ te_form_res_rels(const EPI * epi, const REL_INFO * rel_info,
     for (i = 0; i < num_results; i++) {
         while (qrels_ptr < end_qrels &&
                strcmp(qrels_ptr->docno, docno_info[i].docno) < 0) {
-            if (qrels_ptr->rel >= 0)
-                rel_levels[qrels_ptr->rel]++;
             qrels_ptr++;
         }
         if (qrels_ptr >= end_qrels ||
@@ -178,19 +213,10 @@ te_form_res_rels(const EPI * epi, const REL_INFO * rel_info,
             if (qrels_ptr->rel < 0)
                 /* In pool, but unjudged (eg, infAP uses a sample of pool) */
                 docno_info[i].rel = RELVALUE_UNJUDGED;
-            else {
+            else
                 docno_info[i].rel = qrels_ptr->rel;
-            }
-            if (qrels_ptr->rel >= 0)
-                rel_levels[qrels_ptr->rel]++;
             qrels_ptr++;
         }
-    }
-    /* Finish counting rels */
-    while (qrels_ptr < end_qrels) {
-        if (qrels_ptr->rel >= 0)
-            rel_levels[qrels_ptr->rel]++;
-        qrels_ptr++;
     }
 
     /* Construct ranked_rel_list and associated counts */
@@ -198,7 +224,8 @@ te_form_res_rels(const EPI * epi, const REL_INFO * rel_info,
     saved_res_rels.num_nonpool = 0;
     saved_res_rels.num_unjudged_in_pool = 0;
     saved_res_rels.results_rel_list = ranked_rel_list;
-    saved_res_rels.rel_levels = rel_levels;
+    saved_res_rels.num_rel_levels = num_rel_levels;
+    saved_res_rels.rel_levels = (num_rel_levels > 0) ? rel_levels : NULL;
     if (epi->judged_docs_only_flag) {
         /* If judged_docs_only_flag, then must fix up ranks to
            reflect unjudged docs being thrown out. Note: done this way
@@ -232,12 +259,9 @@ te_form_res_rels(const EPI * epi, const REL_INFO * rel_info,
         saved_res_rels.num_ret = num_results;
     }
     saved_res_rels.num_rel = 0;
-    for (i = 0; i <= max_rel; i++) {
-        if (saved_res_rels.rel_levels[i]) {
-            saved_res_rels.num_rel_levels = i + 1;
-            if (i >= epi->relevance_level)
-                saved_res_rels.num_rel += saved_res_rels.rel_levels[i];
-        }
+    for (i = 0; i < saved_res_rels.num_rel_levels; i++) {
+        if (saved_res_rels.rel_levels[i].rel_level >= epi->relevance_level)
+            saved_res_rels.num_rel += saved_res_rels.rel_levels[i].num_at_level;
     }
 
     *res_rels = saved_res_rels;
@@ -279,6 +303,17 @@ static int comp_docno(const void * ptr1, const void * ptr2)
     return (strcmp(((DOCNO_INFO *) ptr1)->docno, ((DOCNO_INFO *) ptr2)->docno));
 }
 
+static int comp_long(const void * ptr1, const void * ptr2)
+{
+    long v1 = *(const long *) ptr1;
+    long v2 = *(const long *) ptr2;
+    if (v1 < v2)
+        return (-1);
+    if (v1 > v2)
+        return (1);
+    return (0);
+}
+
 
 int te_form_res_rels_cleanup()
 {
@@ -298,6 +333,10 @@ int te_form_res_rels_cleanup()
     if (max_docno_info > 0) {
         Free(docno_info);
         max_docno_info = 0;
+    }
+    if (max_rel_vals > 0) {
+        Free(rel_vals);
+        max_rel_vals = 0;
     }
     return (1);
 }

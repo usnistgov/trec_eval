@@ -49,7 +49,7 @@ int setup_gains(const TREC_MEAS * tm, const RES_RELS * res_rels, GAINS * gains)
         num_pairs = tm->meas_params->num_params;
     }
 
-    if (NULL == (gains->rel_gains = Malloc(res_rels->num_rel_levels + num_pairs,
+    if (NULL == (gains->rel_gains = Malloc(MAX(res_rels->num_rel_levels + num_pairs, 1),
                                            REL_GAIN)))
         return (UNDEF);
     num_gains = 0;
@@ -60,6 +60,7 @@ int setup_gains(const TREC_MEAS * tm, const RES_RELS * res_rels, GAINS * gains)
         if (error) {
             fprintf(stderr, "trec_eval: Unusable relevance level '%s'\n",
                     pairs[i].name);
+            Free(gains->rel_gains);
             return (UNDEF);
         }
         gains->rel_gains[num_gains].gain = (double) pairs[i].value;
@@ -68,22 +69,25 @@ int setup_gains(const TREC_MEAS * tm, const RES_RELS * res_rels, GAINS * gains)
     }
 
     for (i = 0; i < res_rels->num_rel_levels; i++) {
-        for (j = 0; j < num_gains && gains->rel_gains[j].rel_level != i; j++);
+        long rel_level = res_rels->rel_levels[i].rel_level;
+        long num_at_level = res_rels->rel_levels[i].num_at_level;
+        for (j = 0; j < num_gains && gains->rel_gains[j].rel_level != rel_level; j++);
         if (j < num_gains)
             /* Was included in list of parameters. Update occurrence info */
-            gains->rel_gains[j].num_at_level = res_rels->rel_levels[i];
+            gains->rel_gains[j].num_at_level = num_at_level;
         else {
             /* Not included in list of parameters. New gain level */
-            gains->rel_gains[num_gains].rel_level = i;
-            gains->rel_gains[num_gains].gain = (double) i;
-            gains->rel_gains[num_gains].num_at_level = res_rels->rel_levels[i];
+            gains->rel_gains[num_gains].rel_level = rel_level;
+            gains->rel_gains[num_gains].gain = (double) rel_level;
+            gains->rel_gains[num_gains].num_at_level = num_at_level;
             num_gains++;
         }
     }
 
     /* Sort gains by increasing gain value */
-    qsort((char *) gains->rel_gains,
-          (int) num_gains, sizeof(REL_GAIN), comp_rel_gain);
+    if (num_gains > 1)
+        qsort((char *) gains->rel_gains,
+              (size_t) num_gains, sizeof(REL_GAIN), comp_rel_gain);
 
     gains->total_num_at_levels = 0;
     for (i = 0; i < num_gains; i++)
@@ -95,7 +99,13 @@ int setup_gains(const TREC_MEAS * tm, const RES_RELS * res_rels, GAINS * gains)
 
 int comp_rel_gain(const void * ptr1, const void * ptr2)
 {
-    return (((REL_GAIN *) ptr1)->gain - ((REL_GAIN *) ptr2)->gain);
+    double g1 = ((const REL_GAIN *) ptr1)->gain;
+    double g2 = ((const REL_GAIN *) ptr2)->gain;
+    if (g1 < g2)
+        return (-1);
+    if (g1 > g2)
+        return (1);
+    return (0);
 }
 
 double get_gain(const long rel_level, const GAINS * gains)
