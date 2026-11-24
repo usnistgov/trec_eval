@@ -46,13 +46,6 @@ TREC_MEAS te_meas_relstring = { "relstring",
     (void *) &default_relstring_params, -1
 };
 
-int
-clear_relstr() {
-    current_string = strdup("");
-    string_len = strlen(current_string);
-    return 1;
-}
-
 static int
 te_calc_relstring(const EPI * epi, const REL_INFO * rel_info,
                   const RESULTS * results, const TREC_MEAS * tm,
