@@ -189,3 +189,39 @@ def test_parameter_validation_and_sorting(sample_qrels_dict, sample_run_dict):
     # Invalid global_gains raises ValueError
     with pytest.raises(ValueError):
         Evaluator(sample_qrels_dict, measures=["ndcg"], global_gains="1=x")
+
+
+def test_run_score_validation_issue_107(tmp_path):
+    qrels_path = tmp_path / "abc.qrels"
+    qrels_path.write_text("1 0 a 1\n1 0 b 2\n1 0 c 3\n")
+    ok_run = tmp_path / "ok.run"
+    ok_run.write_text("1 Q0 a 1 5 r\n1 Q0 b 2 4 r\n1 Q0 c 3 3 r\n")
+
+    ev = Evaluator(str(qrels_path), measures=["relstring"])
+    res = ev.evaluate(str(ok_run))
+    assert res["1"]["relstring"] == "'123'"
+
+    # Run files with non-numeric, trailing-garbage, NaN, or Inf scores raise ValueError
+    for bad in ["nan", "abc", "1.5x", "inf", "-inf", "1e400"]:
+        bad_run = tmp_path / f"{bad}.run"
+        bad_run.write_text(f"1 Q0 a 1 5 r\n1 Q0 b 2 {bad} r\n1 Q0 c 3 3 r\n")
+        with pytest.raises(ValueError):
+            ev.evaluate(str(bad_run))
+
+    # In-memory dict and iterable inputs reject NaN and Inf with ValueError
+    for bad_float in [float("nan"), float("inf"), float("-inf")]:
+        with pytest.raises(ValueError):
+            ev.evaluate({"1": {"a": 5.0, "b": bad_float, "c": 3.0}})
+        with pytest.raises(ValueError):
+            ev.evaluate([("1", "a", 5.0), ("1", "b", bad_float), ("1", "c", 3.0)])
+        with pytest.raises(ValueError):
+            ev.evaluate([
+                ScoredDoc("1", "a", 5.0),
+                ScoredDoc("1", "b", bad_float),
+                ScoredDoc("1", "c", 3.0),
+            ])
+
+    # Non-numeric strings in dict/iterable raise TypeError
+    for bad_str in ["abc", "1.5x"]:
+        with pytest.raises(TypeError):
+            ev.evaluate({"1": {"a": 5.0, "b": bad_str, "c": 3.0}})

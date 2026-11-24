@@ -498,3 +498,86 @@ fn test_regression_parameter_validation_and_exit_codes() {
     compare_outputs(&["-q", "-m", "relstring.0"], &["-q", "-m", "relstring.0"], "qrels.test", "results.test");
 }
 
+#[test]
+fn test_regression_run_score_validation_issue_107() {
+    struct TempDirGuard(PathBuf);
+    impl Drop for TempDirGuard {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    let dir = std::env::temp_dir().join(format!(
+        "te_rust_issue_107_{}",
+        std::process::id()
+    ));
+    std::fs::create_dir_all(&dir).expect("failed to create temp dir");
+    let _guard = TempDirGuard(dir.clone());
+
+    let qrels_path = dir.join("abc.qrels");
+    std::fs::write(&qrels_path, "1 0 a 1\n1 0 b 2\n1 0 c 3\n").unwrap();
+
+    let ok_run = dir.join("ok.run");
+    std::fs::write(&ok_run, "1 Q0 a 1 5 r\n1 Q0 b 2 4 r\n1 Q0 c 3 3 r\n").unwrap();
+
+    let rust_bin = get_te_rust_bin();
+    let ok_out = Command::new(&rust_bin)
+        .args(["-q", "-m", "relstring"])
+        .arg(&qrels_path)
+        .arg(&ok_run)
+        .output()
+        .expect("Failed to run te-rust");
+    assert!(
+        ok_out.status.success(),
+        "expected ok.run to succeed, stderr={}",
+        String::from_utf8_lossy(&ok_out.stderr)
+    );
+    let ok_rows = parse_ordered_rows(&String::from_utf8_lossy(&ok_out.stdout));
+    assert_eq!(
+        ok_rows,
+        vec![("relstring".to_string(), "1".to_string(), "'123'".to_string())]
+    );
+
+    // Issue #107 reproduction cases plus inf/-inf/overflow (strictly rejected by te-rust)
+    for (name, bad_score) in [
+        ("nan.run", "nan"),
+        ("abc.run", "abc"),
+        ("trail.run", "1.5x"),
+        ("inf.run", "inf"),
+        ("neginf.run", "-inf"),
+        ("overflow.run", "1e400"),
+    ] {
+        let run_path = dir.join(name);
+        std::fs::write(
+            &run_path,
+            format!("1 Q0 a 1 5 r\n1 Q0 b 2 {} r\n1 Q0 c 3 3 r\n", bad_score),
+        )
+        .unwrap();
+
+        let out = Command::new(&rust_bin)
+            .args(["-q", "-m", "relstring"])
+            .arg(&qrels_path)
+            .arg(&run_path)
+            .output()
+            .expect("Failed to run te-rust");
+        let stderr = String::from_utf8_lossy(&out.stderr);
+        assert_eq!(
+            out.status.code(),
+            Some(1),
+            "expected exit 1 for {} (score '{}'), got {:?}; stdout={}, stderr={}",
+            name,
+            bad_score,
+            out.status.code(),
+            String::from_utf8_lossy(&out.stdout),
+            stderr
+        );
+        assert!(
+            stderr.contains("Line 2") && stderr.contains(bad_score),
+            "expected stderr for {} to cite line 2 and '{}', got '{}'",
+            name,
+            bad_score,
+            stderr
+        );
+    }
+}
+

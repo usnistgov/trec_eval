@@ -54,7 +54,7 @@ Empty parameter suffixes (`P.`, `P_`, `P@`) are rejected with exit status `1`.
 
 ## 3. Input Parsing Guards & Comment Handling
 
-- **Non-finite similarity scores:** Run files containing `NaN` or `Infinity` scores are rejected during parsing rather than propagating into unstable rankings or `NaN` metrics.
+- **Invalid and non-finite similarity scores:** Run files (and Python in-memory run inputs) containing non-numeric tokens (such as `abc`), trailing non-numeric characters (such as `1.5x`), `NaN`, or `Infinity` (`inf`, `-inf`, or overflowing literals like `1e400`) are rejected with an error rather than coerced to `0.0`, partially parsed with a warning, or propagated into unstable rankings.
 - **Relevance grade bounds:** Qrels relevance levels are validated to fall within `[-1,000,000, 1,000,000]` to guard against unbounded memory allocation when indexing relevance-level histograms.
 - **Comment indentation:** Lines whose first non-whitespace character is `#` are treated as comments in qrels and run files (C `trec_eval` requires `#` in column 0).
 

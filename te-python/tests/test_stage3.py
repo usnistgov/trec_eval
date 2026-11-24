@@ -106,3 +106,20 @@ def test_to_dataframe_wide_and_tidy():
     assert isinstance(df_tidy, pd.DataFrame)
     assert set(df_tidy.columns) == {"query_id", "measure", "value"}
     assert len(df_tidy) == 4  # 2 queries x 2 measures
+
+
+def test_dataframe_and_arrays_reject_non_finite_scores():
+    qrels = {"1": {"a": 1, "b": 2, "c": 3}}
+    evaluator = Evaluator(qrels, measures=["relstring"])
+
+    for bad_float in [float("nan"), float("inf"), float("-inf")]:
+        bad_df = MockDataFrame({
+            "query_id": ["1", "1", "1"],
+            "doc_id": ["a", "b", "c"],
+            "score": [5.0, bad_float, 3.0],
+        })
+        with pytest.raises(ValueError):
+            evaluator.evaluate(bad_df)
+
+        with pytest.raises(ValueError):
+            evaluator.evaluate_arrays(["1", "1", "1"], ["a", "b", "c"], [5.0, bad_float, 3.0])

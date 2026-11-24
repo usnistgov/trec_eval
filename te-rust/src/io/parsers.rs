@@ -500,3 +500,85 @@ pub fn parse_trec_run<P: AsRef<Path>>(path: P) -> Result<RunData, IOError> {
 fn mt_cmp_order(ord: std::cmp::Ordering) -> std::cmp::Ordering {
     ord
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+    use std::path::PathBuf;
+    use std::sync::atomic::{AtomicUsize, Ordering};
+
+    struct TempFile {
+        path: PathBuf,
+    }
+
+    impl TempFile {
+        fn new(name: &str, contents: &str) -> Self {
+            static COUNTER: AtomicUsize = AtomicUsize::new(0);
+            let id = COUNTER.fetch_add(1, Ordering::Relaxed);
+            let path = std::env::temp_dir().join(format!(
+                "te_rust_parser_test_{}_{}_{}.txt",
+                std::process::id(),
+                id,
+                name
+            ));
+            let mut f = File::create(&path).expect("failed to create temp test file");
+            f.write_all(contents.as_bytes()).expect("failed to write temp test file");
+            Self { path }
+        }
+    }
+
+    impl Drop for TempFile {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_file(&self.path);
+        }
+    }
+
+    #[test]
+    fn test_parse_trec_run_valid_scores() {
+        let f = TempFile::new(
+            "ok_run",
+            "1 Q0 a 1 5 r\n1 Q0 b 2 -0.0 r\n1 Q0 c 3 1.5e-2 r\n1 Q0 d 4 +2.5 r\n",
+        );
+        let run = parse_trec_run(&f.path).expect("valid finite scores should parse");
+        assert_eq!(run.run_id, "r");
+        assert_eq!(run.queries.len(), 1);
+        assert_eq!(run.queries[0].records.len(), 4);
+    }
+
+    #[test]
+    fn test_parse_trec_run_rejects_non_numeric_and_non_finite_scores() {
+        let bad_scores = [
+            "nan",
+            "NaN",
+            "-nan",
+            "abc",
+            "1.5x",
+            "inf",
+            "-inf",
+            "+inf",
+            "infinity",
+            "1e400",
+            "-1e400",
+        ];
+
+        for bad in bad_scores {
+            let contents = format!("1 Q0 a 1 5 r\n1 Q0 b 2 {} r\n1 Q0 c 3 3 r\n", bad);
+            let f = TempFile::new("bad_score", &contents);
+            let err = parse_trec_run(&f.path)
+                .expect_err(&format!("score '{}' should be rejected", bad));
+            match err {
+                IOError::FormatError(ParseError::InvalidFloat {
+                    line_num,
+                    field,
+                    value,
+                }) => {
+                    assert_eq!(line_num, 2, "wrong line_num for '{}'", bad);
+                    assert_eq!(field, "sim", "wrong field for '{}'", bad);
+                    assert_eq!(value, bad, "wrong value for '{}'", bad);
+                }
+                other => panic!("expected InvalidFloat for '{}', got {:?}", bad, other),
+            }
+        }
+    }
+}

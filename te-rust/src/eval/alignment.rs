@@ -46,6 +46,23 @@ struct DocInfo {
     sim: f64,
 }
 
+/// Strict total order for ranking documents: higher `sim` first, ties broken
+/// by `docno` descending. Normalizes `-0.0` to `+0.0` (matching C `trec_eval`
+/// tie-breaking) and places any `NaN` deterministically after all finite/infinite
+/// scores so direct library callers cannot trigger non-transitive `sort_by` panics.
+fn cmp_doc_info(a: &DocInfo, b: &DocInfo) -> std::cmp::Ordering {
+    match (a.sim.is_nan(), b.sim.is_nan()) {
+        (true, true) => b.docno.cmp(&a.docno),
+        (true, false) => std::cmp::Ordering::Greater,
+        (false, true) => std::cmp::Ordering::Less,
+        (false, false) => {
+            let a_sim = if a.sim == 0.0 { 0.0 } else { a.sim };
+            let b_sim = if b.sim == 0.0 { 0.0 } else { b.sim };
+            b_sim.total_cmp(&a_sim).then_with(|| b.docno.cmp(&a.docno))
+        }
+    }
+}
+
 /// Aligns standard run results with qrels judgments for a single query.
 pub fn align_query(
     run_query: Option<&RunQuery>,
@@ -105,17 +122,7 @@ pub fn align_query(
         })
         .collect();
 
-    doc_infos.sort_by(|a, b| {
-        // Sort sim descending
-        match b.sim.partial_cmp(&a.sim) {
-            Some(std::cmp::Ordering::Equal) => {
-                // Tie breaker: docno descending lexicographically
-                b.docno.cmp(&a.docno)
-            }
-            Some(other) => other,
-            None => std::cmp::Ordering::Equal, // Parser guarantees finite numbers, so None won't happen
-        }
-    });
+    doc_infos.sort_by(cmp_doc_info);
 
     // 4. Truncate to max_docs_per_topic
     if doc_infos.len() > max_docs_per_topic {
@@ -210,5 +217,88 @@ pub fn align_query_jg(
             )
         })
         .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::io::{QrelsRecord, RunRecord};
+
+    #[test]
+    fn test_align_query_signed_zero_tiebreak() {
+        let qrels = QrelsQuery {
+            qid: "1".to_string(),
+            records: vec![
+                QrelsRecord { docno: "a".to_string(), rel: 1 },
+                QrelsRecord { docno: "b".to_string(), rel: 2 },
+            ],
+        };
+        let run = RunQuery {
+            qid: "1".to_string(),
+            records: vec![
+                RunRecord { docno: "a".to_string(), sim: 0.0 },
+                RunRecord { docno: "b".to_string(), sim: -0.0 },
+            ],
+        };
+
+        let state = align_query(Some(&run), &qrels, "r", 1, usize::MAX, false);
+        // -0.0 and +0.0 tie, broken by docno descending: "b" (rel 2) then "a" (rel 1).
+        assert_eq!(state.results_rel_list, vec![2, 1]);
+    }
+
+    #[test]
+    fn test_align_query_nan_is_total_order_and_deterministic() {
+        let qrels = QrelsQuery {
+            qid: "1".to_string(),
+            records: vec![
+                QrelsRecord { docno: "a".to_string(), rel: 1 },
+                QrelsRecord { docno: "b".to_string(), rel: 2 },
+                QrelsRecord { docno: "c".to_string(), rel: 3 },
+            ],
+        };
+
+        let orders = [
+            vec![("a", 5.0), ("b", f64::NAN), ("c", 3.0)],
+            vec![("c", 3.0), ("b", f64::NAN), ("a", 5.0)],
+            vec![("b", f64::NAN), ("c", 3.0), ("a", 5.0)],
+        ];
+        for records in orders {
+            let run = RunQuery {
+                qid: "1".to_string(),
+                records: records
+                    .into_iter()
+                    .map(|(docno, sim)| RunRecord {
+                        docno: docno.to_string(),
+                        sim,
+                    })
+                    .collect(),
+            };
+            let state = align_query(Some(&run), &qrels, "r", 1, usize::MAX, false);
+            // Finite scores rank descending (a=5, c=3), NaN (b) deterministically last.
+            assert_eq!(state.results_rel_list, vec![1, 3, 2]);
+        }
+
+        // Larger run with multiple NaNs must not panic slice::sort_by.
+        let large_qrels = QrelsQuery {
+            qid: "1".to_string(),
+            records: (0..40)
+                .map(|i| QrelsRecord {
+                    docno: format!("d{:02}", i),
+                    rel: if i < 10 { 1 } else { 0 },
+                })
+                .collect(),
+        };
+        let large_run = RunQuery {
+            qid: "1".to_string(),
+            records: (0..40)
+                .map(|i| RunRecord {
+                    docno: format!("d{:02}", i),
+                    sim: if i % 7 == 0 { f64::NAN } else { (i % 13) as f64 },
+                })
+                .collect(),
+        };
+        let state = align_query(Some(&large_run), &large_qrels, "r", 1, usize::MAX, false);
+        assert_eq!(state.num_ret, 40);
+    }
 }
 
