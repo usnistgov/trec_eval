@@ -15,6 +15,10 @@ double log2(double x);
 static int
 te_calc_ndcg(const EPI * epi, const REL_INFO * rel_info,
              const RESULTS * results, const TREC_MEAS * tm, TREC_EVAL * eval);
+/* One parameter list per measure: te_init_meas_s_double_p_pair mutates
+   tm->meas_params in place and te_print_final_meas_s_double_p frees it. */
+static PARAMS default_dcg_gains = { NULL, 0, NULL };
+static PARAMS default_ideal_dcg_gains = { NULL, 0, NULL };
 static PARAMS default_ndcg_gains = { NULL, 0, NULL };
 
 TREC_MEAS te_meas_dcg = { "dcg",
@@ -25,7 +29,7 @@ TREC_MEAS te_meas_dcg = { "dcg",
     te_calc_avg_meas_s,
     te_print_single_meas_s_double,
     te_print_final_meas_s_double_p,
-    &default_ndcg_gains, -1
+    &default_dcg_gains, -1
 };
 
 TREC_MEAS te_meas_ideal_dcg = { "ideal_dcg",
@@ -36,7 +40,7 @@ TREC_MEAS te_meas_ideal_dcg = { "ideal_dcg",
     te_calc_avg_meas_s,
     te_print_single_meas_s_double,
     te_print_final_meas_s_double_p,
-    &default_ndcg_gains, -1
+    &default_ideal_dcg_gains, -1
 };
 
 /* See trec_eval.h for definition of TREC_MEAS */
