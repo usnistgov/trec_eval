@@ -48,8 +48,9 @@ te_calc_gm_bpref(const EPI * epi, const REL_INFO * rel_info,
     if (UNDEF == te_form_res_rels(epi, rel_info, results, &res_rels))
         return (UNDEF);
 
-    for (j = 0; j < epi->relevance_level; j++)
-        num_nonrel += res_rels.rel_levels[j];
+    for (j = 0; j < res_rels.num_rel_levels &&
+         res_rels.rel_levels[j].rel_level < epi->relevance_level; j++)
+        num_nonrel += res_rels.rel_levels[j].num_at_level;
 
     /* Calculate judgement based measures (dependent on only
        judged docs; no assumption of non-relevance if not judged) */

@@ -75,8 +75,10 @@ te_calc_Rndcg(const EPI * epi, const REL_INFO * rel_info,
     if (UNDEF == setup_gains(tm, &res_rels, &gains))
         return (UNDEF);
 
-    if (res_rels.num_rel == 0)
+    if (res_rels.num_rel == 0) {
+        Free(gains.rel_gains);
         return (0);
+    }
 
     results_dcg = 0.0;
     ideal_dcg = 0.0;
@@ -160,7 +162,8 @@ te_calc_Rndcg(const EPI * epi, const REL_INFO * rel_info,
         i++;
     }
 
-    eval->values[tm->eval_index].value = sum / num_changed_ideal_gain;
+    if (num_changed_ideal_gain > 0)
+        eval->values[tm->eval_index].value = sum / num_changed_ideal_gain;
 
     Free(gains.rel_gains);
     return (1);
