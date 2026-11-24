@@ -796,7 +796,7 @@ static int form_prefs_and_ranks(const EPI * epi,
     num_results = text_results_info->num_text_results;
     if (NULL == (docno_results =
                  te_chk_and_malloc(docno_results, &max_docno_results,
-                                   num_results, sizeof(DOCNO_RESULTS))))
+                                   MAX(num_results, 1), sizeof(DOCNO_RESULTS))))
         return (UNDEF);
 
     for (i = 0; i < num_results; i++) {
@@ -804,8 +804,9 @@ static int form_prefs_and_ranks(const EPI * epi,
         docno_results[i].sim = text_results_info->text_results[i].sim;
     }
     /* Sort results by sim, breaking ties lexicographically using docno */
-    qsort((char *) docno_results,
-          (int) num_results, sizeof(DOCNO_RESULTS), comp_sim_docno);
+    if (num_results > 1)
+        qsort((char *) docno_results,
+              (int) num_results, sizeof(DOCNO_RESULTS), comp_sim_docno);
 
     if (epi->debug_level >= 5)
         debug_print_docno_results(docno_results, num_results,
@@ -819,8 +820,9 @@ static int form_prefs_and_ranks(const EPI * epi,
         docno_results[i].rank = i + 1;
     }
     /* Sort docno_results by increasing docno */
-    qsort((char *) docno_results,
-          (int) num_results, sizeof(DOCNO_RESULTS), comp_docno);
+    if (num_results > 1)
+        qsort((char *) docno_results,
+              (int) num_results, sizeof(DOCNO_RESULTS), comp_docno);
     /* Error checking for duplicates */
     for (i = 1; i < num_results; i++) {
         if (0 == strcmp(docno_results[i].docno, docno_results[i - 1].docno)) {
@@ -869,8 +871,9 @@ static int form_prefs_and_ranks(const EPI * epi,
     }
     /* sort docno_results[0..i] by increasing rank */
     num_results = i;
-    qsort((char *) docno_results,
-          (int) num_results, sizeof(DOCNO_RESULTS), comp_results_inc_rank);
+    if (num_results > 1)
+        qsort((char *) docno_results,
+              (int) num_results, sizeof(DOCNO_RESULTS), comp_results_inc_rank);
 
     if (epi->debug_level >= 5)
         debug_print_docno_results(docno_results, num_results,
@@ -887,8 +890,9 @@ static int form_prefs_and_ranks(const EPI * epi,
     }
     num_results = lnum_judged_ret;
     /* Sort docno_results by increasing docno */
-    qsort((char *) docno_results,
-          (int) num_results, sizeof(DOCNO_RESULTS), comp_docno);
+    if (num_results > 1)
+        qsort((char *) docno_results,
+              (int) num_results, sizeof(DOCNO_RESULTS), comp_docno);
 
     if (epi->debug_level >= 5)
         debug_print_docno_results(docno_results, num_results,
