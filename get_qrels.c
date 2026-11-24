@@ -79,7 +79,8 @@ Relevance for each docno to qid is determined from text_qrels_file, which
 consists of text tuples of the form
    qid  iter  docno  rel
 giving TREC document numbers (docno, a string) and their relevance (rel,
-an integer between -127 and 127) to query qid (a string).  Iter is ignored
+a non-negative integer, or a negative integer for unjudged) to query qid
+(a string).  Iter is ignored.
 Fields are separated by whitespace, string fields can contain no whitespace.
 File may contain no NULL characters.
 
