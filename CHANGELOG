@@ -1,6 +1,8 @@
 ------------------------------------------------------------------------------
 Change Log  (only recent)
 ------------------------------------------------------------------------------
+8/1/26
+       Support results files larger than 2 GB on 64-bit Windows.
 6/18/26 Version 10.0
 	Breaking fix: change uses of int truncation to round/floor.
 	-c mode now prints out skipped queries in -q mode.
