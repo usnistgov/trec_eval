@@ -9,6 +9,7 @@
 #include "sysfunc.h"
 #include "trec_eval.h"
 #include "trec_format.h"
+#include "functions.h"
 #include <ctype.h>
 
 
@@ -132,7 +133,7 @@ typedef struct {
     char *jg;
     char *jsg;
     char *docno;
-    char *rel;
+    double rel;
 } LINES;
 
 int te_get_prefs(EPI * epi, char *text_prefs_file, ALL_REL_INFO * all_rel_info)
@@ -147,6 +148,8 @@ int te_get_prefs(EPI * epi, char *text_prefs_file, ALL_REL_INFO * all_rel_info)
     long num_lines;
     long current_column;
     long num_qid;
+    char *rel_str = NULL;
+    int error = 0;
     /* current pointers into static pools above */
     REL_INFO *rel_info_ptr;
     TEXT_PREFS_INFO *text_info_ptr;
@@ -202,9 +205,17 @@ int te_get_prefs(EPI * epi, char *text_prefs_file, ALL_REL_INFO * all_rel_info)
 		}
         if (UNDEF == parse_prefs_line(&ptr, &line_ptr->qid, &line_ptr->jg,
                                       &line_ptr->jsg, &line_ptr->docno,
-                                      &line_ptr->rel)) {
+                                      &rel_str)) {
             fprintf(stderr, "trec_eval.get_prefs: Malformed line %ld\n",
                     (long) (line_ptr - lines + 1));
+            Free(lines);
+            return (UNDEF);
+        }
+        line_ptr->rel = str_to_double(rel_str, FALSE, &error);
+        if (error) {
+            fprintf(stderr, "trec_eval.get_prefs: Unusable relevance level '%s' on line %ld\n",
+                    rel_str, (long) (line_ptr - lines + 1));
+            Free(lines);
             return (UNDEF);
         }
         line_ptr++;
@@ -250,7 +261,7 @@ int te_get_prefs(EPI * epi, char *text_prefs_file, ALL_REL_INFO * all_rel_info)
         }
         text_prefs_ptr->jg = lines[i].jg;
         text_prefs_ptr->jsg = lines[i].jsg;
-        text_prefs_ptr->rel_level = atof(lines[i].rel);
+        text_prefs_ptr->rel_level = lines[i].rel;
         text_prefs_ptr->docno = lines[i].docno;
         text_prefs_ptr++;
     }

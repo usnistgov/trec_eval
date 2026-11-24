@@ -35,6 +35,45 @@ long str_to_long(const char * str, int * error) {
     return value;
 }
 
+/*
+ * Convert a string to a double, with error checking.
+ * Rejects unparseable strings and NaN. Infinite values are rejected unless
+ * allow_inf is TRUE; overflow warns when allow_inf is TRUE, while
+ * underflow (ERANGE with a finite result) is allowed. Trailing characters
+ * after a valid number emit a warning.
+ */
+double str_to_double(const char * str, int allow_inf, int * error) {
+    char *endptr = NULL;
+    errno = 0;
+
+    *error = FALSE;
+    double value = strtod(str, &endptr);
+    if (endptr == str) {
+        fprintf(stderr, "Error: value `%s' could not be parsed.\n", str);
+        *error = TRUE;
+        return 0.0;
+    }
+    if (isnan(value)) {
+        fprintf(stderr, "Error: value `%s' is NaN.\n", str);
+        *error = TRUE;
+        return 0.0;
+    }
+    if (isinf(value)) {
+        if (!allow_inf) {
+            fprintf(stderr, "Error: value `%s' is infinite or out of range.\n", str);
+            *error = TRUE;
+            return 0.0;
+        }
+        if (errno == ERANGE) {
+            fprintf(stderr, "Warning, value `%s' overflowed to `%g'.\n", str, value);
+        }
+    }
+    if (*endptr != '\0') {
+        fprintf(stderr, "Warning, value `%s' partially read as `%g'.\n", str, value);
+    }
+    return value;
+}
+
 /* Read all relevance information from text_qrels_file.
 Relevance for each docno to qid is determined from text_qrels_file, which
 consists of text tuples of the form

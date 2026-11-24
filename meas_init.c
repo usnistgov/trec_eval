@@ -323,6 +323,7 @@ static int get_double_cutoffs(PARAMS * params, char *param_string)
     char *ptr, *start_ptr;
     double *cutoffs;
     long i;
+    int error = 0;
 
     /* Count number of parameters in param_string (comma separated) */
     num_cutoffs = 1;
@@ -346,11 +347,21 @@ static int get_double_cutoffs(PARAMS * params, char *param_string)
     for (ptr = param_string; *ptr; ptr++) {
         if (*ptr == ',') {
             *ptr = '\0';
-            cutoffs[num_cutoffs++] = atof(start_ptr);
+            cutoffs[num_cutoffs++] = str_to_double(start_ptr, FALSE, &error);
+            if (error) {
+                fprintf(stderr, "trec_eval: Illegal cutoff '%s'\n",
+                        start_ptr);
+                return (UNDEF);
+            }
             start_ptr = ptr + 1;
         }
     }
-    cutoffs[num_cutoffs++] = atof(start_ptr);
+    cutoffs[num_cutoffs++] = str_to_double(start_ptr, FALSE, &error);
+    if (error) {
+        fprintf(stderr, "trec_eval: Illegal cutoff '%s'\n",
+                start_ptr);
+        return (UNDEF);
+    }
 
     /* Sort cutoffs in increasing order */
     qsort((char *) cutoffs, (int) num_cutoffs, sizeof(double), comp_double);
@@ -371,6 +382,7 @@ static int get_double_params(PARAMS * params, char *param_string)
     long num_params;
     char *ptr, *start_ptr;
     double *values;
+    int error = 0;
 
     /* Count number of parameters in param_string (comma separated) */
     num_params = 1;
@@ -393,11 +405,21 @@ static int get_double_params(PARAMS * params, char *param_string)
     for (ptr = param_string; *ptr; ptr++) {
         if (*ptr == ',') {
             *ptr = '\0';
-            values[num_params++] = atof(start_ptr);
+            values[num_params++] = str_to_double(start_ptr, FALSE, &error);
+            if (error) {
+                fprintf(stderr, "trec_eval: Illegal parameter '%s'\n",
+                        start_ptr);
+                return (UNDEF);
+            }
             start_ptr = ptr + 1;
         }
     }
-    values[num_params++] = atof(start_ptr);
+    values[num_params++] = str_to_double(start_ptr, FALSE, &error);
+    if (error) {
+        fprintf(stderr, "trec_eval: Illegal parameter '%s'\n",
+                start_ptr);
+        return (UNDEF);
+    }
     params->param_values = values;
     params->num_params = num_params;
     return (1);
@@ -410,6 +432,7 @@ static int get_param_pairs(PARAMS * params, char *param_string)
     char last_seen;
     char *ptr, *start_ptr;
     DOUBLE_PARAM_PAIR *values;
+    int error = 0;
 
     /* Count number of parameters in param_string (comma separated), all
        of form name=value.  Return error if not of right form */
@@ -453,11 +476,21 @@ static int get_param_pairs(PARAMS * params, char *param_string)
             start_ptr = ptr + 1;
         } else if (*ptr == ',') {
             *ptr = '\0';
-            values[num_params++].value = atof(start_ptr);
+            values[num_params++].value = str_to_double(start_ptr, FALSE, &error);
+            if (error) {
+                fprintf(stderr, "trec_eval: Illegal parameter value '%s'\n",
+                        start_ptr);
+                return (UNDEF);
+            }
             start_ptr = ptr + 1;
         }
     }
-    values[num_params++].value = atof(start_ptr);
+    values[num_params++].value = str_to_double(start_ptr, FALSE, &error);
+    if (error) {
+        fprintf(stderr, "trec_eval: Illegal parameter value '%s'\n",
+                start_ptr);
+        return (UNDEF);
+    }
 
     params->param_values = values;
     params->num_params = num_params;
