@@ -70,7 +70,8 @@ te_calc_Rprec_mult_avgjg(const EPI * epi, const REL_INFO * rel_info,
         for (i = 0; i < tm->meas_params->num_params; i++)
             cutoffs[i] = (long) (cutoff_percents[i]
                                  * rr.jgs[jg].num_rel + 0.9);
-        precis = (double) rr.jgs[jg].num_rel_ret / (double) rr.jgs[jg].num_ret;
+        precis = rr.jgs[jg].num_ret ?
+            (double) rr.jgs[jg].num_rel_ret / (double) rr.jgs[jg].num_ret : 0.0;
         int_precis = precis;
 
         current_cut = tm->meas_params->num_params - 1;

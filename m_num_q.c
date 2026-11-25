@@ -40,16 +40,12 @@ te_calc_num_q(const EPI * epi, const REL_INFO * rel_info,
     return (1);
 }
 
-/* Need custom calc_avg because after -c flag, calculated value may not
-   agree with eval->num_queries. (Actually other ways to better do it now) */
+/* Report the number of evaluated queries directly (also preserves the count
+   under -Z when num_q is not present in the zscores file). */
 static int
 te_calc_avg_num_q(const EPI * epi, const TREC_MEAS * tm,
                   const ALL_REL_INFO * all_rel_info, TREC_EVAL * accum_eval)
 {
-    long num_queries = accum_eval->num_queries;
-    if (epi->average_complete_flag)
-        num_queries = all_rel_info->num_q_rels;
-
-    accum_eval->values[tm->eval_index].value = num_queries;
+    accum_eval->values[tm->eval_index].value = accum_eval->num_queries;
     return (1);
 }
