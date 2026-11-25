@@ -130,11 +130,12 @@ impl Measure for RbpMeasure {
             &self.gains_config
         };
 
-        let gains = Gains::setup(gains_config, &q_state.rel_levels);
+        let mut gains = Gains::setup(gains_config, &q_state.rel_levels);
 
-        // Find min and max gains to normalize if needed
-        let mut min_gain = f64::INFINITY;
-        let mut max_gain = f64::NEG_INFINITY;
+        // Normalize gains to [0, 1] anchored at 0.0 if any gain falls outside [0, 1]
+        // (matching C trec_eval m_rbp.c).
+        let mut min_gain = 0.0_f64;
+        let mut max_gain = 0.0_f64;
         for g in &gains.rel_gains {
             if g.gain < min_gain {
                 min_gain = g.gain;
@@ -143,26 +144,18 @@ impl Measure for RbpMeasure {
                 max_gain = g.gain;
             }
         }
-
-        let get_normalized_gain = |rel_level: i64| -> f64 {
-            let raw_gain = gains.get_gain(rel_level);
-            if min_gain < 0.0 || max_gain > 1.0 {
-                let range = max_gain - min_gain;
-                if range > 0.0 {
-                    (raw_gain - min_gain) / range
-                } else {
-                    0.0
-                }
-            } else {
-                raw_gain
+        if (min_gain < 0.0 || max_gain > 1.0) && max_gain > min_gain {
+            let range = max_gain - min_gain;
+            for g in &mut gains.rel_gains {
+                g.gain = (g.gain - min_gain) / range;
             }
-        };
+        }
 
         let mut sum = 0.0;
         let mut cur_p = 1.0;
 
         for &rel in &q_state.results_rel_list {
-            let gain = get_normalized_gain(rel);
+            let gain = gains.get_gain(rel);
             if gain != 0.0 {
                 sum += gain * cur_p;
             }
@@ -231,7 +224,7 @@ mod tests {
         config.global_gains = Some(GainsConfig::parse("1=10,2=10").unwrap());
 
         let mut state = make_mock_state(vec![1, 2], 2);
-        state.rel_levels = vec![100, 1, 1];
+        state.rel_levels = std::collections::BTreeMap::from([(0, 100), (1, 1), (2, 1)]);
         // rank 1: rel=1 -> norm_gain=0.25, cur_p=1.0 -> 0.25
         // rank 2: rel=2 -> norm_gain=1.0,  cur_p=0.5 -> 0.5
         // val = (1 - 0.5) * (0.25 + 0.5) = 0.375
@@ -269,5 +262,55 @@ mod tests {
         assert!(RbpMeasure::from_params(Some("1=nan")).is_err());
         assert!(RbpMeasure::from_params(Some("1=inf")).is_err());
         assert!(RbpMeasure::from_params(Some("p=1.0")).is_err());
+    }
+
+    #[test]
+    fn test_rbp_rescaled_from_zero_and_invariant_to_relevance_level() {
+        use crate::eval::alignment::align_query;
+        use crate::io::{QrelsQuery, QrelsRecord, RunQuery, RunRecord};
+
+        // Issue #94: min/max initialized to 0.0 so 0=1,1=3 rescales against [0, 3]:
+        // gain(1)=1.0, gain(0)=1/3 => (1 - 0.9) * (1.0 + 0.9 / 3.0) = 0.13
+        let qrels = QrelsQuery {
+            qid: "1".to_string(),
+            records: vec![
+                QrelsRecord { docno: "a".to_string(), rel: 1 },
+                QrelsRecord { docno: "b".to_string(), rel: 0 },
+            ],
+        };
+        let run = RunQuery {
+            qid: "1".to_string(),
+            records: vec![
+                RunRecord { docno: "a".to_string(), sim: 2.0 },
+                RunRecord { docno: "b".to_string(), sim: 1.0 },
+            ],
+        };
+
+        let m_scaled = RbpMeasure::from_params(Some("0=1,1=3")).unwrap();
+        let state = align_query(Some(&run), &qrels, "r", 1, usize::MAX, false);
+        let actual = m_scaled.calc(&EvalConfig::default(), &EvalState::Standard(state));
+        if let MetricValue::Float(v) = actual[0] {
+            assert!((v - 0.13).abs() < 1e-12, "expected 0.13, got {}", v);
+        } else {
+            panic!("Expected float value");
+        }
+
+        // High -l must not introduce phantom grades that alter RBP gain normalization.
+        let m_default = RbpMeasure::default();
+        let s1 = align_query(Some(&run), &qrels, "r", 1, usize::MAX, false);
+        let s4 = align_query(Some(&run), &qrels, "r", 4, usize::MAX, false);
+        let s_huge = align_query(Some(&run), &qrels, "r", 1_000_000_000_000, usize::MAX, false);
+        let mut cfg_high = EvalConfig::default();
+        cfg_high.relevance_level = 1_000_000_000_000;
+        let v1 = m_default.calc(&EvalConfig::default(), &EvalState::Standard(s1));
+        let v4 = m_default.calc(&EvalConfig::default(), &EvalState::Standard(s4));
+        let v_huge = m_default.calc(&cfg_high, &EvalState::Standard(s_huge));
+        assert_eq!(v1, v4);
+        assert_eq!(v1, v_huge);
+        if let MetricValue::Float(v) = v1[0] {
+            assert!((v - 0.1).abs() < 1e-12, "expected 0.1, got {}", v);
+        } else {
+            panic!("Expected float value");
+        }
     }
 }

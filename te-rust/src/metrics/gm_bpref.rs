@@ -51,12 +51,13 @@ impl Measure for GMBprefMeasure {
             None => return self.initial_values(),
         };
 
-        let mut num_nonrel = 0;
-        for j in 0..config.relevance_level as usize {
-            if j < q_state.rel_levels.len() {
-                num_nonrel += q_state.rel_levels[j];
-            }
-        }
+        let num_nonrel: usize = q_state
+            .rel_levels
+            .iter()
+            .take_while(|(&level, _)| level < config.relevance_level)
+            .filter(|(&level, _)| level >= 0)
+            .map(|(_, &count)| count)
+            .sum();
 
         let mut nonrel_so_far = 0;
         let mut bpref = 0.0;
@@ -146,5 +147,47 @@ mod tests {
         let state = make_mock_state(vec![], 5);
         let actual = measure.calc(&config, &EvalState::Standard(state));
         assert_eq!(actual, vec![MetricValue::Float((0.00001_f64).ln())]);
+    }
+
+    #[test]
+    fn test_gm_bpref_extreme_relevance_levels() {
+        use crate::eval::alignment::align_query;
+        use crate::io::{QrelsQuery, QrelsRecord, RunQuery, RunRecord};
+
+        let measure = GMBprefMeasure::new();
+        let qrels = QrelsQuery {
+            qid: "1".to_string(),
+            records: vec![
+                QrelsRecord { docno: "a".to_string(), rel: 2 },
+                QrelsRecord { docno: "b".to_string(), rel: 0 },
+            ],
+        };
+        let run = RunQuery {
+            qid: "1".to_string(),
+            records: vec![
+                RunRecord { docno: "a".to_string(), sim: 2.0 },
+                RunRecord { docno: "b".to_string(), sim: 1.0 },
+            ],
+        };
+
+        for lvl in [4, 1_000_000_000_000, i64::MAX] {
+            let mut config = EvalConfig::default();
+            config.relevance_level = lvl;
+            let state = align_query(Some(&run), &qrels, "r", lvl, usize::MAX, false);
+            assert_eq!(
+                measure.calc(&config, &EvalState::Standard(state)),
+                vec![MetricValue::Float((0.00001_f64).ln())]
+            );
+        }
+
+        for lvl in [0, -1] {
+            let mut config = EvalConfig::default();
+            config.relevance_level = lvl;
+            let state = align_query(Some(&run), &qrels, "r", lvl, usize::MAX, false);
+            assert_eq!(
+                measure.calc(&config, &EvalState::Standard(state)),
+                vec![MetricValue::Float((1.0_f64).ln())]
+            );
+        }
     }
 }

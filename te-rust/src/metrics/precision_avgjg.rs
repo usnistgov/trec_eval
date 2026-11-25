@@ -94,7 +94,7 @@ mod tests {
             num_rel_ret: 2,
             num_nonpool: 0,
             num_unjudged_in_pool: 0,
-            rel_levels: vec![3, 2],
+            rel_levels: std::collections::BTreeMap::from([(0, 3), (1, 2)]),
         };
 
         let state2 = QueryEvalState {
@@ -106,7 +106,7 @@ mod tests {
             num_rel_ret: 0,
             num_nonpool: 0,
             num_unjudged_in_pool: 0,
-            rel_levels: vec![3, 2],
+            rel_levels: std::collections::BTreeMap::from([(0, 3), (1, 2)]),
         };
 
         // P@5 for state1 = 2/5 = 0.4; state2 = 0/5 = 0.0 -> Mean = 0.2

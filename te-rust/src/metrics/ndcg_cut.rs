@@ -192,7 +192,7 @@ mod tests {
             num_rel_ret: 2,
             num_nonpool: 0,
             num_unjudged_in_pool: 0,
-            rel_levels: vec![100, 1, 1],
+            rel_levels: std::collections::BTreeMap::from([(0, 100), (1, 1), (2, 1)]),
         };
         
         let actual = measure.calc(&config, &EvalState::Standard(state));

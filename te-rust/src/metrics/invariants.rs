@@ -78,9 +78,11 @@ pub(crate) mod checking {
         let num_rel_ret = results_rel_list.iter().filter(|&&r| r >= 1).count();
         let num_nonpool = results_rel_list.iter().filter(|&&r| r == -1).count();
         let num_unjudged_in_pool = results_rel_list.iter().filter(|&&r| r == -2).count();
-        let mut rel_levels = vec![0usize; 2];
-        rel_levels[0] = 10;
-        rel_levels[1] = num_rel;
+        let mut rel_levels = std::collections::BTreeMap::new();
+        rel_levels.insert(0, 10);
+        if num_rel > 0 {
+            rel_levels.insert(1, num_rel);
+        }
         QueryEvalState {
             qid: "invariant".to_string(),
             run_id: "invariant_run".to_string(),
