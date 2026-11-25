@@ -72,3 +72,13 @@ def test_pytrec_eval_rejects_invalid_run_scores(tmp_path):
         with pytest.raises(ValueError):
             evaluator.evaluate({"1": {"a": 5.0, "b": bad_float, "c": 3.0}})
 
+
+def test_pytrec_eval_high_relevance_level_bpref():
+    qrels = {"1": {"a": 2, "b": 0, "c": 1}, "2": {"a": 1, "b": 0}}
+    run = {"1": {"a": 3.0, "c": 2.0, "b": 1.0}, "2": {"a": 2.0, "b": 1.0}}
+    evaluator = pytrec_eval.RelevanceEvaluator(qrels, {"bpref"}, relevance_level=10**12)
+    res = evaluator.evaluate(run)
+    assert res["1"]["bpref"] == 0.0
+    assert res["2"]["bpref"] == 0.0
+
+

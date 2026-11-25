@@ -67,7 +67,7 @@ The `QueryState` object is passed to `calc_query()` for each query topic:
 | `query.num_rel_ret` | `int` | Total retrieved documents that are relevant. |
 | `query.num_nonpool` | `int` | Total retrieved documents not present in the judgment pool (`-1`). |
 | `query.num_unjudged_in_pool` | `int` | Total retrieved documents marked unjudged in pool (`-2`). |
-| `query.rel_levels` | `List[int]` | Total documents in qrels at each relevance grade (`rel_levels[grade]`). |
+| `query.rel_levels` | `Dict[int, int]` | Sparse mapping of distinct judged ($\ge 0$) relevance grades in qrels to their document counts (`{grade: count}`). |
 | `query.relevance_level` | `int` | Minimum relevance threshold cutoff configured for this evaluation (`-l`). |
 
 ### Relevance Value Sentinels in `query.relevances`
