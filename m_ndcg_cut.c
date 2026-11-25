@@ -93,11 +93,13 @@ te_calc_ndcg_cut(const EPI * epi, const REL_INFO * rel_info,
     ideal_dcg = 0.0;
     for (i = 0; 1; i++) {
         lvl_count++;
-        while (cur_lvl > 0 && lvl_count > res_rels.rel_levels[cur_lvl]) {
+        while (cur_lvl >= 0 &&
+               res_rels.rel_levels[cur_lvl].rel_level > 0 &&
+               lvl_count > res_rels.rel_levels[cur_lvl].num_at_level) {
             cur_lvl--;
             lvl_count = 1;
         }
-        if (cur_lvl == 0)
+        if (cur_lvl < 0 || res_rels.rel_levels[cur_lvl].rel_level <= 0)
             break;
 
         if (i == cutoffs[cutoff_index]) {
@@ -110,10 +112,11 @@ te_calc_ndcg_cut(const EPI * epi, const REL_INFO * rel_info,
             if (++cutoff_index == tm->meas_params->num_params)
                 break;
         }
-        gain = cur_lvl;
+        gain = (double) res_rels.rel_levels[cur_lvl].rel_level;
         ideal_dcg += gain / (double) log2((double) (i + 2));
         if (epi->debug_level > 0)
-            printf("ndcg_cut:%ld %ld %3.1f %6.4f\n", i, cur_lvl, gain,
+            printf("ndcg_cut:%ld %ld %3.1f %6.4f\n", i,
+                   res_rels.rel_levels[cur_lvl].rel_level, gain,
                    ideal_dcg);
     }
 

@@ -68,13 +68,15 @@ te_calc_rbp(const EPI * epi, const REL_INFO * rel_info, const RESULTS * results,
     /* normalize gains to [0,1], per email conversation with Alistair Moffat */
     /* Note we don't care whether there is a relevance value with gain 1, only
        that the gains all lie between 0 and 1 inclusive. */
+    min = 0.0;
+    max = 0.0;
     for (i = 0; i < gains.num_gains; i++) {
         if (gains.rel_gains[i].gain < min)
             min = gains.rel_gains[i].gain;
         if (gains.rel_gains[i].gain > max)
             max = gains.rel_gains[i].gain;
     }
-    if (min < 0 || max > 1) {
+    if ((min < 0 || max > 1) && max > min) {
         for (i = 0; i < gains.num_gains; i++) {
             gains.rel_gains[i].gain =
                 (gains.rel_gains[i].gain - min) / (max - min);
@@ -95,5 +97,6 @@ te_calc_rbp(const EPI * epi, const REL_INFO * rel_info, const RESULTS * results,
     }
 
     eval->values[tm->eval_index].value = (1.0 - p) * sum;
+    Free(gains.rel_gains);
     return (1);
 }

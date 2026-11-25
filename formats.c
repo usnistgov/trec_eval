@@ -32,7 +32,7 @@ Relevance for each docno to qid is determined from rel_info_file, which \n\
 consists of text tuples of the form \n\
    qid  iter  docno  rel \n\
 giving TREC document numbers (docno, a string) and their relevance (rel,  \n\
-a non-negative integer less than 128, or -1 (unjudged)) \n\
+a non-negative integer, or a negative integer for unjudged) \n\
 to query qid (a string).  iter string field is ignored.   \n\
 Lines starting with '#' are ignored. \n\
 Fields are separated by whitespace, string fields can contain no whitespace. \n\
@@ -47,7 +47,7 @@ Relevance for each docno to qid is determined from rel_info_file, which \n\
 consists of text tuples of the form \n\
    qid  ujg  docno  rel \n\
 giving TREC document numbers (docno, a string) and their relevance (rel,  \n\
-a non-negative integer less than 128, or -1 (unjudged)) \n\
+a non-negative integer, or a negative integer for unjudged) \n\
 to query qid (a string) for a particular user judgment group. \n\
 This allows averaging (or other operations) of appropriate evaluation measures\n\
 across multiple users, whoc may differ in their judgments. \n\

@@ -65,6 +65,12 @@ typedef struct {                /* For each query in rel judgements */
 /* Intermediate form of merged results plus rel_info that can be more 
    directly used by several measures */
 
+/* Judged relevance level and document count for a topic */
+typedef struct {
+    long rel_level;             /* Judged relevance grade (>= 0) */
+    long num_at_level;          /* Number of docs in qrels with this grade */
+} REL_LEVEL;
+
 /* Original trec_results and qrels  */
 typedef struct {
     /* Counts among retrieved docs (possibly different after -M)  */
@@ -81,9 +87,10 @@ typedef struct {
 
     /* Counts among total relevance judgments (independent of retrieval) */
     long num_rel;
-    long num_rel_levels;        /* Number of judged rel_levels */
-    long *rel_levels;           /* Number of docs in each judged rel_level 
-                                   (0 through num_rel_levels-1), whether
+    long num_rel_levels;        /* Number of distinct judged rel_levels */
+    REL_LEVEL *rel_levels;      /* Distinct judged rel_levels sorted in
+                                   ascending order of rel_level, with the
+                                   number of docs at each level whether
                                    ranked or not */
 
     long *results_rel_list;     /* Ordered list of relevance judgements

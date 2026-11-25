@@ -101,7 +101,8 @@ te_calc_ndcg_rel(const EPI * epi, const REL_INFO * rel_info,
         }
         /* Average will include this point if rel */
         if (results_gain > 0) {
-            sum += results_dcg / ideal_dcg;
+            if (ideal_dcg > 0.0)
+                sum += results_dcg / ideal_dcg;
             num_rel_ret++;
         }
         if (epi->debug_level > 0)
@@ -117,7 +118,8 @@ te_calc_ndcg_rel(const EPI * epi, const REL_INFO * rel_info,
                 results_dcg += results_gain / log2((double) (i + 2));
             /* Average will include this point if rel */
             if (results_gain > 0) {
-                sum += results_dcg / ideal_dcg;
+                if (ideal_dcg > 0.0)
+                    sum += results_dcg / ideal_dcg;
                 num_rel_ret++;
             }
             if (epi->debug_level > 0)
@@ -147,11 +149,12 @@ te_calc_ndcg_rel(const EPI * epi, const REL_INFO * rel_info,
         i++;
     }
 
-    sum += ((double) (num_rel - num_rel_ret)) * results_dcg / ideal_dcg;
+    if (ideal_dcg > 0.0)
+        sum += ((double) (num_rel - num_rel_ret)) * results_dcg / ideal_dcg;
     if (epi->debug_level > 0)
         printf("ndcg_rel: %ld %ld %6.4f %6.4f %6.4f\n",
                i, cur_level, results_dcg, ideal_dcg, sum);
-    if (sum > 0.0)
+    if (sum > 0.0 && num_rel > 0)
         eval->values[tm->eval_index].value = sum / num_rel;
 
     Free(gains.rel_gains);
