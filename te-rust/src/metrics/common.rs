@@ -1,5 +1,5 @@
 use crate::metrics::EvalConfig;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 use std::fmt;
 
 /// Distinguishes CLI/specification syntax errors (exit 1) from invalid
@@ -210,13 +210,13 @@ pub struct Gains {
 }
 
 impl Gains {
-    pub fn setup(config: &GainsConfig, rel_levels: &[usize]) -> Self {
-        let mut rel_gains = Vec::new();
+    pub fn setup(config: &GainsConfig, rel_levels: &BTreeMap<i64, usize>) -> Self {
+        let mut rel_gains = Vec::with_capacity(config.custom_gains.len() + rel_levels.len());
 
         // 1. First add the custom gains specified in parameters
         for (&rel_level, &gain) in &config.custom_gains {
-            let num_at_level = if rel_level >= 0 && (rel_level as usize) < rel_levels.len() {
-                rel_levels[rel_level as usize]
+            let num_at_level = if rel_level >= 0 {
+                rel_levels.get(&rel_level).copied().unwrap_or(0)
             } else {
                 0
             };
@@ -227,14 +227,13 @@ impl Gains {
             });
         }
 
-        // 2. Then add all other relevance levels that were NOT specified in custom_gains
-        for i in 0..rel_levels.len() {
-            let rel_level = i as i64;
-            if !config.custom_gains.contains_key(&rel_level) {
+        // 2. Then add all other judged relevance levels not specified in custom_gains
+        for (&rel_level, &num_at_level) in rel_levels {
+            if rel_level >= 0 && num_at_level > 0 && !config.custom_gains.contains_key(&rel_level) {
                 rel_gains.push(RelGain {
                     rel_level,
                     gain: rel_level as f64,
-                    num_at_level: rel_levels[i],
+                    num_at_level,
                 });
             }
         }
@@ -265,9 +264,11 @@ pub(crate) fn make_mock_state(results_rel_list: Vec<i64>, num_rel: i64) -> crate
     let num_ret = results_rel_list.len();
     let num_rel_ret = results_rel_list.iter().filter(|&&r| r >= 1).count(); // assume relevance level cutoff >= 1
     
-    let mut rel_levels = vec![0; 2];
-    rel_levels[1] = num_rel as usize;
-    rel_levels[0] = 100; // default count of non-relevant docs
+    let mut rel_levels = BTreeMap::new();
+    rel_levels.insert(0, 100); // default count of non-relevant docs
+    if num_rel > 0 {
+        rel_levels.insert(1, num_rel as usize);
+    }
     
     crate::eval::alignment::QueryEvalState {
         qid: "mock_topic".to_string(),
