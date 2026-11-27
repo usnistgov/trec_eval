@@ -174,17 +174,13 @@ pub trait Measure: Send + Sync {
         }
     }
 
-    /// Calculate the final summary score from the accumulated totals.
-    fn average(&self, config: &EvalConfig, running_totals: &mut [MetricValue], num_queries_evaluated: usize, total_qrels_queries: usize) {
-        let denominator = if config.average_complete_flag {
-            total_qrels_queries
-        } else {
-            num_queries_evaluated
-        };
-        if denominator > 0 {
+    /// Calculate the final summary score from the accumulated totals across `num_queries` evaluated topics.
+    /// Defaults to arithmetic mean for floats; integer counts (sums) and strings are left unchanged.
+    fn average(&self, running_totals: &mut [MetricValue], num_queries: usize) {
+        if num_queries > 0 {
             for total in running_totals.iter_mut() {
                 if let MetricValue::Float(t) = total {
-                    *t /= denominator as f64;
+                    *t /= num_queries as f64;
                 }
             }
         }
