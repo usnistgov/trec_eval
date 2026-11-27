@@ -149,3 +149,50 @@ def test_query_state_rel_levels_is_sparse_dict():
     assert res["q_sparse"]["capture_levels"] == 3.0
     assert res["q_allneg"]["capture_levels"] == 0.0
 
+
+def test_custom_measure_aggregate_complete_set_average():
+    import math
+
+    class CustomGeoMeanRR(Measure):
+        def __init__(self):
+            super().__init__(name="gm_rr")
+            self.seen_lengths = []
+
+        def calc_query(self, query: QueryState) -> float:
+            rr = 0.0
+            for rank, rel in enumerate(query.relevances, start=1):
+                if rel >= query.relevance_level:
+                    rr = 1.0 / rank
+                    break
+            return math.log(max(rr, 1e-5))
+
+        def aggregate(self, scores):
+            self.seen_lengths.append(len(scores))
+            return math.exp(sum(scores) / len(scores)) if scores else 0.0
+
+    qrels = {
+        "1": {"a": 1},
+        "2": {"b": 0, "c": 1},
+        "3": {"d": 1},
+    }
+    run = {
+        "1": {"a": 1.0},            # rr = 1.0
+        "2": {"b": 2.0, "c": 1.0},  # rr = 0.5
+    }
+
+    m = CustomGeoMeanRR()
+    res_no_c = Evaluator(qrels, measures=[m], complete_set_average=False).evaluate(run)
+    expected_no_c = math.exp((math.log(1.0) + math.log(0.5)) / 2.0)
+    assert m.seen_lengths[-1] == 2
+    assert res_no_c.aggregate()["gm_rr"] == pytest.approx(expected_no_c)
+
+    res_c = Evaluator(qrels, measures=[m], complete_set_average=True).evaluate(run)
+    expected_c = math.exp((math.log(1.0) + math.log(0.5) + math.log(1e-5)) / 3.0)
+    assert m.seen_lengths[-1] == 3
+    assert res_c.aggregate()["gm_rr"] == pytest.approx(expected_c)
+
+    # Disjoint run with complete_set_average=True evaluates all qrels topics
+    res_disjoint = Evaluator(qrels, measures=[m], complete_set_average=True).evaluate({"99": {"z": 1.0}})
+    assert m.seen_lengths[-1] == 3
+    assert res_disjoint.aggregate()["gm_rr"] == pytest.approx(1e-5)
+

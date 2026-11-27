@@ -858,3 +858,14 @@ fn test_c_parity_legal_parameter_edge_cases() {
         "results.test",
     );
 }
+
+#[test]
+#[ignore = "requires C trec_eval reference; run with: cargo test -p te-rust --test c_parity -- --ignored"]
+fn test_regression_average_complete() {
+    compare_outputs(
+        &["-q", "-c", "-m", "all_trec"],
+        &["-q", "-c", "-m", "all_trec"],
+        "qrels.test",
+        "results.trunc",
+    );
+}

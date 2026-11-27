@@ -36,35 +36,24 @@ class Measure:
         """
         raise NotImplementedError("Custom measures must implement calc_query(query: QueryState)")
 
-    def aggregate(
-        self,
-        scores: List[float],
-        num_queries_evaluated: int,
-        total_qrels_queries: int,
-        complete_set_average: bool,
-    ) -> float:
+    def aggregate(self, scores: List[float]) -> float:
         """Calculate the final summary score from the per-query scores.
 
         Parameters
         ----------
         scores : List[float]
-            List of evaluated per-query scores.
-        num_queries_evaluated : int
-            Number of queries evaluated in the run.
-        total_qrels_queries : int
-            Total queries present in the judgments file.
-        complete_set_average : bool
-            Whether complete set average (-c) was requested.
+            List of evaluated per-query scores across all topics included in
+            the evaluation (including empty-ranking scores for missing qrels
+            topics when ``complete_set_average=True``).
 
         Returns
         -------
         float
             Summary aggregated score across all queries.
         """
-        denominator = total_qrels_queries if complete_set_average else num_queries_evaluated
-        if denominator <= 0:
+        if not scores:
             return 0.0
-        return sum(scores) / float(denominator)
+        return sum(scores) / float(len(scores))
 
     def __call__(self, query: QueryState) -> Union[float, int, str]:
         return self.calc_query(query)

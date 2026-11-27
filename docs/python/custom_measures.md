@@ -27,16 +27,14 @@ class ReciprocalRankAtK(Measure):
                 return 1.0 / rank
         return 0.0
 
-    def aggregate(
-        self,
-        scores: list[float],
-        num_queries_evaluated: int,
-        total_qrels_queries: int,
-        complete_set_average: bool,
-    ) -> float:
-        """Custom summary aggregation (default: arithmetic mean)."""
-        denominator = total_qrels_queries if complete_set_average else num_queries_evaluated
-        return sum(scores) / denominator if denominator > 0 else 0.0
+    def aggregate(self, scores: list[float]) -> float:
+        """Custom summary aggregation (default: arithmetic mean).
+
+        ``scores`` already contains one entry per evaluated topic (including
+        empty-ranking scores for missing qrels topics when
+        ``complete_set_average=True``).
+        """
+        return sum(scores) / len(scores) if scores else 0.0
 ```
 
 ### Option B: Functional Decorator (`@trec_eval.register_measure`)

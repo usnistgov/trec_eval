@@ -94,22 +94,11 @@ impl Measure for GMBprefMeasure {
         vec![MetricValue::Float(val)]
     }
 
-    fn average(&self, config: &EvalConfig, running_totals: &mut [MetricValue], num_queries_evaluated: usize, total_qrels_queries: usize) {
-        let denominator = if config.average_complete_flag {
-            total_qrels_queries
-        } else {
-            num_queries_evaluated
-        };
-        if denominator > 0 {
+    fn average(&self, running_totals: &mut [MetricValue], num_queries: usize) {
+        if num_queries > 0 {
             for total in running_totals.iter_mut() {
                 if let MetricValue::Float(t) = total {
-                    if config.average_complete_flag {
-                        let missing = total_qrels_queries as f64 - num_queries_evaluated as f64;
-                        if missing > 0.0 {
-                            *t += missing * (0.00001_f64).ln();
-                        }
-                    }
-                    *t = (*t / denominator as f64).exp();
+                    *t = (*t / num_queries as f64).exp();
                 }
             }
         }
@@ -147,6 +136,32 @@ mod tests {
         let state = make_mock_state(vec![], 5);
         let actual = measure.calc(&config, &EvalState::Standard(state));
         assert_eq!(actual, vec![MetricValue::Float((0.00001_f64).ln())]);
+    }
+
+    #[test]
+    fn test_gm_bpref_average_with_empty_topic_and_zero_queries() {
+        let measure = GMBprefMeasure::new();
+        let config = EvalConfig::default();
+        let mut totals = measure.initial_values();
+        for state in [
+            make_mock_state(vec![1], 1),    // bpref = 1.0
+            make_mock_state(vec![1, 0], 2), // bpref = 0.5
+            make_mock_state(vec![], 1),     // missing/empty -> floor 1e-5
+        ] {
+            let scores = measure.calc(&config, &EvalState::Standard(state));
+            measure.accumulate(&scores, &mut totals);
+        }
+        measure.average(&mut totals, 3);
+        let expected = ((1.0_f64.ln() + 0.5_f64.ln() + 1e-5_f64.ln()) / 3.0).exp();
+        if let MetricValue::Float(v) = totals[0] {
+            assert!((v - expected).abs() < 1e-9);
+        } else {
+            panic!("Expected float value");
+        }
+
+        let mut empty_totals = measure.initial_values();
+        measure.average(&mut empty_totals, 0);
+        assert_eq!(empty_totals, vec![MetricValue::Float(0.0)]);
     }
 
     #[test]

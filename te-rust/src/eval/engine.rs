@@ -51,17 +51,12 @@ pub fn evaluate_run(
 
     // Collect topic IDs in alphabetical qid order (matching qrels ordering)
     let mut eval_qids = Vec::new();
-    let mut num_queries_evaluated = 0;
-
     for qrels_q in &qrels.queries {
-        let in_run = run_by_qid.contains_key(&qrels_q.qid);
-        if in_run {
-            num_queries_evaluated += 1;
-        }
-        if config.average_complete_flag || in_run {
+        if config.average_complete_flag || run_by_qid.contains_key(&qrels_q.qid) {
             eval_qids.push(qrels_q.qid.clone());
         }
     }
+    let num_queries_evaluated = eval_qids.len();
 
     let mut running_totals: Vec<Vec<MetricValue>> = measures
         .iter()
@@ -135,7 +130,7 @@ pub fn evaluate_run(
                 continue;
             }
             let mut totals = running_totals[m_idx].clone();
-            m.average(config, &mut totals, num_queries_evaluated, total_qrels_queries);
+            m.average(&mut totals, num_queries_evaluated);
 
             let sub_names = m.sub_metrics();
             for (sub_idx, val) in totals.into_iter().enumerate() {
@@ -193,17 +188,12 @@ pub fn evaluate_run_jg(
     }
 
     let mut eval_qids = Vec::new();
-    let mut num_queries_evaluated = 0;
-
     for qrels_q in &qrels.queries {
-        let in_run = run_by_qid.contains_key(&qrels_q.qid);
-        if in_run {
-            num_queries_evaluated += 1;
-        }
-        if config.average_complete_flag || in_run {
+        if config.average_complete_flag || run_by_qid.contains_key(&qrels_q.qid) {
             eval_qids.push(qrels_q.qid.clone());
         }
     }
+    let num_queries_evaluated = eval_qids.len();
 
     let mut running_totals: Vec<Vec<MetricValue>> = measures
         .iter()
@@ -278,12 +268,7 @@ pub fn evaluate_run_jg(
                 continue;
             }
             let mut totals = running_totals[m_idx].clone();
-            m.average(
-                config,
-                &mut totals,
-                num_queries_evaluated,
-                total_qrels_queries,
-            );
+            m.average(&mut totals, num_queries_evaluated);
 
             let sub_names = m.sub_metrics();
             for (sub_idx, val) in totals.into_iter().enumerate() {
@@ -318,6 +303,188 @@ pub fn evaluate_run_jg(
         summary_results,
         num_queries_evaluated,
         total_qrels_queries,
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::io::{QrelsJGGroup, QrelsRecord, RunRecord};
+    use crate::metrics::gm_bpref::GMBprefMeasure;
+    use crate::metrics::gm_map::GMMapMeasure;
+    use crate::metrics::map::MapMeasure;
+    use crate::metrics::map_avgjg::MapAvgjgMeasure;
+    use crate::metrics::num_q::NumQMeasure;
+
+    fn three_topic_qrels() -> QrelsData {
+        QrelsData {
+            queries: vec![
+                QrelsQuery {
+                    qid: "1".to_string(),
+                    records: vec![QrelsRecord { docno: "a".to_string(), rel: 1 }],
+                },
+                QrelsQuery {
+                    qid: "2".to_string(),
+                    records: vec![
+                        QrelsRecord { docno: "c".to_string(), rel: 1 },
+                        QrelsRecord { docno: "f".to_string(), rel: 1 },
+                        QrelsRecord { docno: "d".to_string(), rel: 0 },
+                    ],
+                },
+                QrelsQuery {
+                    qid: "3".to_string(),
+                    records: vec![QrelsRecord { docno: "e".to_string(), rel: 1 }],
+                },
+            ],
+            comments: Vec::new(),
+        }
+    }
+
+    fn summary_value<'a>(out: &'a EvaluationOutput, name: &str) -> &'a MetricValue {
+        &out.summary_results
+            .iter()
+            .find(|s| s.name == name)
+            .unwrap_or_else(|| panic!("missing summary metric '{}'", name))
+            .value
+    }
+
+    #[test]
+    fn test_evaluate_run_average_complete_does_not_double_count_gm_measures() {
+        let qrels = three_topic_qrels();
+        let run = RunData {
+            run_id: "r".to_string(),
+            queries: vec![
+                RunQuery {
+                    qid: "1".to_string(),
+                    records: vec![RunRecord { docno: "a".to_string(), sim: 1.0 }],
+                },
+                RunQuery {
+                    qid: "2".to_string(),
+                    records: vec![
+                        RunRecord { docno: "c".to_string(), sim: 2.0 },
+                        RunRecord { docno: "d".to_string(), sim: 1.0 },
+                    ],
+                },
+            ],
+            comments: Vec::new(),
+        };
+        let measures: Vec<Box<dyn Measure>> = vec![
+            Box::new(NumQMeasure::new()),
+            Box::new(MapMeasure::new()),
+            Box::new(GMMapMeasure::new()),
+            Box::new(GMBprefMeasure::new()),
+        ];
+
+        let mut config = EvalConfig::default();
+        config.average_complete_flag = true;
+        let out = evaluate_run(&qrels, &run, &measures, &config, None);
+
+        assert_eq!(out.num_queries_evaluated, 3);
+        assert_eq!(out.total_qrels_queries, 3);
+        assert_eq!(summary_value(&out, "num_q"), &MetricValue::Integer(3));
+
+        let expected_gm = ((1.0_f64.ln() + 0.5_f64.ln() + 1e-5_f64.ln()) / 3.0).exp();
+        for name in ["gm_map", "gm_bpref"] {
+            if let MetricValue::Float(v) = summary_value(&out, name) {
+                assert!(
+                    (v - expected_gm).abs() < 1e-9,
+                    "{} expected {}, got {}",
+                    name,
+                    expected_gm,
+                    v
+                );
+            } else {
+                panic!("expected float for {}", name);
+            }
+        }
+        if let MetricValue::Float(v) = summary_value(&out, "map") {
+            assert!((v - 0.5).abs() < 1e-9);
+        } else {
+            panic!("expected float for map");
+        }
+    }
+
+    #[test]
+    fn test_evaluate_run_average_complete_zero_overlap() {
+        let qrels = three_topic_qrels();
+        let run = RunData {
+            run_id: "r".to_string(),
+            queries: vec![RunQuery {
+                qid: "99".to_string(),
+                records: vec![RunRecord { docno: "z".to_string(), sim: 1.0 }],
+            }],
+            comments: Vec::new(),
+        };
+        let measures: Vec<Box<dyn Measure>> = vec![
+            Box::new(NumQMeasure::new()),
+            Box::new(MapMeasure::new()),
+            Box::new(GMMapMeasure::new()),
+            Box::new(GMBprefMeasure::new()),
+        ];
+
+        let mut config = EvalConfig::default();
+        let out_no_c = evaluate_run(&qrels, &run, &measures, &config, None);
+        assert_eq!(out_no_c.num_queries_evaluated, 0);
+        assert!(out_no_c.summary_results.is_empty());
+
+        config.average_complete_flag = true;
+        let out_c = evaluate_run(&qrels, &run, &measures, &config, None);
+        assert_eq!(out_c.num_queries_evaluated, 3);
+        assert_eq!(summary_value(&out_c, "num_q"), &MetricValue::Integer(3));
+        assert_eq!(summary_value(&out_c, "map"), &MetricValue::Float(0.0));
+        for name in ["gm_map", "gm_bpref"] {
+            if let MetricValue::Float(v) = summary_value(&out_c, name) {
+                assert!((v - 1e-5).abs() < 1e-12, "{} expected 1e-5, got {}", name, v);
+            } else {
+                panic!("expected float for {}", name);
+            }
+        }
+    }
+
+    #[test]
+    fn test_evaluate_run_jg_average_complete() {
+        let qrels = QrelsJGData {
+            queries: vec![
+                QrelsJGQuery {
+                    qid: "1".to_string(),
+                    groups: vec![QrelsJGGroup {
+                        jg: "jg1".to_string(),
+                        records: vec![QrelsRecord { docno: "a".to_string(), rel: 1 }],
+                    }],
+                },
+                QrelsJGQuery {
+                    qid: "2".to_string(),
+                    groups: vec![QrelsJGGroup {
+                        jg: "jg1".to_string(),
+                        records: vec![QrelsRecord { docno: "b".to_string(), rel: 1 }],
+                    }],
+                },
+            ],
+            comments: Vec::new(),
+        };
+        let run = RunData {
+            run_id: "r".to_string(),
+            queries: vec![RunQuery {
+                qid: "1".to_string(),
+                records: vec![RunRecord { docno: "a".to_string(), sim: 1.0 }],
+            }],
+            comments: Vec::new(),
+        };
+        let measures: Vec<Box<dyn Measure>> = vec![
+            Box::new(NumQMeasure::new()),
+            Box::new(MapAvgjgMeasure::new()),
+        ];
+
+        let mut config = EvalConfig::default();
+        config.average_complete_flag = true;
+        let out = evaluate_run_jg(&qrels, &run, &measures, &config, None);
+        assert_eq!(out.num_queries_evaluated, 2);
+        assert_eq!(summary_value(&out, "num_q"), &MetricValue::Integer(2));
+        if let MetricValue::Float(v) = summary_value(&out, "map_avgjg") {
+            assert!((v - 0.5).abs() < 1e-9);
+        } else {
+            panic!("expected float for map_avgjg");
+        }
     }
 }
 
