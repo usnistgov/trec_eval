@@ -21,13 +21,12 @@ trec-eval-rust/
 │   │   └── metrics/          # Stateless evaluation measures and registry
 │   ├── docs/                 # Design documents and issue resolutions
 │   └── tests/                # Verification and live C-parity regression suites
-├── te-python/                # Python bindings package (`trec-eval`)
-│   ├── Cargo.toml            # PyO3 extension crate (`_trec_eval`)
-│   ├── pyproject.toml        # PEP 517/621 packaging metadata and extras
-│   ├── python/               # Pure Python package layer (`trec_eval`)
-│   ├── src/                  # Rust PyO3 classes (Evaluator, EvalResult, conversions)
-│   └── tests/                # Python integration & numerical parity tests
-└── trec_eval/                # Reference C trec_eval checkout (read-only reference)
+└── te-python/                # Python bindings package (`trec-eval`)
+    ├── Cargo.toml            # PyO3 extension crate (`_trec_eval`)
+    ├── pyproject.toml        # PEP 517/621 packaging metadata and extras
+    ├── python/               # Pure Python package layer (`trec_eval`)
+    ├── src/                  # Rust PyO3 classes (Evaluator, EvalResult, conversions)
+    └── tests/                # Python integration & numerical parity tests
 ```
 
 ---
@@ -36,9 +35,10 @@ trec-eval-rust/
 
 ### Prerequisites
 
-- **Rust**: 1.75+ (via `rustup`)
-- **Python**: 3.8+
+- **Rust**: 1.85+ (via `rustup`)
+- **Python**: 3.10+
 - **uv** (recommended) or `pip` + `maturin`
+- **C parity tests (optional)**: `git`, `make`, and a C compiler (Unix/WSL), or a prebuilt C `trec_eval` via `TREC_EVAL_DIR`
 
 ### 1. Rust CLI (`te-rust`)
 
@@ -49,9 +49,15 @@ cargo build --release
 # Run CLI directly
 cargo run --release -- -q -m official qrels.test results.test
 
-# Run all Rust unit tests, boundary invariant tests, and C regression tests (needs old trec_eval compiled)
-(cd trec_eval && make)
+# Run all pure-Rust unit, confidence-interval, and CLI regression tests (no C build required)
 cargo test
+
+# Run live C-parity regression tests against the pinned C trec_eval commit
+# (configured under [workspace.metadata.trec_eval_ref] in root Cargo.toml)
+cargo test -p te-rust --test c_parity -- --ignored
+
+# Or point at an existing local C trec_eval build (required on native Windows)
+TREC_EVAL_DIR=/path/to/trec_eval cargo test -p te-rust --test c_parity -- --ignored
 ```
 
 The compiled binary will be located at `target/release/te-rust`.

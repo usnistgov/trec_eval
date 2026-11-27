@@ -26,10 +26,11 @@ permissions:
 
 jobs:
   test-matrix:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
         rust-version: ["1.85.0", "stable"]
 
     steps:
@@ -41,16 +42,45 @@ jobs:
         with:
           toolchain: ${{ matrix.rust-version }}
 
-      - name: Check out C trec_eval reference
+      - name: Read pinned C trec_eval commit
+        id: trec_eval_ref
+        shell: bash
+        run: |
+          COMMIT=$(cargo metadata --no-deps --format-version 1 | jq -er '.metadata.trec_eval_ref.commit' | tr -d '\r')
+          echo "commit=$COMMIT" >> "$GITHUB_OUTPUT"
+
+      - name: Run Rust tests
+        run: cargo test
+
+      - name: Fetch pinned C trec_eval commit (Unix)
+        if: runner.os != 'Windows'
+        run: git fetch --no-tags --depth=1 origin "${{ steps.trec_eval_ref.outputs.commit }}"
+
+      - name: Run C-parity regression tests (Unix)
+        if: runner.os != 'Windows'
+        run: cargo test -p te-rust --test c_parity -- --ignored
+
+      - name: Check out C trec_eval reference (Windows)
+        if: runner.os == 'Windows'
         uses: actions/checkout@v4
         with:
           repository: usnistgov/trec_eval
-          ref: f4253652c8efd0d86ddffd0d163cc0a0f813111a # v10.0
+          ref: ${{ steps.trec_eval_ref.outputs.commit }}
           path: trec_eval_ref
+          submodules: recursive
 
-      - name: Run Rust tests
-        run: |
-          cargo test --workspace --lib --bins
-          cargo test -p te-rust --test confidence_intervals
-          make -C trec_eval_ref -j2
-          TREC_EVAL_DIR=trec_eval_ref cargo test -p te-rust --test regression
+      - name: Set up MSVC (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build C trec_eval (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        working-directory: trec_eval_ref
+        run: build.bat
+
+      - name: Run C-parity regression tests (Windows)
+        if: runner.os == 'Windows'
+        env:
+          TREC_EVAL_DIR: trec_eval_ref
+        run: cargo test -p te-rust --test c_parity -- --ignored
