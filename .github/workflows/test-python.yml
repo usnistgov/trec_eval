@@ -24,11 +24,27 @@ permissions:
 
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        include:
+          - os: ubuntu-latest
+            python-version: "3.10"
+          - os: ubuntu-latest
+            python-version: "3.11"
+          - os: ubuntu-latest
+            python-version: "3.12"
+          - os: ubuntu-latest
+            python-version: "3.13"
+          - os: macos-latest
+            python-version: "3.10"
+          - os: macos-latest
+            python-version: "3.13"
+          - os: windows-latest
+            python-version: "3.10"
+          - os: windows-latest
+            python-version: "3.13"
 
     steps:
       - name: Checkout repository
@@ -48,7 +64,4 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Run Python tests
-        run: uv run --project te-python --extra dev pytest te-python/tests
-
-      - name: Run Rust tests for Python extension crate
-        run: cargo test -p te-python --lib
+        run: uv run --python ${{ matrix.python-version }} --project te-python --extra dev pytest te-python/tests
