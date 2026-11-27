@@ -52,21 +52,6 @@ impl Measure for NumQMeasure {
     fn calc(&self, _config: &EvalConfig, _state: &EvalState) -> Vec<MetricValue> {
         vec![MetricValue::Integer(1)]
     }
-
-    fn average(
-        &self,
-        config: &EvalConfig,
-        running_totals: &mut [MetricValue],
-        num_queries_evaluated: usize,
-        total_qrels_queries: usize,
-    ) {
-        let count = if config.average_complete_flag {
-            total_qrels_queries
-        } else {
-            num_queries_evaluated
-        };
-        running_totals[0] = MetricValue::Integer(count as i64);
-    }
 }
 
 impl Default for NumQMeasure {
@@ -91,13 +76,10 @@ mod tests {
         assert!(measure.is_summary_enabled());
 
         let mut totals = measure.initial_values();
-        measure.average(&config, &mut totals, 42, 50);
-        assert_eq!(totals, vec![MetricValue::Integer(42)]);
-
-        let mut complete_config = EvalConfig::default();
-        complete_config.average_complete_flag = true;
-        let mut totals_c = measure.initial_values();
-        measure.average(&complete_config, &mut totals_c, 42, 50);
-        assert_eq!(totals_c, vec![MetricValue::Integer(50)]);
+        for _ in 0..3 {
+            measure.accumulate(&actual, &mut totals);
+        }
+        measure.average(&mut totals, 3);
+        assert_eq!(totals, vec![MetricValue::Integer(3)]);
     }
 }

@@ -64,8 +64,4 @@ impl Measure for RunIdMeasure {
             }
         }
     }
-
-    fn average(&self, _config: &EvalConfig, _running_totals: &mut [MetricValue], _num_queries_evaluated: usize, _total_qrels_queries: usize) {
-        // No-op for runid
-    }
 }
