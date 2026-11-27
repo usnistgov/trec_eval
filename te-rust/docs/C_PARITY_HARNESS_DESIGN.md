@@ -53,10 +53,9 @@ To update the C reference in the future:
    - Because the build cache is keyed by full commit SHA (`target/trec_eval_ref/<commit>/`), bumping `commit` automatically triggers a clean extraction and rebuild without stale artifacts.
 3. Because `.github/workflows/test-rust.yml` already triggers on `Cargo.toml` changes and reads `commit` from it, CI picks up the new reference automatically with no workflow edits.
 
-### Parsing Without New Dependencies
-`te-rust` currently has zero `[dev-dependencies]`. Rather than pulling in `toml`/`serde` crates just to read one key, `te-rust/tests/c_parity.rs` will include a small, std-only parser for `[workspace.metadata.trec_eval_ref]` that:
-- Locates the `[workspace.metadata.trec_eval_ref]` table header (stopping at the next `[...]` header).
-- Extracts `commit = "..."`, stripping inline `#` comments outside quotes and surrounding whitespace.
+### Parsing `Cargo.toml`
+`te-rust/Cargo.toml` adds `toml = "1"` under `[dev-dependencies]` (MSRV 1.85, matching CI, with zero impact on the release binary, library consumers, or `te-python` wheels). `te-rust/tests/c_parity.rs` parses root `Cargo.toml` via `toml::Table` and:
+- Looks up `workspace.metadata.trec_eval_ref.commit` (handling standard tables, dotted keys, inline tables, and comments).
 - Validates that `commit` is a 40-character hexadecimal SHA-1 string (rejecting short SHAs, branch names, or path-unsafe strings).
 - Is covered by regular (non-ignored) unit tests inside `c_parity.rs`, including a test that parses the real workspace `Cargo.toml`, so plain `cargo test` immediately catches a malformed pin.
 
@@ -190,14 +189,14 @@ Replace the hardcoded commit checkout and `make` step with:
         run: git fetch --no-tags --depth=1 origin "${{ steps.trec_eval_ref.outputs.commit }}"
 
       - name: Run Rust tests
-        run: cargo test --workspace
+        run: cargo test
 
       - name: Run C-parity regression tests
         run: cargo test -p te-rust --test c_parity -- --ignored
 ```
 
 This achieves two things simultaneously:
-1. `cargo test --workspace` proves plain `cargo test` passes purely in Rust (running all unit tests, `confidence_intervals`, `cli_regression`, `te-python --lib`, and the `c_parity` metadata parser tests).
+1. `cargo test` (which uses `default-members = ["te-rust"]`, leaving `te-python` to `test-python.yml` where Python is configured) proves plain `cargo test` passes purely in Rust across Linux, macOS, and Windows (running all unit tests, `confidence_intervals`, `cli_regression`, and the `c_parity` metadata parser tests).
 2. `cargo test -p te-rust --test c_parity -- --ignored` runs without `TREC_EVAL_DIR`, exercising the exact `Cargo.toml` → `git archive` → `make` → cache path on every PR.
 
 > **Follow-up CI task:** Expand the OS matrix in `.github/workflows/test-rust.yml` to include `windows-latest` and `macos-latest` once this harness is merged. On `macos-latest`, the steps above work unchanged. On `windows-latest`, read the same `commit` from `Cargo.toml`, check out `usnistgov/trec_eval` at that commit into `trec_eval_ref` with `submodules: recursive`, run `ilammy/msvc-dev-cmd@v1` + `build.bat`, and invoke `c_parity` with `TREC_EVAL_DIR=trec_eval_ref`.
@@ -210,7 +209,7 @@ This achieves two things simultaneously:
 
 ## 7. Verification Plan
 
-1. **Plain Rust tests:** `cargo test --workspace` passes with no `trec_eval/` directory present and reports the `c_parity` tests as ignored (and passes the non-ignored metadata parser unit tests).
+1. **Plain Rust tests:** `cargo test` passes with no `trec_eval/` directory present and reports the `c_parity` tests as ignored (and passes the non-ignored metadata parser unit tests).
 2. **C-parity cold build:** `cargo test -p te-rust --test c_parity -- --ignored` extracts `f4253652c8efd0d86ddffd0d163cc0a0f813111a` via `git archive`, compiles into `target/trec_eval_ref/f4253652c8efd0d86ddffd0d163cc0a0f813111a/trec_eval`, and passes all 16 C-parity tests.
 3. **C-parity warm cache:** Re-running `cargo test -p te-rust --test c_parity -- --ignored` reuses the cached binary without re-extracting or rebuilding.
 4. **Missing commit error path:** Tested via unit test (or temporary fake SHA) confirming a clear diagnostic message with `git fetch origin <commit>` and `TREC_EVAL_DIR` guidance is emitted once.
