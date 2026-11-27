@@ -41,16 +41,17 @@ jobs:
         with:
           toolchain: ${{ matrix.rust-version }}
 
-      - name: Check out C trec_eval reference
-        uses: actions/checkout@v4
-        with:
-          repository: usnistgov/trec_eval
-          ref: f4253652c8efd0d86ddffd0d163cc0a0f813111a # v10.0
-          path: trec_eval_ref
+      - name: Read pinned C trec_eval commit
+        id: trec_eval_ref
+        run: |
+          COMMIT=$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["workspace"]["metadata"]["trec_eval_ref"]["commit"])')
+          echo "commit=$COMMIT" >> "$GITHUB_OUTPUT"
+
+      - name: Fetch pinned C trec_eval commit
+        run: git fetch --no-tags --depth=1 origin "${{ steps.trec_eval_ref.outputs.commit }}"
 
       - name: Run Rust tests
-        run: |
-          cargo test --workspace --lib --bins
-          cargo test -p te-rust --test confidence_intervals
-          make -C trec_eval_ref -j2
-          TREC_EVAL_DIR=trec_eval_ref cargo test -p te-rust --test regression
+        run: cargo test
+
+      - name: Run C-parity regression tests
+        run: cargo test -p te-rust --test c_parity -- --ignored
