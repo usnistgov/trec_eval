@@ -86,8 +86,7 @@ In C `trec_eval` (`measures.c`), the canonical declaration order of measures is:
 * **Query output**: `is_query_enabled(&self) -> bool { false }` (C's `te_print_single_meas_empty`).
 * **Summary output**: `is_summary_enabled(&self) -> bool { true }`.
 * **Summary value calculation**:
-  * If `config.average_complete_flag` is true (`-c`), the value is `total_qrels_queries`.
-  * Otherwise, the value is `num_queries_evaluated`.
+  * Emits `MetricValue::Integer(1)` per evaluated topic and sums via the default integer accumulation (so it automatically equals `total_qrels_queries` when `-c` is enabled, or the intersection count otherwise).
 * **Registry position**: Canonical index 1 (directly after `runid`).
 
 ---
