@@ -264,3 +264,33 @@ def test_sparse_rel_levels_and_extreme_relevance_level_issue_102():
     res_rbp = evaluate({"1": {"a": 1, "b": 0}}, {"1": {"a": 2.0, "b": 1.0}}, measures=["rbp.0=1,1=3"])
     assert res_rbp.aggregate()["rbp_0=1,1=3"] == pytest.approx(0.13)
 
+
+def test_gm_measures_complete_set_average_issue_58():
+    import math
+
+    qrels = {
+        "1": {"a": 1},
+        "2": {"c": 1, "f": 1, "d": 0},
+        "3": {"e": 1},
+    }
+    run = {
+        "1": {"a": 1.0},
+        "2": {"c": 2.0, "d": 1.0},
+    }
+
+    ev = Evaluator(qrels, measures=["num_q", "gm_map", "gm_bpref"], complete_set_average=True)
+    res = ev.evaluate(run)
+    agg = res.aggregate()
+
+    expected = math.exp((math.log(1.0) + math.log(0.5) + math.log(1e-5)) / 3.0)
+    assert agg["num_q"] == 3
+    assert agg["gm_map"] == pytest.approx(expected)
+    assert agg["gm_bpref"] == pytest.approx(expected)
+
+    # Zero overlapping topics under complete_set_average=True still summarizes all qrels topics
+    disjoint = ev.evaluate({"99": {"z": 1.0}})
+    disjoint_agg = disjoint.aggregate()
+    assert disjoint_agg["num_q"] == 3
+    assert disjoint_agg["gm_map"] == pytest.approx(1e-5)
+    assert disjoint_agg["gm_bpref"] == pytest.approx(1e-5)
+

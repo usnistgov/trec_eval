@@ -266,14 +266,8 @@ fn evaluate_custom_measures(
     }
 
     let mut eval_qids = Vec::new();
-    let mut num_queries_evaluated = 0;
-
     for qrels_q in &qrels.queries {
-        let in_run = run_by_qid.contains_key(&qrels_q.qid);
-        if in_run {
-            num_queries_evaluated += 1;
-        }
-        if config.average_complete_flag || in_run {
+        if config.average_complete_flag || run_by_qid.contains_key(&qrels_q.qid) {
             eval_qids.push(qrels_q.qid.clone());
         }
     }
@@ -363,8 +357,7 @@ fn evaluate_custom_measures(
     }
 
     // Compute aggregate for each custom measure
-    let total_qrels_queries = qrels.queries.len();
-    if config.summary_flag && num_queries_evaluated > 0 {
+    if config.summary_flag && !eval_qids.is_empty() {
         for (m_idx, meas) in custom_measures.iter().enumerate() {
             let meas_name = &custom_names[m_idx];
             let scores = &custom_query_scores[m_idx];
@@ -373,15 +366,7 @@ fn evaluate_custom_measures(
             let agg_val: f64 = if bound.hasattr("aggregate").unwrap_or(false) {
                 let py_scores = PyList::new_bound(py, scores);
                 let agg_obj = bound
-                    .call_method1(
-                        "aggregate",
-                        (
-                            py_scores,
-                            num_queries_evaluated,
-                            total_qrels_queries,
-                            config.average_complete_flag,
-                        ),
-                    )
+                    .call_method1("aggregate", (py_scores,))
                     .map_err(|e| {
                         PyValueError::new_err(format!(
                             "EvaluationError in custom measure '{}' aggregate(): {}",
@@ -389,17 +374,10 @@ fn evaluate_custom_measures(
                         ))
                     })?;
                 agg_obj.extract::<f64>()?
+            } else if !scores.is_empty() {
+                scores.iter().sum::<f64>() / scores.len() as f64
             } else {
-                let denom = if config.average_complete_flag {
-                    total_qrels_queries
-                } else {
-                    num_queries_evaluated
-                };
-                if denom > 0 {
-                    scores.iter().sum::<f64>() / denom as f64
-                } else {
-                    0.0
-                }
+                0.0
             };
 
             output.summary_results.push(SummaryEvaluation {
