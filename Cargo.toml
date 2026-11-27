@@ -6,6 +6,9 @@ members = [
 default-members = ["te-rust"]
 resolver = "2"
 
+[workspace.package]
+rust-version = "1.85.0"
+
 [workspace.metadata.trec_eval_ref]
 # Pinned C trec_eval commit used by live C-parity tests (te-rust/tests/c_parity.rs).
 # Currently pinned to v10.0. Update this SHA (and note the release/PR here) to

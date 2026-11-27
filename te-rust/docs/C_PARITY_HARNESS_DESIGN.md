@@ -29,8 +29,7 @@ This became a major concern because a number of issues were discovered by Jeff D
 
 ### Non-Goals / Follow-Up Work
 - **Bumping the pinned C reference commit to current `main`:** Deferred to a separate follow-up PR once this harness is in place.
-- **Native Windows C auto-build inside `c_parity.rs`:** C `trec_eval`'s Windows build (`build.bat`) requires MSVC (`cl.exe`) plus three external Git submodules (`mman-win32`, `ya_getopt`, `strings_h`) that `git archive` does not populate. Plain `cargo test` works natively on Windows, and Windows users/CI can run `c_parity` via WSL or by building `trec_eval.exe` and setting `TREC_EVAL_DIR`.
-- **Expanding `.github/workflows/test-rust.yml` to Windows and macOS:** Follow-up task after this infrastructure lands. Once added, `macos-latest` will use the same `git fetch` + auto-build path as Linux, and `windows-latest` will read the same `commit` from `Cargo.toml`, check out with `submodules: recursive`, build via `ilammy/msvc-dev-cmd@v1` + `build.bat`, and run `c_parity` with `TREC_EVAL_DIR=trec_eval_ref`.
+- **Native Windows C auto-build inside `c_parity.rs`:** C `trec_eval`'s Windows build (`build.bat`) requires MSVC (`cl.exe`) plus three external Git submodules (`mman-win32`, `ya_getopt`, `strings_h`) that `git archive` does not populate. Plain `cargo test` works natively on Windows, and Windows users/CI run `c_parity` via WSL or by building `trec_eval.exe` and setting `TREC_EVAL_DIR`.
 
 ---
 
@@ -176,30 +175,57 @@ Storing `Result<PathBuf, String>` (rather than panicking inside `get_or_init`) e
 - Keep `/trec_eval/` in `.gitignore` so developers who manually place a local C checkout there won't dirty `git status`.
 
 ### 6.2 GitHub Actions (`.github/workflows/test-rust.yml`)
-Replace the hardcoded commit checkout and `make` step with:
+Run across `os: [ubuntu-latest, macos-latest, windows-latest]` and `rust-version: ["1.85.0", "stable"]`, reading `commit` from root `Cargo.toml` via `cargo metadata` + `jq` (avoiding any dependency on Python 3.11+ `tomllib` across OS images):
 
 ```yaml
       - name: Read pinned C trec_eval commit
         id: trec_eval_ref
+        shell: bash
         run: |
-          COMMIT=$(python3 -c 'import tomllib; print(tomllib.load(open("Cargo.toml", "rb"))["workspace"]["metadata"]["trec_eval_ref"]["commit"])')
+          COMMIT=$(cargo metadata --no-deps --format-version 1 | jq -er '.metadata.trec_eval_ref.commit' | tr -d '\r')
           echo "commit=$COMMIT" >> "$GITHUB_OUTPUT"
-
-      - name: Fetch pinned C trec_eval commit
-        run: git fetch --no-tags --depth=1 origin "${{ steps.trec_eval_ref.outputs.commit }}"
 
       - name: Run Rust tests
         run: cargo test
 
-      - name: Run C-parity regression tests
+      - name: Fetch pinned C trec_eval commit (Unix)
+        if: runner.os != 'Windows'
+        run: git fetch --no-tags --depth=1 origin "${{ steps.trec_eval_ref.outputs.commit }}"
+
+      - name: Run C-parity regression tests (Unix)
+        if: runner.os != 'Windows'
+        run: cargo test -p te-rust --test c_parity -- --ignored
+
+      - name: Check out C trec_eval reference (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/checkout@v4
+        with:
+          repository: usnistgov/trec_eval
+          ref: ${{ steps.trec_eval_ref.outputs.commit }}
+          path: trec_eval_ref
+          submodules: recursive
+
+      - name: Set up MSVC (Windows)
+        if: runner.os == 'Windows'
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Build C trec_eval (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        working-directory: trec_eval_ref
+        run: build.bat
+
+      - name: Run C-parity regression tests (Windows)
+        if: runner.os == 'Windows'
+        env:
+          TREC_EVAL_DIR: trec_eval_ref
         run: cargo test -p te-rust --test c_parity -- --ignored
 ```
 
-This achieves two things simultaneously:
-1. `cargo test` (which uses `default-members = ["te-rust"]`, leaving `te-python` to `test-python.yml` where Python is configured) proves plain `cargo test` passes purely in Rust across Linux, macOS, and Windows (running all unit tests, `confidence_intervals`, `cli_regression`, and the `c_parity` metadata parser tests).
-2. `cargo test -p te-rust --test c_parity -- --ignored` runs without `TREC_EVAL_DIR`, exercising the exact `Cargo.toml` → `git archive` → `make` → cache path on every PR.
-
-> **Follow-up CI task:** Expand the OS matrix in `.github/workflows/test-rust.yml` to include `windows-latest` and `macos-latest` once this harness is merged. On `macos-latest`, the steps above work unchanged. On `windows-latest`, read the same `commit` from `Cargo.toml`, check out `usnistgov/trec_eval` at that commit into `trec_eval_ref` with `submodules: recursive`, run `ilammy/msvc-dev-cmd@v1` + `build.bat`, and invoke `c_parity` with `TREC_EVAL_DIR=trec_eval_ref`.
+This achieves three things simultaneously:
+1. `cargo test` (which uses `default-members = ["te-rust"]`, leaving `te-python` to `test-python.yml` where Python is configured) runs *before* any C commit fetch/checkout, proving plain `cargo test` passes purely in Rust across Linux, macOS, and Windows.
+2. On Linux and macOS, `cargo test -p te-rust --test c_parity -- --ignored` runs without `TREC_EVAL_DIR`, exercising the exact `Cargo.toml` → `git archive` → `make` → cache path on every PR.
+3. On Windows, CI checks out the exact same `commit` with `submodules: recursive`, builds `trec_eval.exe` via `ilammy/msvc-dev-cmd@v1` + `build.bat`, and runs `c_parity` via `TREC_EVAL_DIR=trec_eval_ref`, exercising the override path and native Windows C-parity.
 
 ### 6.3 Documentation Updates
 - `README.md`: remove `trec_eval/` from the Project Structure tree; document plain `cargo test` vs `cargo test -p te-rust --test c_parity -- --ignored`, `TREC_EVAL_DIR`, and how to bump `[workspace.metadata.trec_eval_ref]`.
