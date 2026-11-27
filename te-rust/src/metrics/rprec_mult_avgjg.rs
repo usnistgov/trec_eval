@@ -138,7 +138,7 @@ mod tests {
             num_rel_ret: 2,
             num_nonpool: 0,
             num_unjudged_in_pool: 0,
-            rel_levels: vec![2, 2],
+            rel_levels: std::collections::BTreeMap::from([(0, 2), (1, 2)]),
         };
 
         // For state1 (num_rel = 2):
@@ -167,7 +167,7 @@ mod tests {
             num_rel_ret: 2,
             num_nonpool: 0,
             num_unjudged_in_pool: 0,
-            rel_levels: vec![2, 2],
+            rel_levels: std::collections::BTreeMap::from([(0, 2), (1, 2)]),
         };
         let scores = measure.calc(&config, &EvalState::JudgmentGroups(vec![state1]));
         assert_eq!(scores, vec![MetricValue::Float(1.0), MetricValue::Float(0.5)]);

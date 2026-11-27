@@ -26,7 +26,7 @@ struct Args {
     no_summary_flag: bool,
 
     /// Minimum relevance level at which a document is considered relevant
-    #[arg(short = 'l', default_value = "1")]
+    #[arg(short = 'l', default_value = "1", allow_hyphen_values = true)]
     relevance_level: i64,
 
     /// Average over the complete set of queries in qrels instead of the intersection

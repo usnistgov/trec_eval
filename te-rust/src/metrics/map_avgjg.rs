@@ -88,7 +88,7 @@ mod tests {
             num_rel_ret: 2,
             num_nonpool: 0,
             num_unjudged_in_pool: 0,
-            rel_levels: vec![1, 2],
+            rel_levels: std::collections::BTreeMap::from([(0, 1), (1, 2)]),
         };
 
         let state2 = QueryEvalState {
@@ -100,7 +100,7 @@ mod tests {
             num_rel_ret: 1,
             num_nonpool: 0,
             num_unjudged_in_pool: 0,
-            rel_levels: vec![2, 1],
+            rel_levels: std::collections::BTreeMap::from([(0, 2), (1, 1)]),
         };
 
         // AP1 = (1/1 + 2/3) / 2 = 5/6 ≈ 0.8333

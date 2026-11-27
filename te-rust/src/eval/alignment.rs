@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use crate::io::{QrelsJGQuery, QrelsQuery, RunQuery};
 
 pub const RELVALUE_NONPOOL: i64 = -1;
@@ -36,9 +38,9 @@ pub struct QueryEvalState {
     /// Total retrieved documents present in judgments but marked unjudged (value < 0).
     pub num_unjudged_in_pool: usize,
 
-    /// Flat array where `rel_levels[g]` stores the total number of documents in qrels with relevance grade `g`.
-    /// Sized defensively as `max(max_grade + 1, relevance_level_cutoff + 1)`.
-    pub rel_levels: Vec<usize>,
+    /// Sparse map of distinct judged relevance grades (`>= 0`) in qrels to their document counts,
+    /// ordered by ascending grade. Empty if all qrels for this topic have negative grades.
+    pub rel_levels: BTreeMap<i64, usize>,
 }
 
 struct DocInfo {
@@ -74,21 +76,13 @@ pub fn align_query(
 ) -> QueryEvalState {
     let qid = qrels_query.qid.clone();
 
-    // 1. Calculate max relevance grade and populate rel_levels counts
-    let mut max_rel_grade = 0;
-    for record in &qrels_query.records {
-        if record.rel > max_rel_grade {
-            max_rel_grade = record.rel;
-        }
-    }
-
-    let rel_levels_size = std::cmp::max(max_rel_grade + 1, relevance_level_cutoff + 1) as usize;
-    let mut rel_levels = vec![0; rel_levels_size];
+    // 1. Populate distinct judged (>= 0) relevance grade counts and total relevant count
+    let mut rel_levels: BTreeMap<i64, usize> = BTreeMap::new();
     let mut num_rel = 0;
 
     for record in &qrels_query.records {
         if record.rel >= 0 {
-            rel_levels[record.rel as usize] += 1;
+            *rel_levels.entry(record.rel).or_insert(0) += 1;
             if record.rel >= relevance_level_cutoff {
                 num_rel += 1;
             }
@@ -299,6 +293,59 @@ mod tests {
         };
         let state = align_query(Some(&large_run), &large_qrels, "r", 1, usize::MAX, false);
         assert_eq!(state.num_ret, 40);
+    }
+
+    #[test]
+    fn test_align_query_sparse_rel_levels_and_extreme_cutoffs() {
+        // Sparse huge grades including i64::MAX must only store distinct judged grades.
+        let qrels = QrelsQuery {
+            qid: "1".to_string(),
+            records: vec![
+                QrelsRecord { docno: "a".to_string(), rel: 0 },
+                QrelsRecord { docno: "b".to_string(), rel: 500_000_000 },
+                QrelsRecord { docno: "c".to_string(), rel: i64::MAX },
+                QrelsRecord { docno: "u".to_string(), rel: -2 },
+            ],
+        };
+        let run = RunQuery {
+            qid: "1".to_string(),
+            records: vec![
+                RunRecord { docno: "c".to_string(), sim: 3.0 },
+                RunRecord { docno: "b".to_string(), sim: 2.0 },
+                RunRecord { docno: "a".to_string(), sim: 1.0 },
+            ],
+        };
+
+        let expected_levels = BTreeMap::from([(0, 1), (500_000_000, 1), (i64::MAX, 1)]);
+
+        // Huge relevance_level_cutoff (1e12 and i64::MAX) must not pad rel_levels or overflow.
+        let state_1e12 = align_query(Some(&run), &qrels, "r", 1_000_000_000_000, usize::MAX, false);
+        assert_eq!(state_1e12.rel_levels, expected_levels);
+        assert_eq!(state_1e12.num_rel, 1);
+        assert_eq!(state_1e12.num_rel_ret, 1);
+
+        let state_max = align_query(Some(&run), &qrels, "r", i64::MAX, usize::MAX, false);
+        assert_eq!(state_max.rel_levels, expected_levels);
+        assert_eq!(state_max.num_rel, 1);
+
+        // Negative relevance_level_cutoff marks all judged (>= 0) docs relevant.
+        let state_neg = align_query(Some(&run), &qrels, "r", -1, usize::MAX, false);
+        assert_eq!(state_neg.rel_levels, expected_levels);
+        assert_eq!(state_neg.num_rel, 3);
+        assert_eq!(state_neg.num_rel_ret, 3);
+
+        // All-negative topic yields empty rel_levels and zero num_rel.
+        let all_neg = QrelsQuery {
+            qid: "2".to_string(),
+            records: vec![
+                QrelsRecord { docno: "a".to_string(), rel: -1 },
+                QrelsRecord { docno: "b".to_string(), rel: -2 },
+            ],
+        };
+        let state_all_neg = align_query(Some(&run), &all_neg, "r", 1, usize::MAX, false);
+        assert!(state_all_neg.rel_levels.is_empty());
+        assert_eq!(state_all_neg.num_rel, 0);
+        assert_eq!(state_all_neg.num_rel_ret, 0);
     }
 }
 

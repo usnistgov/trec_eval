@@ -122,3 +122,30 @@ def test_custom_measure_significance_testing(sample_data):
     assert comp.n == 2
     assert isinstance(comp.statistic, float)
     assert isinstance(comp.pvalue, float)
+
+
+def test_query_state_rel_levels_is_sparse_dict():
+    observed = {}
+
+    @register_measure(name="capture_levels")
+    def capture_levels(query: QueryState) -> float:
+        observed[query.qid] = query.rel_levels
+        return float(sum(query.rel_levels.values()))
+
+    qrels = {
+        "q_sparse": {"d1": 0, "d2": 500_000_000, "d3": 500_000_000, "d4": -2},
+        "q_allneg": {"d1": -1, "d2": -2},
+    }
+    run = {
+        "q_sparse": {"d2": 2.0, "d1": 1.0},
+        "q_allneg": {"d1": 1.0},
+    }
+    ev = Evaluator(qrels, measures=[capture_levels], relevance_level=10**12)
+    res = ev.evaluate(run)
+
+    assert isinstance(observed["q_sparse"], dict)
+    assert observed["q_sparse"] == {0: 1, 500_000_000: 2}
+    assert observed["q_allneg"] == {}
+    assert res["q_sparse"]["capture_levels"] == 3.0
+    assert res["q_allneg"]["capture_levels"] == 0.0
+

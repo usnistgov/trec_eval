@@ -225,3 +225,42 @@ def test_run_score_validation_issue_107(tmp_path):
     for bad_str in ["abc", "1.5x"]:
         with pytest.raises(TypeError):
             ev.evaluate({"1": {"a": 5.0, "b": bad_str, "c": 3.0}})
+
+
+def test_sparse_rel_levels_and_extreme_relevance_level_issue_102():
+    qrels = {
+        "1": {"a": 2, "b": 0, "c": 1, "d": 2},
+        "2": {"a": 1, "b": 0},
+    }
+    run = {
+        "1": {"a": 4.0, "c": 3.0, "b": 2.0, "d": 1.0},
+        "2": {"a": 2.0, "b": 1.0},
+    }
+
+    # Issue #102: huge relevance_level must return 0.0 immediately and leave rbp unchanged
+    ev_high = Evaluator(qrels, measures=["bpref", "gm_bpref", "rbp"], relevance_level=10**12)
+    res_high = ev_high.evaluate(run)
+    assert res_high["1"]["bpref"] == 0.0
+    assert res_high["2"]["bpref"] == 0.0
+    assert res_high.aggregate()["bpref"] == 0.0
+    assert res_high.aggregate()["gm_bpref"] == pytest.approx(0.00001)
+    assert res_high["2"]["rbp"] == pytest.approx(0.1)
+
+    # Negative relevance_level treats all judged (>= 0) docs as relevant
+    ev_neg = Evaluator(qrels, measures=["bpref", "gm_bpref"], relevance_level=-1)
+    res_neg = ev_neg.evaluate(run)
+    assert res_neg.aggregate()["bpref"] == pytest.approx(1.0)
+    assert res_neg.aggregate()["gm_bpref"] == pytest.approx(1.0)
+
+    # Sparse huge qrels grades (including i64::MAX) work without excessive allocation
+    huge_qrels = {"1": {"d1": 0, "d2": 10**9, "d3": (1 << 63) - 1}}
+    huge_run = {"1": {"d3": 3.0, "d2": 2.0, "d1": 1.0}}
+    res_huge = evaluate(huge_qrels, huge_run, measures=["map", "ndcg", "bpref"])
+    assert res_huge["1"]["map"] == pytest.approx(1.0)
+    assert res_huge["1"]["ndcg"] == pytest.approx(1.0)
+    assert res_huge["1"]["bpref"] == pytest.approx(1.0)
+
+    # Issue #94: rbp rescales gains from 0.0
+    res_rbp = evaluate({"1": {"a": 1, "b": 0}}, {"1": {"a": 2.0, "b": 1.0}}, measures=["rbp.0=1,1=3"])
+    assert res_rbp.aggregate()["rbp_0=1,1=3"] == pytest.approx(0.13)
+

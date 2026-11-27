@@ -10,7 +10,6 @@ pub enum ParseError {
     InvalidInteger { line_num: usize, field: String, value: String },
     InvalidFloat { line_num: usize, field: String, value: String },
     DuplicateDocument { line_num: usize, qid: String, docno: String },
-    RelevanceOutOfBounds { line_num: usize, value: i64 },
 }
 
 impl std::fmt::Display for ParseError {
@@ -28,9 +27,6 @@ impl std::fmt::Display for ParseError {
             }
             ParseError::DuplicateDocument { line_num, qid, docno } => {
                 write!(f, "Line {}: duplicate document '{}' for query '{}'", line_num, docno, qid)
-            }
-            ParseError::RelevanceOutOfBounds { line_num, value } => {
-                write!(f, "Line {}: relevance score {} out of bounds (-1,000,000..1,000,000)", line_num, value)
             }
         }
     }
@@ -169,13 +165,6 @@ pub fn parse_trec_qrels<P: AsRef<Path>>(path: P) -> Result<QrelsData, IOError> {
             })
         })?;
 
-        if rel < -1_000_000 || rel > 1_000_000 {
-            return Err(IOError::FormatError(ParseError::RelevanceOutOfBounds {
-                line_num,
-                value: rel,
-            }));
-        }
-
         raw_records.push(RawQrels {
             qid,
             docno,
@@ -290,13 +279,6 @@ pub fn parse_trec_qrels_jg<P: AsRef<Path>>(path: P) -> Result<QrelsJGData, IOErr
                 value: rel_str.to_string(),
             })
         })?;
-
-        if rel < -1_000_000 || rel > 1_000_000 {
-            return Err(IOError::FormatError(ParseError::RelevanceOutOfBounds {
-                line_num,
-                value: rel,
-            }));
-        }
 
         raw_records.push(RawQrelsJG {
             qid,
@@ -580,5 +562,24 @@ mod tests {
                 other => panic!("expected InvalidFloat for '{}', got {:?}", bad, other),
             }
         }
+    }
+
+    #[test]
+    fn test_parse_qrels_allows_large_and_extreme_i64_grades() {
+        let qrels_file = TempFile::new(
+            "large_qrels",
+            "1 0 d1 0\n1 0 d2 500000000\n1 0 d3 9223372036854775807\n1 0 d4 -9223372036854775808\n",
+        );
+        let qrels = parse_trec_qrels(&qrels_file.path).expect("i64 grades should parse");
+        assert_eq!(qrels.queries.len(), 1);
+        assert_eq!(qrels.queries[0].records.len(), 4);
+
+        let jg_file = TempFile::new(
+            "large_qrels_jg",
+            "1 jg1 d1 9223372036854775807\n1 jg1 d2 -2\n",
+        );
+        let jg = parse_trec_qrels_jg(&jg_file.path).expect("i64 jg grades should parse");
+        assert_eq!(jg.queries.len(), 1);
+        assert_eq!(jg.queries[0].groups[0].records[0].rel, i64::MAX);
     }
 }

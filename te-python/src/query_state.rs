@@ -1,3 +1,5 @@
+use std::collections::BTreeMap;
+
 use pyo3::prelude::*;
 use te_rust::eval::QueryEvalState;
 
@@ -27,9 +29,9 @@ pub struct QueryState {
     /// Total retrieved documents marked unjudged in pool (-2).
     #[pyo3(get)]
     pub num_unjudged_in_pool: usize,
-    /// Distribution of relevance grades in qrels (index = grade, value = document count).
+    /// Distribution of distinct judged (>= 0) relevance grades in qrels (`{grade: count}`).
     #[pyo3(get)]
-    pub rel_levels: Vec<usize>,
+    pub rel_levels: BTreeMap<i64, usize>,
     /// Minimum relevance level cutoff configured for this evaluation (-l).
     #[pyo3(get)]
     pub relevance_level: i64,
