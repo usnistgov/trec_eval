@@ -505,3 +505,64 @@ fn test_regression_rel_levels_and_issue_102() {
     let out = run_eval("issue94 rbp rescaled from 0", &["-m", "rbp.0=1,1=3"], &rbp_q, &rbp_r);
     assert_val(&out, "issue94 rbp rescaled from 0", "rbp_0=1,1=3", "all", "0.1300");
 }
+
+#[test]
+fn test_regression_gm_measures_average_complete_issue_58() {
+    struct TempDirGuard(PathBuf);
+    impl Drop for TempDirGuard {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+
+    let dir = std::env::temp_dir().join(format!("te_rust_issue_58_{}", std::process::id()));
+    std::fs::create_dir_all(&dir).expect("failed to create temp dir");
+    let _guard = TempDirGuard(dir.clone());
+    let rust_bin = get_te_rust_bin();
+
+    // 1. Minimal reproduction from issue #58
+    let qrels_path = dir.join("three-topics.qrels");
+    let run_path = dir.join("no-topic-3.run");
+    std::fs::write(&qrels_path, "1 0 a 1\n2 0 c 1\n2 0 f 1\n2 0 d 0\n3 0 e 1\n").unwrap();
+    std::fs::write(&run_path, "1 Q0 a 1 1.0 r\n2 Q0 c 1 2.0 r\n2 Q0 d 2 1.0 r\n").unwrap();
+
+    let out = Command::new(&rust_bin)
+        .args(["-c", "-m", "num_q", "-m", "gm_map", "-m", "gm_bpref"])
+        .arg(&qrels_path)
+        .arg(&run_path)
+        .output()
+        .expect("Failed to run te-rust");
+    assert!(
+        out.status.success(),
+        "te-rust failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let rows: HashMap<(String, String), String> = parse_ordered_rows(&String::from_utf8_lossy(&out.stdout))
+        .into_iter()
+        .map(|(m, q, v)| ((m, q), v))
+        .collect();
+    assert_eq!(rows.get(&("num_q".to_string(), "all".to_string())).map(|s| s.as_str()), Some("3"));
+    assert_eq!(rows.get(&("gm_map".to_string(), "all".to_string())).map(|s| s.as_str()), Some("0.0171"));
+    assert_eq!(rows.get(&("gm_bpref".to_string(), "all".to_string())).map(|s| s.as_str()), Some("0.0171"));
+
+    // 2. Stored reference fixture: -q -c -m all_trec qrels.test results.trunc (out.test.aqc)
+    let out_aqc = Command::new(&rust_bin)
+        .args(["-q", "-c", "-m", "all_trec"])
+        .arg(get_test_data_path("qrels.test"))
+        .arg(get_test_data_path("results.trunc"))
+        .output()
+        .expect("Failed to run te-rust");
+    assert!(
+        out_aqc.status.success(),
+        "te-rust failed: {}",
+        String::from_utf8_lossy(&out_aqc.stderr)
+    );
+    let aqc_rows: HashMap<(String, String), String> =
+        parse_ordered_rows(&String::from_utf8_lossy(&out_aqc.stdout))
+            .into_iter()
+            .map(|(m, q, v)| ((m, q), v))
+            .collect();
+    assert_eq!(aqc_rows.get(&("num_q".to_string(), "all".to_string())).map(|s| s.as_str()), Some("3"));
+    assert_eq!(aqc_rows.get(&("gm_map".to_string(), "all".to_string())).map(|s| s.as_str()), Some("0.0045"));
+    assert_eq!(aqc_rows.get(&("gm_bpref".to_string(), "all".to_string())).map(|s| s.as_str()), Some("0.0074"));
+}
